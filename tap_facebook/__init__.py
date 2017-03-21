@@ -7,7 +7,17 @@ import os
 import requests
 import singer
 
+from facebookads import FacebookAdsApi
+import facebookads.objects as objects
+from facebookads.objects import (
+    AdAccount,
+    Campaign,
+)
+
 from tap_facebook import utils
+
+api = None
+account = None
 
 BASE_URL = "https://graph.facebook.com"
 API_VERSION = "v2.8"
@@ -22,6 +32,7 @@ RATE_LIMIT_CODES = [4, 17, 613, 1487225]
 
 CONFIG = {}
 STATE = {}
+SCHEMAS = {}
 
 LOGGER = singer.get_logger()
 SESSION = requests.Session()
@@ -178,7 +189,7 @@ def request(url, params=None):
     if 'user_agent' in CONFIG:
         headers['User-Agent'] = CONFIG['user_agent']
 
-    req = requests.Request(method, url, **kwargs).prepare()
+    req = requests.Request('get', url, params=params, headers=headers).prepare()
     LOGGER.info("GET {}".format(req.url))
     resp = SESSION.send(req)
     resp.raise_for_status()
@@ -186,6 +197,7 @@ def request(url, params=None):
 
 
 def paged_request(url, params=None):
+    print("In paged_request, url is {}, params are {}".format(url, params))
     while True:
         data = request(url, params).json()
         for row in data.get("data"):
@@ -200,7 +212,6 @@ def paged_request(url, params=None):
 """
 Example Schema:
 {
-  "type": "SCHEMA",
   "stream": "orders",
   "location": {
     "schema": "public",
@@ -278,25 +289,40 @@ def transform_fields(row, schema):
     return rtn
 
 
+campaign_schema = {
+    'key_properties': ['id'],
+    'stream' : 'junk',
+    'schema': {}
+}
+
+
 def sync_campaigns(schema):
-    stream = schema['stream']
-    key_properties = schema['key_properties']
-    singer.write_schema(stream, schema['schema'], key_properties)
-    start = get_start("campaigns")
+    user = objects.AdUser(fbid='me')
+    
+    accounts = user.get_ad_accounts()
+    account = None
+    for a in accounts:
+        if a['account_id'] == CONFIG['account_id']:
+            account = a
+    if not account:
+        raise("Couldn't find account with id {}".format(CONFIG['account_id']))
 
-    start_date, _ = start.split("T")
+    campaigns = account.get_campaigns()
+    campaign_data = []
+    for c in campaigns:
+        c.remote_read(fields=["id", "account_id", "name", "objective", "effective_status", "buying_type"])
+        ads = c.get_ads()
+        ad_list = []
+        for a in ads:
+            ad_list.append(a._json)
+        c = c._json
 
-    params = {
-        "fields": list(schema['schema']['properties'].keys()),
-        "limit": PAGE_SIZE,
-        "since": start_date,
-    }
+        c['ads'] = ad_list
+        print('Got info for campaign {}'.format(c))
+        campaign_data.append(c)
 
-    url = get_url("/act_{}/insights".format(CONFIG['account_id']))
-    for row in paged_request(url, params=params):
-        record = transform_fields(row, schema)
-        singer.write_record(stream, record)
-        # TODO: update state
+    print('Account: {}'.format(account))
+    print ('Campaigns: {}'.format(campaign_data))
 
 
 def sync_ads_insights(schema):
@@ -309,24 +335,26 @@ def do_sync():
         # "adsets": sync_adsets,
         # "ads": sync_ads,
         # "adcreative": sync_adcreative,
-        "ads_insights": sync_ads_insights,
+        # "ads_insights": sync_ads_insights,
         # "ads_insights_country": sync_ads_insights_country,
         # "ads_insights_age_and_gender": sync_ads_insights_age_and_gender,
         # "ads_insights_placement_and_device": sync_ads_insights_placement_and_device,
     }
 
-    for entity, schema in SCHEMAS.items():
-        if entity not in sync_funcs:
-            continue
-
-        sync_funcs[entity](schema)
+    for k in sync_funcs:
+        sync_funcs[k](campaign_schema)
 
 
 def main():
+    global api
+    global account
     config, state, schemas = utils.parse_args(REQUIRED_CONFIG_KEYS)
     CONFIG.update(config)
     STATE.update(state)
     SCHEMAS.update(schemas)
+
+    api = FacebookAdsApi.init(access_token=CONFIG['access_token'])
+    #account = AdAccount(account_id=CONFIG['account_id'])
     do_sync()
 
 
