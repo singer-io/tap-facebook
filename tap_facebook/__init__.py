@@ -308,21 +308,19 @@ def sync_campaigns(schema):
         raise("Couldn't find account with id {}".format(CONFIG['account_id']))
 
     campaigns = account.get_campaigns()
-    campaign_data = []
+
     for c in campaigns:
+        fields = ["id", "account_id", "name", "objective", "effective_status", "buying_type"]
         c.remote_read(fields=["id", "account_id", "name", "objective", "effective_status", "buying_type"])
-        ads = c.get_ads()
-        ad_list = []
-        for a in ads:
-            ad_list.append(a._json)
-        c = c._json
+        c_out = {'ads': []}
+        for k in fields:
+            c_out[k] = c[k]
 
-        c['ads'] = ad_list
-        print('Got info for campaign {}'.format(c))
-        campaign_data.append(c)
+        for ad in c.get_ads():
+            c_out['ads'].append(ad['id'])
+ 
+        singer.write_record('campaigns', c_out)
 
-    print('Account: {}'.format(account))
-    print ('Campaigns: {}'.format(campaign_data))
 
 
 def sync_ads_insights(schema):
