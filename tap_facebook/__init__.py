@@ -148,14 +148,12 @@ ENTITIES = {
                    "budget_remaining", "targeting", "promoted_object"],
     },
     "ads": {
-        "fields": ["id", "account_id", "adgroup_review_feedback", "effective_status", "bid_type", "bid_info",
+        "fields": ["id", "account_id", "effective_status", "bid_type", "bid_info",
                    "campaign_id", "adset_id", "conversion_specs", "created_time", "creative", "name",
-                   "targeting", "targeting_specs", "updated_time"],
+                   "targeting", "updated_time"],
     },
     "adcreative": {
-        "fields": ["id", "actor_id", "body", "follow_redirect", "image_crops", "image_file", "image_hash",
-                   "image_url", "name", "object_id", "object_story_id", "object_story_spec", "title",
-                   "url_tags"],
+        "fields": ["id", "body", "image_hash", "image_url", "name", "object_id", "object_story_id", "object_story_spec", "title", "url_tags"],
     },
     "ads_insights": {
         "fields": INSIGHTS_FIELD_LIST,
@@ -297,31 +295,51 @@ campaign_schema = {
 
 
 def sync_campaigns(schema):
-    user = objects.AdUser(fbid='me')
-    
-    accounts = user.get_ad_accounts()
-    account = None
-    for a in accounts:
-        if a['account_id'] == CONFIG['account_id']:
-            account = a
-    if not account:
-        raise("Couldn't find account with id {}".format(CONFIG['account_id']))
-
     campaigns = account.get_campaigns()
 
     for c in campaigns:
         fields = ["id", "account_id", "name", "objective", "effective_status", "buying_type"]
-        c.remote_read(fields=["id", "account_id", "name", "objective", "effective_status", "buying_type"])
-        c_out = {'ads': []}
+        c.remote_read(fields=fields)
+        c_out = {'ads': {'data': []}}
         for k in fields:
             c_out[k] = c[k]
 
         for ad in c.get_ads():
-            c_out['ads'].append(ad['id'])
+            c_out['ads']['data'].append({'id': ad['id']})
  
         singer.write_record('campaigns', c_out)
 
+def sync_adsets(schema):
+    ad_sets = account.get_ad_sets()
 
+    #TODO check on publisher_platforms and device_platforms sub-tables
+    for a in ad_sets:
+        fields = ENTITIES['adsets']['fields']
+        a.remote_read(fields=fields)
+
+        singer.write_record('ad_sets', a.export_all_data())
+
+def sync_ads(schema):
+    #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
+    ads = account.get_ads()
+
+    #TODO check that adgroup_review_feedback and targeting_specs is ok to delete
+    for a in ads:
+        fields = ENTITIES['ads']['fields']
+        a.remote_read(fields=fields)
+        
+        singer.write_record('ads', a.export_all_data())
+
+def sync_adcreative(schema):
+    #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
+    ad_creative = account.get_ad_creatives()
+
+    #TODO follow_redirect, image_crops, image_file,
+    for a in ad_creative:
+        fields = ENTITIES['adcreative']['fields']
+        a.remote_read(fields=fields)
+ 
+        singer.write_record('adcreative', a.export_all_data())
 
 def sync_ads_insights(schema):
     pass
@@ -353,6 +371,16 @@ def main():
 
     api = FacebookAdsApi.init(access_token=CONFIG['access_token'])
     #account = AdAccount(account_id=CONFIG['account_id'])
+    user = objects.AdUser(fbid='me')
+    
+    accounts = user.get_ad_accounts()
+    account = None
+    for a in accounts:
+        if a['account_id'] == CONFIG['account_id']:
+            account = a
+    if not account:
+        raise("Couldn't find account with id {}".format(CONFIG['account_id']))
+
     do_sync()
 
 
