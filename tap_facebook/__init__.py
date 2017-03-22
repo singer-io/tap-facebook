@@ -14,7 +14,7 @@ from facebookads.objects import (
     Campaign,
 )
 
-from tap_facebook import utils
+from singer import utils
 
 api = None
 account = None
@@ -364,10 +364,10 @@ def do_sync():
 def main():
     global api
     global account
-    config, state, schemas = utils.parse_args(REQUIRED_CONFIG_KEYS)
+    config, state = utils.parse_args(REQUIRED_CONFIG_KEYS)
     CONFIG.update(config)
     STATE.update(state)
-    SCHEMAS.update(schemas)
+    # SCHEMAS.update(schemas)
 
     api = FacebookAdsApi.init(access_token=CONFIG['access_token'])
     #account = AdAccount(account_id=CONFIG['account_id'])
