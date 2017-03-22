@@ -6,6 +6,7 @@ import os
 
 import requests
 import singer
+from singer import utils
 
 from facebookads import FacebookAdsApi
 import facebookads.objects as objects
@@ -14,10 +15,10 @@ from facebookads.objects import (
     Campaign,
 )
 
-from singer import utils
 
-api = None
-account = None
+
+API = None
+ACCOUNT = None
 
 BASE_URL = "https://graph.facebook.com"
 API_VERSION = "v2.8"
@@ -295,7 +296,7 @@ campaign_schema = {
 
 
 def sync_campaigns(schema):
-    campaigns = account.get_campaigns()
+    campaigns = ACCOUNT.get_campaigns()
 
     for c in campaigns:
         fields = ["id", "account_id", "name", "objective", "effective_status", "buying_type"]
@@ -306,11 +307,11 @@ def sync_campaigns(schema):
 
         for ad in c.get_ads():
             c_out['ads']['data'].append({'id': ad['id']})
- 
+
         singer.write_record('campaigns', c_out)
 
 def sync_adsets(schema):
-    ad_sets = account.get_ad_sets()
+    ad_sets = ACCOUNT.get_ad_sets()
 
     #TODO check on publisher_platforms and device_platforms sub-tables
     for a in ad_sets:
@@ -321,24 +322,24 @@ def sync_adsets(schema):
 
 def sync_ads(schema):
     #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
-    ads = account.get_ads()
+    ads = ACCOUNT.get_ads()
 
     #TODO check that adgroup_review_feedback and targeting_specs is ok to delete
     for a in ads:
         fields = ENTITIES['ads']['fields']
         a.remote_read(fields=fields)
-        
+
         singer.write_record('ads', a.export_all_data())
 
 def sync_adcreative(schema):
     #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
-    ad_creative = account.get_ad_creatives()
+    ad_creative = ACCOUNT.get_ad_creatives()
 
     #TODO follow_redirect, image_crops, image_file,
     for a in ad_creative:
         fields = ENTITIES['adcreative']['fields']
         a.remote_read(fields=fields)
- 
+
         singer.write_record('adcreative', a.export_all_data())
 
 def sync_ads_insights(schema):
@@ -362,24 +363,24 @@ def do_sync():
 
 
 def main():
-    global api
-    global account
+    global API
+    global ACCOUNT
     config, state = utils.parse_args(REQUIRED_CONFIG_KEYS)
     CONFIG.update(config)
     STATE.update(state)
     # SCHEMAS.update(schemas)
 
-    api = FacebookAdsApi.init(access_token=CONFIG['access_token'])
+    API = FacebookAdsApi.init(access_token=CONFIG['access_token'])
     #account = AdAccount(account_id=CONFIG['account_id'])
     user = objects.AdUser(fbid='me')
-    
+
     accounts = user.get_ad_accounts()
-    account = None
+
     for a in accounts:
         if a['account_id'] == CONFIG['account_id']:
-            account = a
-    if not account:
-        raise("Couldn't find account with id {}".format(CONFIG['account_id']))
+            ACCOUNT = a
+    if not ACCOUNT:
+        raise Exception("Couldn't find account with id {}".format(CONFIG['account_id']))
 
     do_sync()
 
