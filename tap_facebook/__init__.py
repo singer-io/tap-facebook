@@ -17,9 +17,6 @@ from facebookads.objects import (
 
 
 
-API = None
-ACCOUNT = None
-
 BASE_URL = "https://graph.facebook.com"
 API_VERSION = "v2.8"
 REQUIRED_CONFIG_KEYS = ["start_date", "account_id", "access_token"]
@@ -161,65 +158,6 @@ def get_start(key):
     return STATE[key]
 
 
-def get_url(endpoint):
-    return "{}/{}/{}".format(BASE_URL, API_VERSION, endpoint)
-
-
-def request(url, params=None):
-    params = params or {}
-    params["access_token"] = CONFIG['access_token']
-    headers = {}
-    if 'user_agent' in CONFIG:
-        headers['User-Agent'] = CONFIG['user_agent']
-
-    req = requests.Request('get', url, params=params, headers=headers).prepare()
-    LOGGER.info("GET {}".format(req.url))
-    resp = SESSION.send(req)
-    resp.raise_for_status()
-    return resp
-
-
-def paged_request(url, params=None):
-    print("In paged_request, url is {}, params are {}".format(url, params))
-    while True:
-        data = request(url, params).json()
-        for row in data.get("data"):
-            yield row
-
-        if "paging" in data and "next" in data['paging']:
-            url = data['paging']['next']
-        else:
-            break
-
-
-"""
-Example Schema:
-{
-  "stream": "orders",
-  "location": {
-    "schema": "public",
-    "table": "orders"
-  },
-  "key_properties": [
-     "id"
-  ],
-  "schema": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "integer"
-      },
-      "user_id": {
-        "type": "integer"
-      },
-      "amount": {
-        "type": "number"
-      },
-    }
-  }
-}
-"""
-
 def transform_field(value, field_type, field_format=None):
     if field_format == "date-time":
         # TODO
@@ -279,63 +217,94 @@ campaign_schema = {
 }
 
 
-def sync_campaigns(selections):
-    campaigns = ACCOUNT.get_campaigns()
-    props = selections['campaigns']['properties']
-    fields = [k for k in props if k != 'ads']
-    pull_ads = 'ads' in props
+class Stream(object):
+
+    def __init__(self, account, selections):
+        self.account = account
+        self.selections = selections
     
-    for c in campaigns:
-        c.remote_read(fields=fields)
-        c_out = {'ads': {'data': []}}
-        for k in fields:
-            c_out[k] = c[k]
+    def is_selected(self):
+        return self.name in self.selections
+        
+    def sync(self):
+        if self.is_selected():
+            LOGGER.info('Syncing {}'.format(self.name))
+            self.sync_impl()
+        else:
+            LOGGER.info('Skipping {}'.format(self.name))
 
-        if pull_ads:
-            for ad in c.get_ads():
-                c_out['ads']['data'].append({'id': ad['id']})
 
-        singer.write_record('campaigns', c_out)
+class CampaignsStream(Stream):
+    name = 'campaigns'
 
-def sync_adsets(selections):
-    ad_sets = ACCOUNT.get_ad_sets()
+    def sync_impl(self):
+    
+        campaigns = self.account.get_campaigns()
+        props = self.selections[self.name]['properties']
+        fields = [k for k in props if k != 'ads']
+        pull_ads = 'ads' in props
 
-    for a in ad_sets:
-        fields = selections['adsets']['properties'].keys()
-        a.remote_read(fields=fields)
+        for c in campaigns:
+            c.remote_read(fields=fields)
+            c_out = {'ads': {'data': []}}
+            for k in fields:
+                c_out[k] = c[k]
 
-        singer.write_record('ad_sets', a.export_all_data())
+            if pull_ads:
+                for ad in c.get_ads():
+                    c_out['ads']['data'].append({'id': ad['id']})
 
-def sync_ads(selections):
-    #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
-    ads = ACCOUNT.get_ads()
+            singer.write_record(self.name, c_out)
 
-    for a in ads:
-        fields = selections['ads']['properties'].keys()
-        a.remote_read(fields=fields)
-        singer.write_record('ads', a.export_all_data())
 
-def sync_adcreative(selections):
-    #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
-    ad_creative = ACCOUNT.get_ad_creatives()
-    fields = selections['adcreative']['properties'].keys()
+class AdSetsStream(Stream):
+    name = 'adsets'
+    
+    def sync_impl(self):
+        ad_sets = self.account.get_ad_sets()
+        for a in ad_sets:
+            fields = self.selections[self.name]['properties'].keys()
+            a.remote_read(fields=fields)
+            singer.write_record(self.name, a.export_all_data())
 
-    for a in ad_creative:
-        a.remote_read(fields=fields)
-        singer.write_record('adcreative', a.export_all_data())
+class AdsStream(Stream):
+
+    name = 'ads'
+            
+    def sync_impl(self):
+        #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
+        ads = self.account.get_ads()
+
+        for a in ads:
+            fields = self.selections[self.name]['properties'].keys()
+            a.remote_read(fields=fields)
+            singer.write_record(self.name, a.export_all_data())
+
+class AdCreativeStream(Stream):
+    name = 'adcreative'
+    
+    def sync_impl(self):
+        #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
+        ad_creative = self.account.get_ad_creatives()
+        fields = self.selections[self.name]['properties'].keys()
+
+        for a in ad_creative:
+            a.remote_read(fields=fields)
+            singer.write_record(self.name, a.export_all_data())
 
 def sync_ads_insights(schema):
     pass
 
 
-SYNC_FUNCS = [
-    ('campaigns', sync_campaigns),
-    ('adsets', sync_adsets),
-    ('ads', sync_ads),
-    ('adcreative', sync_adcreative)
-]
+def do_sync(account, selections):
 
-def do_sync(selections):
+    streams = [
+        CampaignsStream(account, selections),
+        AdSetsStream(account, selections),
+        AdsStream(account, selections),
+        AdCreativeStream(account, selections),
+    ]
+    
     sync_funcs = {
         # "adcreative": sync_adcreative,
         # "ads_insights": sync_ads_insights,
@@ -344,38 +313,29 @@ def do_sync(selections):
         # "ads_insights_placement_and_device": sync_ads_insights_placement_and_device,
     }
 
-    for (k, f) in SYNC_FUNCS:
-        if k in selections:
-            LOGGER.info('Syncing {}'.format(k))
-            f(selections)
-        else:
-            LOGGER.info('Skipping {}'.format(k))
+    for s in streams:
+        s.sync()
 
 
 def main():
-    global API
-    global ACCOUNT
-    config, state = utils.parse_args(REQUIRED_CONFIG_KEYS)
+
+    config, state, properties = utils.parse_args(REQUIRED_CONFIG_KEYS)
     CONFIG.update(config)
     STATE.update(state)
 
-    selections = utils.load_json(CONFIG['selections'])
-    
     # SCHEMAS.update(schemas)
 
-    API = FacebookAdsApi.init(access_token=CONFIG['access_token'])
-    #account = AdAccount(account_id=CONFIG['account_id'])
+    api = FacebookAdsApi.init(access_token=CONFIG['access_token'])
     user = objects.AdUser(fbid='me')
-
     accounts = user.get_ad_accounts()
-
+    account = None
     for a in accounts:
         if a['account_id'] == CONFIG['account_id']:
-            ACCOUNT = a
-    if not ACCOUNT:
+            account = a
+    if not account:
         raise Exception("Couldn't find account with id {}".format(CONFIG['account_id']))
 
-    do_sync(selections)
+    do_sync(account, properties)
 
 
 if __name__ == '__main__':
