@@ -1,0 +1,524 @@
+{
+  "type": [
+    "null",
+    "object"
+  ],
+  "properties": {
+    "name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "end_time": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "promoted_object": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "custom_event_type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "pixel_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "pixel_rule": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "account_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "updated_time": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "daily_budget": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "budget_remaining": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "effective_status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "campaign_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "created_time": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "start_time": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "lifetime_budget": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "targeting": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "publisher_platforms": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "interests": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          }
+        },
+        "instagram_positions": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "geo_locations": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "properties": {
+            "countries": {
+              "type": [
+                "null",
+                "array"
+              ],
+              "items": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            },
+            "cities": {
+              "type": [
+                "null",
+                "array"
+              ],
+              "items": {
+                "type": [
+                  "null",
+                  "object"
+                ],
+                "properties": {
+                  "name": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "country": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "radius": {
+                    "type": [
+                      "null",
+                      "integer"
+                    ]
+                  },
+                  "region_id": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "distance_unit": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "region": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "key": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  }
+                }
+              }
+            },
+            "location_types": {
+              "type": [
+                "null",
+                "array"
+              ],
+              "items": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            },
+            "regions": {
+              "type": [
+                "null",
+                "array"
+              ],
+              "items": {
+                "type": [
+                  "null",
+                  "object"
+                ],
+                "properties": {
+                  "name": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "key": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "country": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "excluded_connections": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          }
+        },
+        "work_positions": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          }
+        },
+        "locales": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          }
+        },
+        "device_platforms": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "age_max": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "exclusions": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "properties": {
+            "work_employers": {
+              "type": [
+                "null",
+                "array"
+              ],
+              "items": {
+                "type": [
+                  "null",
+                  "object"
+                ],
+                "properties": {
+                  "name": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "id": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "age_min": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "flexible_spec": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "interests": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": [
+                    "null",
+                    "object"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "id": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              },
+              "work_positions": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": [
+                    "null",
+                    "object"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "id": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "custom_audiences": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          }
+        },
+        "facebook_positions": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "bid_info": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "CLICKS": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        }
+      }
+    }
+  }
+}

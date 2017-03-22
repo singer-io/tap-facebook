@@ -1,0 +1,72 @@
+{
+  "properties": {
+    "name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "objective": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "account_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "effective_status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "buying_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "ads": {
+      "properties": {
+        "data": {
+          "items": {
+            "properties": {
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            },
+            "type": [
+              "null",
+              "object"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        }
+      },
+      "type": [
+        "null",
+        "object"
+      ]
+    }
+  },
+  "type": [
+    "null",
+    "object"
+  ]
+}

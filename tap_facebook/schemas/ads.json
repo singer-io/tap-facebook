@@ -1,0 +1,650 @@
+{
+  "type": [
+    "null",
+    "object"
+  ],
+  "properties": {
+    "bid_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "account_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "campaign_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "adset_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "bid_info": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "CLICKS": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "ACTIONS": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "REACH": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        }
+      }
+    },
+    "creative": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "creative_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "updated_time": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "created_time": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "targeting": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "locales": {
+          "items": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "connections": {
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "instagram_positions": {
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "exclusions": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "properties": {
+            "work_employers": {
+              "items": {
+                "type": [
+                  "null",
+                  "object"
+                ],
+                "properties": {
+                  "name": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "id": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  }
+                }
+              },
+              "type": [
+                "null",
+                "array"
+              ]
+            }
+          }
+        },
+        "interests": {
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "geo_locations": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "properties": {
+            "regions": {
+              "items": {
+                "type": [
+                  "null",
+                  "object"
+                ],
+                "properties": {
+                  "name": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "country": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "key": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  }
+                }
+              },
+              "type": [
+                "null",
+                "array"
+              ]
+            },
+            "countries": {
+              "items": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "type": [
+                "null",
+                "array"
+              ]
+            },
+            "cities": {
+              "items": {
+                "type": [
+                  "null",
+                  "object"
+                ],
+                "properties": {
+                  "key": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "distance_unit": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "region": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "name": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "country": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "region_id": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "radius": {
+                    "type": [
+                      "null",
+                      "integer"
+                    ]
+                  }
+                }
+              },
+              "type": [
+                "null",
+                "array"
+              ]
+            },
+            "location_types": {
+              "items": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "type": [
+                "null",
+                "array"
+              ]
+            }
+          }
+        },
+        "work_positions": {
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "education_statuses": {
+          "items": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "publisher_platforms": {
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "age_max": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "custom_audiences": {
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "device_platforms": {
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "age_min": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "facebook_positions": {
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "excluded_connections": {
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "flexible_spec": {
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "interests": {
+                "items": {
+                  "type": [
+                    "null",
+                    "object"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "id": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  }
+                },
+                "type": [
+                  "null",
+                  "array"
+                ]
+              },
+              "work_positions": {
+                "items": {
+                  "type": [
+                    "null",
+                    "object"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "id": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  }
+                },
+                "type": [
+                  "null",
+                  "array"
+                ]
+              }
+            }
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "friends_of_connections": {
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        }
+      }
+    },
+    "effective_status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "conversion_specs": {
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "post": {
+            "items": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "type": [
+              "null",
+              "array"
+            ]
+          },
+          "conversion_id": {
+            "items": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "type": [
+              "null",
+              "array"
+            ]
+          },
+          "action.type": {
+            "items": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "type": [
+              "null",
+              "array"
+            ]
+          },
+          "post.wall": {
+            "items": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "type": [
+              "null",
+              "array"
+            ]
+          },
+          "page": {
+            "items": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "type": [
+              "null",
+              "array"
+            ]
+          }
+        }
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    }
+  }
+}

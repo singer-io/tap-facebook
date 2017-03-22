@@ -1,0 +1,298 @@
+{
+  "properties": {
+    "body": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "object_story_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "creative_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "image_url": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "actor_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "title": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "object_story_spec": {
+      "properties": {
+        "page_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "instagram_actor_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "link_data": {
+          "properties": {
+            "multi_share_optimized": {
+              "type": [
+                "null",
+                "integer"
+              ]
+            },
+            "link": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "image_crops": {
+              "properties": {
+                "100x100": {
+                  "items": {
+                    "items": {
+                      "type": [
+                        "null",
+                        "integer"
+                      ]
+                    },
+                    "type": [
+                      "null",
+                      "array"
+                    ]
+                  },
+                  "type": [
+                    "null",
+                    "array"
+                  ]
+                },
+                "191x100": {
+                  "items": {
+                    "items": {
+                      "type": [
+                        "null",
+                        "integer"
+                      ]
+                    },
+                    "type": [
+                      "null",
+                      "array"
+                    ]
+                  },
+                  "type": [
+                    "null",
+                    "array"
+                  ]
+                },
+                "400x150": {
+                  "items": {
+                    "items": {
+                      "type": [
+                        "null",
+                        "integer"
+                      ]
+                    },
+                    "type": [
+                      "null",
+                      "array"
+                    ]
+                  },
+                  "type": [
+                    "null",
+                    "array"
+                  ]
+                }
+              },
+              "type": [
+                "null",
+                "object"
+              ]
+            },
+            "child_attachments": {
+              "items": {
+                "properties": {
+                  "image_hash": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "link": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "call_to_action": {
+                    "properties": {
+                      "type": {
+                        "type": [
+                          "null",
+                          "string"
+                        ]
+                      }
+                    },
+                    "type": [
+                      "null",
+                      "object"
+                    ]
+                  },
+                  "picture": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "description": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  },
+                  "name": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  }
+                },
+                "type": [
+                  "null",
+                  "object"
+                ]
+              },
+              "type": [
+                "null",
+                "array"
+              ]
+            },
+            "description": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "multi_share_end_card": {
+              "type": [
+                "null",
+                "integer"
+              ]
+            },
+            "message": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "caption": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "image_hash": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "call_to_action": {
+              "properties": {
+                "value": {
+                  "properties": {
+                    "link": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  },
+                  "type": [
+                    "null",
+                    "object"
+                  ]
+                },
+                "type": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                }
+              },
+              "type": [
+                "null",
+                "object"
+              ]
+            },
+            "picture": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "attachment_style": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "name": {
+              "type": [
+                "null",
+                "string"
+              ]
+            }
+          },
+          "type": [
+            "null",
+            "object"
+          ]
+        }
+      },
+      "type": [
+        "null",
+        "object"
+      ]
+    },
+    "image_hash": {
+      "type": [
+        "null",
+        "string"
+      ]
+    }
+  },
+  "type": [
+    "null",
+    "object"
+  ]
+}
