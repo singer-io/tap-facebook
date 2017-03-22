@@ -67,7 +67,7 @@
             "multi_share_optimized": {
               "type": [
                 "null",
-                "integer"
+                "boolean"
               ]
             },
             "link": {
@@ -205,7 +205,7 @@
             "multi_share_end_card": {
               "type": [
                 "null",
-                "integer"
+                "boolean"
               ]
             },
             "message": {
