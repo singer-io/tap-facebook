@@ -140,9 +140,6 @@ INSIGHTS_INT_FIELDS = [
 
 
 ENTITIES = {
-    "adcreative": {
-        "fields": ["id", "body", "image_hash", "image_url", "name", "object_id", "object_story_id", "object_story_spec", "title", "url_tags"],
-    },
     "ads_insights": {
         "fields": INSIGHTS_FIELD_LIST,
     },
@@ -318,15 +315,13 @@ def sync_ads(selections):
         a.remote_read(fields=fields)
         singer.write_record('ads', a.export_all_data())
 
-def sync_adcreative(schema):
+def sync_adcreative(selections):
     #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
     ad_creative = ACCOUNT.get_ad_creatives()
+    fields = selections['adcreative']['properties'].keys()
 
-    #TODO follow_redirect, image_crops, image_file,
     for a in ad_creative:
-        fields = ENTITIES['adcreative']['fields']
         a.remote_read(fields=fields)
-
         singer.write_record('adcreative', a.export_all_data())
 
 def sync_ads_insights(schema):
@@ -336,7 +331,8 @@ def sync_ads_insights(schema):
 SYNC_FUNCS = [
     ('campaigns', sync_campaigns),
     ('adsets', sync_adsets),
-    ('ads', sync_ads)
+    ('ads', sync_ads),
+    ('adcreative', sync_adcreative)
 ]
 
 def do_sync(selections):
