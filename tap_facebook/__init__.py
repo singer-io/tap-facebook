@@ -3,6 +3,7 @@
 import datetime
 import json
 import os
+import time
 
 import requests
 import singer
@@ -10,146 +11,16 @@ from singer import utils
 
 from facebookads import FacebookAdsApi
 import facebookads.objects as objects
-from facebookads.objects import (
-    AdAccount,
-    Campaign,
-)
 
 
 
-BASE_URL = "https://graph.facebook.com"
-API_VERSION = "v2.8"
 REQUIRED_CONFIG_KEYS = ["start_date", "account_id", "access_token"]
-
-PAGE_SIZE = 100
-ASYNC_SLEEP_SECONDS = 5 * 60
-ASYNC_WAIT_SECONDS = 30 * 60
-
-AUTH_ERROR_CODES = [100, 190]
-RATE_LIMIT_CODES = [4, 17, 613, 1487225]
 
 CONFIG = {}
 STATE = {}
-SCHEMAS = {}
 
 LOGGER = singer.get_logger()
-SESSION = requests.Session()
 
-INSIGHTS_FIELD_LIST = [
-    "account_id",
-    "account_name",
-    "action_values",
-    "actions",
-    "ad_id",
-    "ad_name",
-    "adset_id",
-    "adset_name",
-    "app_store_clicks",
-    "buying_type",
-    "call_to_action_clicks",
-    "campaign_id",
-    "campaign_name",
-    "canvas_avg_view_percent",
-    "canvas_avg_view_time",
-    "clicks",
-    "cost_per_10_sec_video_view",
-    "cost_per_action_type",
-    "cost_per_inline_link_click",
-    "cost_per_inline_post_engagement",
-    "cost_per_total_action",
-    "cost_per_unique_action_type",
-    "cost_per_unique_click",
-    "cost_per_unique_inline_link_click",
-    "cpc",
-    "cpm",
-    "cpp",
-    "ctr",
-    "date_start",
-    "date_stop",
-    "deeplink_clicks",
-    "frequency",
-    "impressions",
-    "inline_link_click_ctr",
-    "inline_link_clicks",
-    "inline_post_engagement",
-    "newsfeed_avg_position",
-    "newsfeed_clicks",
-    "newsfeed_impressions",
-    "objective",
-    "place_page_name",
-    "reach",
-    "relevance_score",
-    "social_clicks",
-    "social_impressions",
-    "social_reach",
-    "social_spend",
-    "spend",
-    "total_action_value",
-    "total_actions",
-    "total_unique_actions",
-    "unique_actions",
-    "unique_clicks",
-    "unique_ctr",
-    "unique_impressions",
-    "unique_inline_link_click_ctr",
-    "unique_inline_link_clicks",
-    "unique_link_clicks_ctr",
-    "unique_social_clicks",
-    "unique_social_impressions",
-    "video_10_sec_watched_actions",
-    "video_15_sec_watched_actions",
-    "video_30_sec_watched_actions",
-    "video_avg_pct_watched_actions",
-    "video_avg_sec_watched_actions",
-    "video_complete_watched_actions",
-    "video_p100_watched_actions",
-    "video_p25_watched_actions",
-    "video_p50_watched_actions",
-    "video_p75_watched_actions",
-    "video_p95_watched_actions",
-    "website_clicks",
-    "website_ctr",
-]
-
-INSIGHTS_INT_FIELDS = [
-    "app_store_clicks",
-    "call_to_action_clicks",
-    "clicks",
-    "deeplink_clicks",
-    "impressions",
-    "inline_link_clicks",
-    "inline_post_engagement",
-    "newsfeed_clicks",
-    "newsfeed_impressions",
-    "reach",
-    "social_clicks",
-    "social_impressions",
-    "social_reach",
-    "total_actions",
-    "total_unique_actions",
-    "unique_clicks",
-    "unique_impressions",
-    "unique_inline_link_clicks",
-    "unique_social_clicks",
-    "unique_social_impressions",
-    "website_clicks",
-]
-
-
-ENTITIES = {
-    "ads_insights": {
-        "fields": INSIGHTS_FIELD_LIST,
-    },
-    "ads_insights_country": {
-        "fields": INSIGHTS_FIELD_LIST,
-    },
-    "ads_insights_age_and_gender": {
-        "fields": INSIGHTS_FIELD_LIST,
-    },
-    "ads_insights_placement_and_device": {
-        "fields": INSIGHTS_FIELD_LIST,
-    },
-}
 
 def get_start(key):
     if key not in STATE:
@@ -208,13 +79,6 @@ def transform_fields(row, schema):
                              .format(field_name, field_schema, err_msg))
 
     return rtn
-
-
-campaign_schema = {
-    'key_properties': ['id'],
-    'stream' : 'junk',
-    'schema': {}
-}
 
 
 class Stream(object):
@@ -292,38 +156,70 @@ class AdCreativeStream(Stream):
             a.remote_read(fields=fields)
             singer.write_record(self.name, a.export_all_data())
 
-def sync_ads_insights(schema):
-    pass
+class AdsInsights(Stream):
+    name = 'ads_insights'
+    action_breakdowns = [] # ["action_type",
+                         # "action_target_id",
+                         # "action_destination"]
+    limit = 100
+    time_increment = 1
+    action_attribution_windows = [] #["1d_click",
+                                    #"7d_click",
+                                    #               "28d_click",
+                                    #               "1d_view",
+                                    #               "7d_view",
+                                    #               "28d_view"]
+    
+    def sync_impl(self):
+        fields = list(self.selections[self.name]['properties'].keys())
+        LOGGER.info("fields are: {}".format(fields))
+        params={
+            'level': 'ad',
+            'action_breakdowns': self.action_breakdowns,
+            'limit': 100,
+            'fields': fields,
+            'time_increment': 1,
+            'action_attribution_windows': self.action_attribution_windows,
+            'time_ranges': [{'since':'2017-02-15', 'until':'2017-03-01'}]
+        }      
+        i_async_job = self.account.get_insights(params=params, \
+                                                async=True)
+        
+        # Insights
+        while True:
+            job = i_async_job.remote_read()
+            LOGGER.info('Job status: {}; {}% done'
+                        .format(job[objects.AsyncJob.Field.async_status],
+                                job[objects.AsyncJob.Field.async_percent_completion]))
+            time.sleep(5)
+            if job[objects.AsyncJob.Field.async_status] == "Job Completed":
+                LOGGER.info("Done!")
+                break
 
+        LOGGER.info('results are {}'.format(type(i_async_job.get_result())))
+        for o in i_async_job.get_result():        
+            singer.write_record(self.name, o.export_all_data())
 
 def do_sync(account, selections):
 
     streams = [
+        AdsInsights(account, selections),        
         CampaignsStream(account, selections),
         AdSetsStream(account, selections),
         AdsStream(account, selections),
         AdCreativeStream(account, selections),
     ]
     
-    sync_funcs = {
-        # "adcreative": sync_adcreative,
-        # "ads_insights": sync_ads_insights,
-        # "ads_insights_country": sync_ads_insights_country,
-        # "ads_insights_age_and_gender": sync_ads_insights_age_and_gender,
-        # "ads_insights_placement_and_device": sync_ads_insights_placement_and_device,
-    }
-
     for s in streams:
         s.sync()
 
 
 def main():
 
-    config, state, properties = utils.parse_args(REQUIRED_CONFIG_KEYS)
-    CONFIG.update(config)
-    STATE.update(state)
-
-    # SCHEMAS.update(schemas)
+    args = utils.parse_args(REQUIRED_CONFIG_KEYS)
+    CONFIG.update(args.config)
+    if args.state:
+        STATE.update(args.state)
 
     api = FacebookAdsApi.init(access_token=CONFIG['access_token'])
     user = objects.AdUser(fbid='me')
@@ -335,7 +231,10 @@ def main():
     if not account:
         raise Exception("Couldn't find account with id {}".format(CONFIG['account_id']))
 
-    do_sync(account, properties)
+    if args.discover:
+        print("I would print out the schema and exit")
+    else:
+        do_sync(account, args.properties)
 
 
 if __name__ == '__main__':
