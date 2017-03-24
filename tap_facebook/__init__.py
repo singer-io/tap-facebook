@@ -1,8 +1,10 @@
+
 #!/usr/bin/env python3
 
 import datetime
 import json
 import os
+import sys
 import time
 
 import requests
@@ -12,7 +14,7 @@ from singer import utils
 from facebookads import FacebookAdsApi
 import facebookads.objects as objects
 
-
+STREAMS = ['adcreative', 'ads', 'adsets', 'campaigns', 'insights']
 
 REQUIRED_CONFIG_KEYS = ["start_date", "account_id", "access_token"]
 
@@ -89,7 +91,8 @@ class Stream(object):
     
     def is_selected(self):
         return self.name in self.selections
-        
+
+
     def sync(self):
         if self.is_selected():
             LOGGER.info('Syncing {}'.format(self.name))
@@ -213,7 +216,19 @@ def do_sync(account, selections):
     for s in streams:
         s.sync()
 
+def get_abs_path(path):
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)    
 
+def load_schema(stream):
+    path = get_abs_path('schemas/{}.json'.format(stream))
+    return utils.load_json(path)
+
+
+def do_discover():
+    res = {s: load_schema(s) for s in STREAMS}
+    json.dump(res, sys.stdout, indent=4)
+
+    
 def main():
 
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
@@ -232,7 +247,7 @@ def main():
         raise Exception("Couldn't find account with id {}".format(CONFIG['account_id']))
 
     if args.discover:
-        print("I would print out the schema and exit")
+        do_discover()
     else:
         do_sync(account, args.properties)
 
