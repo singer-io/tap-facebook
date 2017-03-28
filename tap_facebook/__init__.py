@@ -85,13 +85,18 @@ def transform_fields(row, schema):
 
 class Stream(object):
 
-    def __init__(self, account, selections):
+    def __init__(self, account, requested_schema):
         self.account = account
-        self.selections = selections
+        self.requested_schema = requested_schema
     
     def is_selected(self):
-        return self.name in self.selections
+        return self.requested_schema is not None
 
+    def selected_properties(self):
+        if self.requested_schema:
+            LOGGER.info('Requested schema is {} of type {}'.format(self.requested_schema, type(self.requested_schema)))            
+            return self.requested_schema['properties'].keys()
+        return set()
 
     def sync(self):
         if self.is_selected():
@@ -107,7 +112,8 @@ class CampaignsStream(Stream):
     def sync_impl(self):
     
         campaigns = self.account.get_campaigns()
-        props = self.selections[self.name]['properties']
+        LOGGER.info('Requested schema is {} of type {}'.format(self.requested_schema, type(self.requested_schema)))
+        props = self.requested_schema['properties'].keys()
         fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
 
@@ -130,7 +136,7 @@ class AdSetsStream(Stream):
     def sync_impl(self):
         ad_sets = self.account.get_ad_sets()
         for a in ad_sets:
-            fields = self.selections[self.name]['properties'].keys()
+            fields = self.selected_properties()
             a.remote_read(fields=fields)
             singer.write_record(self.name, a.export_all_data())
 
@@ -143,7 +149,7 @@ class AdsStream(Stream):
         ads = self.account.get_ads()
 
         for a in ads:
-            fields = self.selections[self.name]['properties'].keys()
+            fields = self.selected_properties()
             a.remote_read(fields=fields)
             singer.write_record(self.name, a.export_all_data())
 
@@ -153,7 +159,7 @@ class AdCreativeStream(Stream):
     def sync_impl(self):
         #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
         ad_creative = self.account.get_ad_creatives()
-        fields = self.selections[self.name]['properties'].keys()
+        fields = self.selected_properties()
 
         for a in ad_creative:
             a.remote_read(fields=fields)
@@ -174,7 +180,7 @@ class AdsInsights(Stream):
                                     #               "28d_view"]
     
     def sync_impl(self):
-        fields = list(self.selections[self.name]['properties'].keys())
+        fields = list(self.selected_properties)
         LOGGER.info("fields are: {}".format(fields))
         params={
             'level': 'ad',
@@ -203,15 +209,22 @@ class AdsInsights(Stream):
         for o in i_async_job.get_result():        
             singer.write_record(self.name, o.export_all_data())
 
-def do_sync(account, selections):
 
-    streams = [
-        AdsInsights(account, selections),        
-        CampaignsStream(account, selections),
-        AdSetsStream(account, selections),
-        AdsStream(account, selections),
-        AdCreativeStream(account, selections),
-    ]
+stream_initializers = {
+    'insights': AdsInsights,
+    'campaigns': CampaignsStream,
+    'adsets': AdSetsStream,
+    'ads': AdsStream,
+    'adcreative': AdCreativeStream
+}
+
+
+            
+def do_sync(account, properties):
+    streams = []
+    for stream_name in properties['streams']:
+        f = stream_initializers[stream_name]
+        streams.append(f(account, properties['streams'][stream_name]))
     
     for s in streams:
         s.sync()
@@ -225,7 +238,7 @@ def load_schema(stream):
 
 
 def do_discover():
-    res = {s: load_schema(s) for s in STREAMS}
+    res = {'streams': {s: load_schema(s) for s in STREAMS}}
     json.dump(res, sys.stdout, indent=4)
 
     
@@ -248,6 +261,8 @@ def main():
 
     if args.discover:
         do_discover()
+    elif not args.properties:
+        LOGGER.info("No properties were selected")
     else:
         do_sync(account, args.properties)
 
