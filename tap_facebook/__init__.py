@@ -162,13 +162,11 @@ class AdSetsStream(Stream):
     field_class = objects.adset.AdSet.Field
     key_properties = ['id', 'updated_time']
 
-    def sync(self):
-        schema = load_schema(self.name)
-        singer.write_schema(self.name, schema, self.key_properties)
+    def __iter__(self):
         ad_sets = self.account.get_ad_sets()
         for a in ad_sets:
             a.remote_read(fields=self.fields())
-            singer.write_record(self.name, a.export_all_data())
+            yield a.export_all_data()
 
 
 class AdsInsights(Stream):
