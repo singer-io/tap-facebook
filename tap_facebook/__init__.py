@@ -239,19 +239,16 @@ def get_abs_path(path):
 
 def load_schema(stream):
     path = get_abs_path('schemas/{}.json'.format(stream))
-    return utils.load_json(path)
+    field_class = field_classes[stream]    
+    schema = utils.load_json(path)
+    for k in schema['properties']:
+        if k in field_class.__dict__:
+            schema['properties'][k]['inclusion'] = 'available'
+    return schema
 
 
 def do_discover():
-    res = {'streams': {}}
-    for s in STREAMS:
-        print(s)
-        schema = load_schema(s)
-        field_class = field_classes[s]
-        for k in schema['properties']:
-            if k in field_class.__dict__:
-                schema['properties'][k]['inclusion'] = 'available'
-        res['streams'][s] = {'schema': schema}
+    res = {'streams': {s: {'schema': load_schema(s)} for s in STREAMS}}
     json.dump(res, sys.stdout, indent=4)
 
     
