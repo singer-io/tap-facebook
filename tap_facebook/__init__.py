@@ -89,26 +89,16 @@ class Stream(object):
         self.account = account
         self.requested_schema = requested_schema
     
-    def is_selected(self):
-        return self.requested_schema is not None
-
     def selected_properties(self):
         if self.requested_schema:
             return self.requested_schema['properties'].keys()
         return set()
 
-    def sync(self):
-        if self.is_selected():
-            LOGGER.info('Syncing {}'.format(self.name))
-            self.sync_impl()
-        else:
-            LOGGER.info('Skipping {}'.format(self.name))
-
 
 class CampaignsStream(Stream):
     name = 'campaigns'
 
-    def sync_impl(self):
+    def sync(self):
     
         campaigns = self.account.get_campaigns()
         props = self.requested_schema['properties'].keys()
@@ -131,7 +121,7 @@ class CampaignsStream(Stream):
 class AdSetsStream(Stream):
     name = 'adsets'
     
-    def sync_impl(self):
+    def sync(self):
         ad_sets = self.account.get_ad_sets()
         for a in ad_sets:
             fields = self.selected_properties()
@@ -142,7 +132,7 @@ class AdsStream(Stream):
 
     name = 'ads'
             
-    def sync_impl(self):
+    def sync(self):
         #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
         ads = self.account.get_ads()
 
@@ -154,7 +144,7 @@ class AdsStream(Stream):
 class AdCreativeStream(Stream):
     name = 'adcreative'
     
-    def sync_impl(self):
+    def sync(self):
         #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
         ad_creative = self.account.get_ad_creatives()
         fields = self.selected_properties()
@@ -177,7 +167,7 @@ class AdsInsights(Stream):
                                     #               "7d_view",
                                     #               "28d_view"]
     
-    def sync_impl(self):
+    def sync(self):
         fields = list(self.selected_properties())
         LOGGER.info("fields are: {}".format(fields))
         params={
