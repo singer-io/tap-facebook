@@ -116,32 +116,6 @@ class AdCreativeStream(Stream):
             yield a.export_all_data()
 
     
-class CampaignsStream(Stream):
-    name = 'campaigns'
-    field_class = objects.campaign.Campaign.Field
-    key_properties = ['id']
-    
-    def sync(self):
-        schema = load_schema(self.name)
-        singer.write_schema(self.name, schema, self.key_properties)
-        campaigns = self.account.get_campaigns()
-        props = self.fields()
-        fields = [k for k in props if k != 'ads']
-        pull_ads = 'ads' in props
-
-        for c in campaigns:
-            c.remote_read(fields=fields)
-            c_out = {'ads': {'data': []}}
-            for k in fields:
-                c_out[k] = c[k]
-
-            if pull_ads:
-                for ad in c.get_ads():
-                    c_out['ads']['data'].append({'id': ad['id']})
-
-            singer.write_record(self.name, c_out)
-
-
 class AdsStream(Stream):
     '''
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
@@ -167,6 +141,31 @@ class AdSetsStream(Stream):
         for a in ad_sets:
             a.remote_read(fields=self.fields())
             yield a.export_all_data()
+
+
+class CampaignsStream(Stream):
+    name = 'campaigns'
+    field_class = objects.campaign.Campaign.Field
+    key_properties = ['id']
+    
+    def __iter__(self):
+
+        campaigns = self.account.get_campaigns()
+        props = self.fields()
+        fields = [k for k in props if k != 'ads']
+        pull_ads = 'ads' in props
+
+        for c in campaigns:
+            c.remote_read(fields=fields)
+            c_out = {'ads': {'data': []}}
+            for k in fields:
+                c_out[k] = c[k]
+
+            if pull_ads:
+                for ad in c.get_ads():
+                    c_out['ads']['data'].append({'id': ad['id']})
+
+            yield c_out
 
 
 class AdsInsights(Stream):
