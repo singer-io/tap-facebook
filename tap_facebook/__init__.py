@@ -89,19 +89,28 @@ class Stream(object):
         self.account = account
         self.requested_schema = requested_schema
     
+    def is_selected(self):
+        return self.requested_schema is not None
+
     def selected_properties(self):
         if self.requested_schema:
             return self.requested_schema['properties'].keys()
         return set()
 
+    def sync(self):
+        if self.is_selected():
+            LOGGER.info('Syncing {}'.format(self.name))
+            self.sync_impl()
+        else:
+            LOGGER.info('Skipping {}'.format(self.name))
+
 
 class CampaignsStream(Stream):
     name = 'campaigns'
 
-    def sync(self):
+    def sync_impl(self):
     
         campaigns = self.account.get_campaigns()
-        LOGGER.info('Requested schema is {} of type {}'.format(self.requested_schema, type(self.requested_schema)))
         props = self.requested_schema['properties'].keys()
         fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
@@ -122,7 +131,7 @@ class CampaignsStream(Stream):
 class AdSetsStream(Stream):
     name = 'adsets'
     
-    def sync(self):
+    def sync_impl(self):
         ad_sets = self.account.get_ad_sets()
         for a in ad_sets:
             fields = self.selected_properties()
@@ -133,7 +142,7 @@ class AdsStream(Stream):
 
     name = 'ads'
             
-    def sync(self):
+    def sync_impl(self):
         #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
         ads = self.account.get_ads()
 
@@ -145,7 +154,7 @@ class AdsStream(Stream):
 class AdCreativeStream(Stream):
     name = 'adcreative'
     
-    def sync(self):
+    def sync_impl(self):
         #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
         ad_creative = self.account.get_ad_creatives()
         fields = self.selected_properties()
@@ -168,7 +177,7 @@ class AdsInsights(Stream):
                                     #               "7d_view",
                                     #               "28d_view"]
     
-    def sync(self):
+    def sync_impl(self):
         fields = list(self.selected_properties())
         LOGGER.info("fields are: {}".format(fields))
         params={
@@ -199,25 +208,31 @@ class AdsInsights(Stream):
             singer.write_record(self.name, o.export_all_data())
 
 
-def do_sync(account, properties):
-    stream_classes = [
-        AdsInsights,
-        CampaignsStream,
-        AdSetsStream,
-        AdsStream,
-        AdCreativeStream
-    ]
+stream_initializers = {
+    'insights': AdsInsights,
+    'campaigns': CampaignsStream,
+    'adsets': AdSetsStream,
+    'ads': AdsStream,
+    'adcreative': AdCreativeStream
+}
 
+field_classes = {
+    'adcreative': objects.adcreative.AdCreative.Field,
+    'ads': objects.ad.Ad.Field,
+    'adsets': objects.adset.AdSet.Field,
+    'campaigns': objects.campaign.Campaign.Field,
+    'insights': objects.adsinsights.AdsInsights.Field
+}
+
+
+def do_sync(account, properties):
     streams = []
-    for cls in stream_classes:
-        if cls.name in properties['streams']:
-            stream = cls(account, properties['streams'][cls.name])
-            schema = load_schema(cls.name)
-            singer.write_schema(cls.name, schema, ["id"])
-            stream.sync()
-        else:
-            LOGGER.info('Skipping {}'.format(cls.name))
-        
+    for stream_name in sorted(properties['streams']):
+        f = stream_initializers[stream_name]
+        streams.append(f(account, properties['streams'][stream_name]))
+    
+    for s in streams:
+        s.sync()
 
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)    
@@ -228,7 +243,15 @@ def load_schema(stream):
 
 
 def do_discover():
-    res = {'streams': {s: load_schema(s) for s in STREAMS}}
+    res = {'streams': {}}
+    for s in STREAMS:
+        print(s)
+        schema = load_schema(s)
+        field_class = field_classes[s]
+        for k in schema['properties']:
+            if k in field_class.__dict__:
+                schema['properties'][k]['inclusion'] = 'available'
+        res['streams'][s] = {'schema': schema}
     json.dump(res, sys.stdout, indent=4)
 
     
@@ -259,3 +282,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
