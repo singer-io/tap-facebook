@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 
 import datetime
@@ -85,23 +84,48 @@ def transform_fields(row, schema):
 
 class Stream(object):
 
-    def __init__(self, account, requested_schema):
-        self.account = account
-        self.requested_schema = requested_schema
+    key_properties = ['id', 'date']
     
-    def selected_properties(self):
-        if self.requested_schema:
-            return self.requested_schema['properties'].keys()
+    def __init__(self, account, annotated_schema):
+        self.account = account
+        self.annotated_schema = annotated_schema
+    
+    def fields(self):
+        if self.annotated_schema:
+            props = self.annotated_schema['properties']
+            return set([k for k in props if props[k].get('selected')])
         return set()
 
 
+class AdCreativeStream(Stream):
+    '''
+    doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
+    '''
+    
+    name = 'adcreative'
+    field_class = objects.adcreative.AdCreative.Field 
+    key_properties = ['id']
+   
+    def __iter__(self):
+        ad_creative = self.account.get_ad_creatives()
+
+        LOGGER.info('Getting adcreative fields {}'.format(self.fields()))
+        
+        for a in ad_creative:                    
+            a.remote_read(fields=self.fields())
+            yield a.export_all_data()
+
+    
 class CampaignsStream(Stream):
     name = 'campaigns'
-
-    def sync(self):
+    field_class = objects.campaign.Campaign.Field
+    key_properties = ['id']
     
+    def sync(self):
+        schema = load_schema(self.name)
+        singer.write_schema(self.name, schema, self.key_properties)
         campaigns = self.account.get_campaigns()
-        props = self.requested_schema['properties'].keys()
+        props = self.fields()
         fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
 
@@ -118,43 +142,40 @@ class CampaignsStream(Stream):
             singer.write_record(self.name, c_out)
 
 
+class AdsStream(Stream):
+    '''
+    doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
+    '''
+    name = 'ads'
+    field_class = objects.ad.Ad.Field
+    key_properties = ['id', 'updated_time']
+
+    def __iter__(self):
+        ads = self.account.get_ads()
+        for a in ads:
+            a.remote_read(fields=self.fields())
+            yield a.export_all_data()
+
+
 class AdSetsStream(Stream):
     name = 'adsets'
-    
+    field_class = objects.adset.AdSet.Field
+    key_properties = ['id', 'updated_time']
+
     def sync(self):
+        schema = load_schema(self.name)
+        singer.write_schema(self.name, schema, self.key_properties)
         ad_sets = self.account.get_ad_sets()
         for a in ad_sets:
-            fields = self.selected_properties()
-            a.remote_read(fields=fields)
+            a.remote_read(fields=self.fields())
             singer.write_record(self.name, a.export_all_data())
 
-class AdsStream(Stream):
-
-    name = 'ads'
-            
-    def sync(self):
-        #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
-        ads = self.account.get_ads()
-
-        for a in ads:
-            fields = self.selected_properties()
-            a.remote_read(fields=fields)
-            singer.write_record(self.name, a.export_all_data())
-
-class AdCreativeStream(Stream):
-    name = 'adcreative'
-    
-    def sync(self):
-        #doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
-        ad_creative = self.account.get_ad_creatives()
-        fields = self.selected_properties()
-
-        for a in ad_creative:
-            a.remote_read(fields=fields)
-            singer.write_record(self.name, a.export_all_data())
 
 class AdsInsights(Stream):
     name = 'ads_insights'
+    field_class = objects.adsinsights.AdsInsights.Field
+    key_properties = ['id', 'updated_time']
+    
     action_breakdowns = [] # ["action_type",
                          # "action_target_id",
                          # "action_destination"]
@@ -168,7 +189,7 @@ class AdsInsights(Stream):
                                     #               "28d_view"]
     
     def sync(self):
-        fields = list(self.selected_properties())
+        fields = list(self.fields())
         LOGGER.info("fields are: {}".format(fields))
         params={
             'level': 'ad',
@@ -206,30 +227,37 @@ stream_initializers = {
     'adcreative': AdCreativeStream
 }
 
-field_classes = {
-    'adcreative': objects.adcreative.AdCreative.Field,
-    'ads': objects.ad.Ad.Field,
-    'adsets': objects.adset.AdSet.Field,
-    'campaigns': objects.campaign.Campaign.Field,
-    'insights': objects.adsinsights.AdsInsights.Field
-}
 
-
-def do_sync(account, properties):
+def do_sync(account, annotated_schemas):
     streams = []
-    for stream_name in sorted(properties['streams']):
-        f = stream_initializers[stream_name]
-        streams.append(f(account, properties['streams'][stream_name]))
+    for stream_name in STREAMS:
+        annotated_schema = {}
+        if stream_name in annotated_schemas['streams']:
+            annotated_schema = annotated_schemas['streams'][stream_name]
+
+        if annotated_schema.get('selected'):
+            f = stream_initializers[stream_name]
+            streams.append(f(account, annotated_schema))
     
     for s in streams:
-        s.sync()
+        LOGGER.info('Syncing {}'.format(s.name))
+        schema = load_schema(s.name)
+        singer.write_schema(s.name, schema, s.key_properties)
+
+        num_records = 0
+        for record in s:
+            num_records += 1
+            singer.write_record(s.name, record)
+            if num_records % 1000 == 0:
+                LOGGER.info('Got {} {} records'.format(num_records, s))
 
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)    
 
 def load_schema(stream):
     path = get_abs_path('schemas/{}.json'.format(stream))
-    field_class = field_classes[stream]    
+    cls = stream_initializers[stream]
+    field_class = cls.field_class
     schema = utils.load_json(path)
     for k in schema['properties']:
         if k in field_class.__dict__:
@@ -238,8 +266,12 @@ def load_schema(stream):
 
 
 def do_discover():
-    res = {'streams': {s: {'schema': load_schema(s)} for s in STREAMS}}
-    json.dump(res, sys.stdout, indent=4)
+    LOGGER.info('Loading schemas')
+    result = {'streams': {}}
+    for stream in STREAMS:
+        LOGGER.info('Loading schema for {}'.format(stream))
+        result['streams'][stream] = {'schema': load_schema(stream)}
+    json.dump(result, sys.stdout, indent=4)
 
     
 def main():
