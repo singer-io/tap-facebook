@@ -176,6 +176,8 @@ class AdsInsights(Stream):
     action_breakdowns = [] # ["action_type",
                          # "action_target_id",
                          # "action_destination"]
+    breakdowns = None
+    level = 'ad'
     limit = 100
     time_increment = 1
     action_attribution_windows = [] #["1d_click",
@@ -189,8 +191,9 @@ class AdsInsights(Stream):
         fields = list(self.fields())
         LOGGER.info("fields are: {}".format(fields))
         params={
-            'level': 'ad',
+            'level': self.level,
             'action_breakdowns': self.action_breakdowns,
+            'breakdowns': self.breakdowns
             'limit': 100,
             'fields': fields,
             'time_increment': 1,
