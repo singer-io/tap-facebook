@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 
+import time
+import json
+import copy
 import random
 import singer
+import os
+import sys
+import subprocess
+from subprocess import Popen, PIPE
 from singer import utils
 import tap_facebook
 import tempfile
 
+LOGGER = singer.get_logger()
 
 ALL_FIELDS = [
     "account_id",
@@ -125,6 +133,11 @@ NO_ACTIONS = [
     "website_clicks",
 ]
 
+FIELD_SETS = {
+    'no_actions': NO_ACTIONS
+}
+
+
 def random_subset(values):
     res = []
     for value in values:
@@ -160,16 +173,55 @@ def gen_action_attribution_windows():
         '7d_view',
         '28d_view'])
 
+def run_tap(config_dir, config, table, field_set_name, fields):
+    props_path = os.path.join(config_dir, 'properties.json')
+    config_path = os.path.join(config_dir, 'config.json')
+
+    with open(config_path, 'w') as fp:
+        json.dump(config, fp)
+    with open(props_path, 'w') as fp:
+        props = {
+            'streams': {
+                'adsinsights': {
+                    'selected': True,
+                    'properties': {k: {'selected': True} for k in fields}
+                }
+            }
+        }
+        json.dump(props, fp)
+        
+    start_time = time.time()
+    cmd = ['tap-facebook', '--config', config_path, '--properties', props_path]
+    tap = Popen(cmd,
+                stdout=PIPE,
+                bufsize=1,
+                universal_newlines=True)
+
+    record = None
+    LOGGER.debug("Stdout reader starting")
+    for raw_line in tap.stdout:
+        LOGGER.debug('Got a line')
+        for line in raw_line.splitlines():
+            message = json.loads(line)
+            if message['type'] == 'RECORD':
+                record = message['record']
+    returncode = tap.wait(5)
+    return {
+        'table': table,
+        'fields': fields,
+        'field_set_name': field_set_name,
+        'return_code': returncode,
+        'duration': time.time() - start_time,
+        'record': record
+    }
+
 def main():
     args = utils.parse_args(tap_facebook.REQUIRED_CONFIG_KEYS)
 
 
     
     with tempfile.TemporaryDirectory(prefix='insights-experiment-') as config_dir:
-        props_path = os.path.join(config_dir, 'properties.json')
-        config_path = os.path.join(config_dir, 'config.json')
-        with open(props_path) as fp:
-            json.dump(args.properties, fp)
+
         while True:
             level = gen_level()
             breakdowns = gen_breakdowns()
@@ -184,13 +236,16 @@ def main():
                 'breakdowns': breakdowns,
                 'action_attribution_windows': action_attribution_windows
             }
-            with open(config_path) as fp:
-                config = copy.deep_copy(config)
-                config['insight_tables'] = [table]
-                json.dump(config, fp)
-                
-        
-        print('{}'.format(table))
+            field_set_name = 'no_actions'
+            fields = FIELD_SETS[field_set_name]
+            config = copy.deepcopy(args.config)
+            config['insight_tables'] = [table]
+
+            result = run_tap(config_dir, config, table, field_set_name, fields)
+
+            json.dump(result, sys.stdout)
+            print("")
+            sys.stdout.flush()
         
 
 if __name__ == '__main__':

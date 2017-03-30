@@ -174,24 +174,9 @@ class Campaigns(Stream):
 class AdsInsights(Stream):
     name = 'adsinsights'
     field_class = objects.adsinsights.AdsInsights.Field
-    key_properties = ['id', 'updated_time']
-    action_breakdowns = [
-        # "action_type",
-        # "action_target_id",
-        # "action_destination",
-    ]
-    breakdowns = None
-    level = 'ad'
+    key_properties = ['id', 'updated_time']    
     limit = 100
     time_increment = 1
-    action_attribution_windows = [
-        # "1d_click",
-        # "7d_click",
-        # "28d_click",
-        # "1d_view",
-        # "7d_view",
-        # "28d_view"
-    ]
 
     def __init__(self,
                  account=None,
@@ -217,7 +202,7 @@ class AdsInsights(Stream):
             'fields': fields,
             'time_increment': 1,
             'action_attribution_windows': self.action_attribution_windows,
-            'time_ranges': [{'since':'2017-02-15', 'until':'2017-03-01'}]
+            'time_ranges': [{'since':'2017-02-15', 'until':'2017-02-16'}]
         }
         LOGGER.info('Starting adsinsights job with params {}'.format(params))
         i_async_job = self.account.get_insights(params=params, async=True)
@@ -312,7 +297,8 @@ def do_discover():
 
     
 def main():
-
+    # singer.write_record('adsinsights', {'a': 1})
+    # return
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
     CONFIG.update(args.config)
     if args.state:
@@ -338,4 +324,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
