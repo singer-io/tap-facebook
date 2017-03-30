@@ -125,6 +125,46 @@ NO_ACTIONS = [
     "website_clicks",
 ]
 
+COMMON_FIELDS = [
+    "account_id",
+    "account_name",
+    "ad_id",
+    "ad_name",
+    "adset_id",
+    "adset_name",
+    "call_to_action_clicks",    
+    "campaign_id",
+    "campaign_name",
+    "canvas_avg_view_percent",
+    "canvas_avg_view_time",
+    "clicks",
+    "cost_per_inline_link_click",
+    "cost_per_inline_post_engagement",
+    "cost_per_total_action",
+    "cpc",
+    "cpm",
+    "cpp",
+    "ctr",
+    "date_start",
+    "date_stop",
+    "deeplink_clicks",
+    "frequency",
+    "impressions",
+    "inline_link_click_ctr",
+    "inline_link_clicks",
+    "inline_post_engagement",
+    "objective",
+    "reach",
+    "social_clicks",
+    "social_impressions",
+    "social_reach",
+    "spend",
+    "total_action_value",
+    "total_actions",
+    "unique_clicks",
+    "website_clicks",
+]
+
 def random_subset(values):
     res = []
     for value in values:
