@@ -169,41 +169,43 @@ class CampaignsStream(Stream):
 
 
 class AdsInsights(Stream):
-    name = 'ads_insights'
+    name = 'insights'
     field_class = objects.adsinsights.AdsInsights.Field
     key_properties = ['id', 'updated_time']
     
-    action_breakdowns = [] # ["action_type",
-                         # "action_target_id",
-                         # "action_destination"]
+    action_breakdowns = [
+        # "action_type",
+        # "action_target_id",
+        # "action_destination",
+    ]
     breakdowns = None
     level = 'ad'
     limit = 100
     time_increment = 1
-    action_attribution_windows = [] #["1d_click",
-                                    #"7d_click",
-                                    #               "28d_click",
-                                    #               "1d_view",
-                                    #               "7d_view",
-                                    #               "28d_view"]
-    
-    def sync(self):
+    action_attribution_windows = [
+        # "1d_click",
+        # "7d_click",
+        # "28d_click",
+        # "1d_view",
+        # "7d_view",
+        # "28d_view"
+    ]
+        
+    def __iter__(self):
         fields = list(self.fields())
-        LOGGER.info("fields are: {}".format(fields))
         params={
             'level': self.level,
             'action_breakdowns': self.action_breakdowns,
-            'breakdowns': self.breakdowns
+            'breakdowns': self.breakdowns,
             'limit': 100,
             'fields': fields,
             'time_increment': 1,
             'action_attribution_windows': self.action_attribution_windows,
             'time_ranges': [{'since':'2017-02-15', 'until':'2017-03-01'}]
-        }      
-        i_async_job = self.account.get_insights(params=params, \
-                                                async=True)
+        }
+        LOGGER.info('Starting insights job with params {}'.format(params))
+        i_async_job = self.account.get_insights(params=params, async=True)
         
-        # Insights
         while True:
             job = i_async_job.remote_read()
             LOGGER.info('Job status: {}; {}% done'
@@ -216,7 +218,7 @@ class AdsInsights(Stream):
 
         LOGGER.info('results are {}'.format(type(i_async_job.get_result())))
         for o in i_async_job.get_result():        
-            singer.write_record(self.name, o.export_all_data())
+            yield o.export_all_data()
 
 
 stream_initializers = {
@@ -270,7 +272,7 @@ def do_discover():
     result = {'streams': {}}
     for stream in STREAMS:
         LOGGER.info('Loading schema for {}'.format(stream))
-        result['streams'][stream] = {'schema': load_schema(stream)}
+        result['streams'][stream] = load_schema(stream)
     json.dump(result, sys.stdout, indent=4)
 
     
@@ -293,10 +295,10 @@ def main():
 
     if args.discover:
         do_discover()
-    elif not args.properties:
-        LOGGER.info("No properties were selected")
-    else:
+    elif args.properties:
         do_sync(account, args.properties)
+    else:
+        LOGGER.info("No properties were selected")
 
 
 if __name__ == '__main__':
