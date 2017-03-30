@@ -13,7 +13,10 @@ from singer import utils
 from facebookads import FacebookAdsApi
 import facebookads.objects as objects
 
-STREAMS = ['adcreative', 'ads', 'adsets', 'campaigns', 'insights']
+INSIGHTS_MAX_WAIT_TO_START_SECONDS = 5 * 60
+INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS = 30 * 60
+
+STREAMS = ['adcreative', 'ads', 'adsets', 'campaigns', 'adsinsights']
 
 REQUIRED_CONFIG_KEYS = ["start_date", "account_id", "access_token"]
 
@@ -169,7 +172,7 @@ class CampaignsStream(Stream):
 
 
 class AdsInsights(Stream):
-    name = 'insights'
+    name = 'adsinsights'
     field_class = objects.adsinsights.AdsInsights.Field
     key_properties = ['id', 'updated_time']
     
@@ -190,7 +193,14 @@ class AdsInsights(Stream):
         # "7d_view",
         # "28d_view"
     ]
-        
+
+    def __init__(self, annotated_schema, breakdowns, action_breakdowns, level, action_attribution_windows):
+        self.breakdowns = breakdowns
+        self.action_breakdowns = action_breakdowns
+        self.level = level
+        self.actions_attribution_windows = action_attribution_windows
+        self.annotated_schema = annotated_schema
+    
     def __iter__(self):
         fields = list(self.fields())
         params={
@@ -203,18 +213,27 @@ class AdsInsights(Stream):
             'action_attribution_windows': self.action_attribution_windows,
             'time_ranges': [{'since':'2017-02-15', 'until':'2017-03-01'}]
         }
-        LOGGER.info('Starting insights job with params {}'.format(params))
+        LOGGER.info('Starting adsinsights job with params {}'.format(params))
         i_async_job = self.account.get_insights(params=params, async=True)
-        
-        while True:
+
+        status = None
+        time_start = time.time()
+        while status != "Job Completed":
+            duration = time.time() - time_start
             job = i_async_job.remote_read()
+            status = job[objects.AsyncJob.Field.async_status]
+            percent_complete = job[objects.AsyncJob.Field.async_percent_completion]
+            job_id = job[objects.AsyncJob.Field.id]
             LOGGER.info('Job status: {}; {}% done'
-                        .format(job[objects.AsyncJob.Field.async_status],
-                                job[objects.AsyncJob.Field.async_percent_completion]))
+                        .format(status,
+                                percent_complete))
+
+            if duration > INSIGHTS_MAX_WAIT_TO_START_SECONDS and percent_complete == 0:
+                raise Exception('Insights job {} did not start after {} seconds'.format(job_id, INSIGHTS_MAX_WAIT_TO_START_SECONDS))
+
+            elif duration > INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS and status != "Job Completed":
+                raise Exception('Insights job {} did not complete after {} seconds'.format(job_id, INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS))
             time.sleep(5)
-            if job[objects.AsyncJob.Field.async_status] == "Job Completed":
-                LOGGER.info("Done!")
-                break
 
         LOGGER.info('results are {}'.format(type(i_async_job.get_result())))
         for o in i_async_job.get_result():        
@@ -222,7 +241,7 @@ class AdsInsights(Stream):
 
 
 stream_initializers = {
-    'insights': AdsInsights,
+    'adsinsights': AdsInsights,
     'campaigns': CampaignsStream,
     'adsets': AdSetsStream,
     'ads': AdsStream,
