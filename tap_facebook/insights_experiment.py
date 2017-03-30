@@ -165,6 +165,43 @@ COMMON_FIELDS = [
     "website_clicks",
 ]
 
+NO_AGGREGATES_OR_UNIQUES = [
+    "account_id",
+    "account_name",
+    "action_values",
+    "actions",
+    "ad_id",
+    "ad_name",
+    "adset_id",
+    "adset_name",
+    "app_store_clicks",
+    "call_to_action_clicks",
+    "campaign_id",
+    "campaign_name",
+    "clicks",
+    "date_start",
+    "date_stop",
+    "deeplink_clicks",
+    "frequency",
+    "impressions",
+    "inline_link_clicks",
+    "inline_post_engagement",
+    "newsfeed_avg_position",
+    "newsfeed_clicks",
+    "newsfeed_impressions",
+    "objective",
+    "reach",
+    "relevance_score",
+    "social_clicks",
+    "social_impressions",
+    "social_reach",
+    "social_spend",
+    "spend",
+    "total_action_value",
+    "total_actions",
+    "website_clicks",
+]
+
 def random_subset(values):
     res = []
     for value in values:
