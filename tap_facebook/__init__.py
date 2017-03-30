@@ -89,7 +89,7 @@ class Stream(object):
 
     key_properties = ['id', 'date']
     
-    def __init__(self, account, annotated_schema):
+    def __init__(self, account=None, annotated_schema=None):
         self.account = account
         self.annotated_schema = annotated_schema
     
@@ -100,7 +100,7 @@ class Stream(object):
         return set()
 
 
-class AdCreativeStream(Stream):
+class AdCreative(Stream):
     '''
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
     '''
@@ -119,7 +119,7 @@ class AdCreativeStream(Stream):
             yield a.export_all_data()
 
     
-class AdsStream(Stream):
+class Ads(Stream):
     '''
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
     '''
@@ -134,7 +134,7 @@ class AdsStream(Stream):
             yield a.export_all_data()
 
 
-class AdSetsStream(Stream):
+class AdSets(Stream):
     name = 'adsets'
     field_class = objects.adset.AdSet.Field
     key_properties = ['id', 'updated_time']
@@ -146,7 +146,7 @@ class AdSetsStream(Stream):
             yield a.export_all_data()
 
 
-class CampaignsStream(Stream):
+class Campaigns(Stream):
     name = 'campaigns'
     field_class = objects.campaign.Campaign.Field
     key_properties = ['id']
@@ -175,7 +175,6 @@ class AdsInsights(Stream):
     name = 'adsinsights'
     field_class = objects.adsinsights.AdsInsights.Field
     key_properties = ['id', 'updated_time']
-    
     action_breakdowns = [
         # "action_type",
         # "action_target_id",
@@ -194,12 +193,19 @@ class AdsInsights(Stream):
         # "28d_view"
     ]
 
-    def __init__(self, annotated_schema, breakdowns, action_breakdowns, level, action_attribution_windows):
+    def __init__(self,
+                 account=None,
+                 annotated_schema=None,
+                 breakdowns=None,
+                 action_breakdowns=None,
+                 level=None,
+                 action_attribution_windows=None):
         self.breakdowns = breakdowns
         self.action_breakdowns = action_breakdowns
         self.level = level
         self.actions_attribution_windows = action_attribution_windows
         self.annotated_schema = annotated_schema
+        self.account = account
     
     def __iter__(self):
         fields = list(self.fields())
@@ -240,29 +246,36 @@ class AdsInsights(Stream):
             yield o.export_all_data()
 
 
-stream_initializers = {
-    'adsinsights': AdsInsights,
-    'campaigns': CampaignsStream,
-    'adsets': AdSetsStream,
-    'ads': AdsStream,
-    'adcreative': AdCreativeStream
-}
+def initialize_stream(stream_name, account, config, annotated_schema):
+    if stream_name == 'adsinsights':
+        return AdsInsights(
+            account, annotated_schema,
+            breakdowns=config['insights_tables'][0]['breakdowns'],
+            action_breakdowns=config['insights_tables'][0]['action_breakdowns'],
+            level=config['insights_tables'][0]['level'],
+            action_attribution_windows=config['insights_tables'][0]['action_attribution_windows'])
+    elif stream_name == 'campaigns':
+        return Campaigns(account, annotated_schema)
+    elif stream_name == 'adsets':
+        return AdSets(account, annotated_schema)
+    elif stream_name == 'ads':
+        return Ads(account, annotated_schema)
+    elif stream_name == 'adcreative':
+        return AdCreative(account, annotated_schema)
 
 
-def do_sync(account, annotated_schemas):
+def do_sync(account, config, annotated_schemas):
     streams = []
     for stream_name in STREAMS:
         annotated_schema = {}
         if stream_name in annotated_schemas['streams']:
             annotated_schema = annotated_schemas['streams'][stream_name]
-
-        if annotated_schema.get('selected'):
-            f = stream_initializers[stream_name]
-            streams.append(f(account, annotated_schema))
-    
+            if annotated_schema.get('selected'):
+                streams.append(initialize_stream(stream_name, account, config, annotated_schema))
+            
     for s in streams:
         LOGGER.info('Syncing {}'.format(s.name))
-        schema = load_schema(s.name)
+        schema = load_schema(s)
         singer.write_schema(s.name, schema, s.key_properties)
 
         num_records = 0
@@ -276,9 +289,8 @@ def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)    
 
 def load_schema(stream):
-    path = get_abs_path('schemas/{}.json'.format(stream))
-    cls = stream_initializers[stream]
-    field_class = cls.field_class
+    path = get_abs_path('schemas/{}.json'.format(stream.name))
+    field_class = stream.field_class
     schema = utils.load_json(path)
     for k in schema['properties']:
         if k in field_class.__dict__:
@@ -289,9 +301,13 @@ def load_schema(stream):
 def do_discover():
     LOGGER.info('Loading schemas')
     result = {'streams': {}}
-    for stream in STREAMS:
-        LOGGER.info('Loading schema for {}'.format(stream))
-        result['streams'][stream] = load_schema(stream)
+    for stream in [Ads(),
+                   AdSets(),
+                   Campaigns(),
+                   AdCreative(),
+                   AdsInsights()]:
+        LOGGER.info('Loading schema for {}'.format(stream.name))
+        result['streams'][stream.name] = load_schema(stream)
     json.dump(result, sys.stdout, indent=4)
 
     
@@ -315,7 +331,7 @@ def main():
     if args.discover:
         do_discover()
     elif args.properties:
-        do_sync(account, args.properties)
+        do_sync(account, CONFIG, args.properties)
     else:
         LOGGER.info("No properties were selected")
 
