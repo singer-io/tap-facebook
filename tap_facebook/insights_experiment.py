@@ -212,6 +212,8 @@ NO_AGGREGATES_OR_UNIQUES = [
 
 FIELD_SETS = {
     'no_actions': NO_ACTIONS,
+    'all_fields': ALL_FIELDS,
+    'common_fields': COMMON_FIELDS,
     'no_aggregates_or_uniques': NO_AGGREGATES_OR_UNIQUES
 }
 
@@ -314,10 +316,10 @@ def main():
                 'breakdowns': breakdowns,
                 'action_attribution_windows': action_attribution_windows
             }
-            field_set_name = 'no_aggregates_or_uniques'
+            field_set_name = random.choise(list(FIELD_SETS.keys()))
             fields = FIELD_SETS[field_set_name]
             config = copy.deepcopy(args.config)
-            config['insights_tables'] = [table]
+            # config['insights_tables'] = [table]  Don't vary config right now
             result = run_tap(config_dir, config, table, field_set_name, fields)
 
             json.dump(result, sys.stdout)
