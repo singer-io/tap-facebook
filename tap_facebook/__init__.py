@@ -188,10 +188,10 @@ class AdsInsights(Stream):
         self.breakdowns = breakdowns
         self.action_breakdowns = action_breakdowns
         self.level = level
-        self.actions_attribution_windows = action_attribution_windows
+        self.action_attribution_windows = action_attribution_windows
         self.annotated_schema = annotated_schema
         self.account = account
-    
+
     def __iter__(self):
         fields = list(self.fields())
         params={
@@ -233,6 +233,7 @@ class AdsInsights(Stream):
 
 def initialize_stream(stream_name, account, config, annotated_schema):
     if stream_name == 'adsinsights':
+        
         return AdsInsights(
             account, annotated_schema,
             breakdowns=config['insights_tables'][0]['breakdowns'],
