@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 
-import time
-import json
+
 import copy
-import random
-import singer
+import json
 import os
-import sys
-import subprocess
+import random
 from subprocess import Popen, PIPE
+import sys
+import tempfile
+import time
+
+import singer
 from singer import utils
 import tap_facebook
-import tempfile
 
 LOGGER = singer.get_logger()
 
@@ -140,7 +141,7 @@ COMMON_FIELDS = [
     "ad_name",
     "adset_id",
     "adset_name",
-    "call_to_action_clicks",    
+    "call_to_action_clicks",
     "campaign_id",
     "campaign_name",
     "canvas_avg_view_percent",
@@ -220,7 +221,7 @@ def random_subset(values):
         if random.random() > 0.5:
             res.append(value)
     return res
-        
+
 def gen_level():
     # return random.choice(['ad', 'campaign'])
     return 'ad'
@@ -249,13 +250,13 @@ def gen_action_attribution_windows():
         '7d_view',
         '28d_view'])
 
-def run_tap(config_dir, config, table, field_set_name, fields):
+def write_configs_and_run_tap(config_dir, config, table, field_set_name, fields):
     props_path = os.path.join(config_dir, 'properties.json')
     config_path = os.path.join(config_dir, 'config.json')
 
-    with open(config_path, 'w') as fp:
-        json.dump(config, fp)
-    with open(props_path, 'w') as fp:
+    with open(config_path, 'w') as out:
+        json.dump(config, out)
+    with open(props_path, 'w') as out:
         props = {
             'streams': {
                 'adsinsights': {
@@ -264,8 +265,13 @@ def run_tap(config_dir, config, table, field_set_name, fields):
                 }
             }
         }
-        json.dump(props, fp)
-        
+        json.dump(props, out)
+
+    run_tap(config_path, props_path, table, field_set_name, fields)
+
+
+def run_tap(config_path, props_path, table, field_set_name, fields):
+
     start_time = time.time()
     cmd = ['tap-facebook', '--config', config_path, '--properties', props_path]
     tap = Popen(cmd,
@@ -295,7 +301,7 @@ def main():
     args = utils.parse_args(tap_facebook.REQUIRED_CONFIG_KEYS)
 
 
-    
+
     with tempfile.TemporaryDirectory(prefix='insights-experiment-') as config_dir:
 
         while True:
@@ -322,7 +328,7 @@ def main():
             json.dump(result, sys.stdout)
             print("")
             sys.stdout.flush()
-        
+
 
 if __name__ == '__main__':
     main()

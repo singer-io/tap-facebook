@@ -88,11 +88,11 @@ def transform_fields(row, schema):
 class Stream(object):
 
     key_properties = ['id', 'date']
-    
+
     def __init__(self, account=None, annotated_schema=None):
         self.account = account
         self.annotated_schema = annotated_schema
-    
+
     def fields(self):
         if self.annotated_schema:
             props = self.annotated_schema['properties']
@@ -104,21 +104,21 @@ class AdCreative(Stream):
     '''
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
     '''
-    
+
     name = 'adcreative'
-    field_class = objects.adcreative.AdCreative.Field 
+    field_class = objects.adcreative.AdCreative.Field
     key_properties = ['id']
-   
+
     def __iter__(self):
         ad_creative = self.account.get_ad_creatives()
 
         LOGGER.info('Getting adcreative fields {}'.format(self.fields()))
-        
-        for a in ad_creative:                    
+
+        for a in ad_creative:
             a.remote_read(fields=self.fields())
             yield a.export_all_data()
 
-    
+
 class Ads(Stream):
     '''
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
@@ -150,7 +150,7 @@ class Campaigns(Stream):
     name = 'campaigns'
     field_class = objects.campaign.Campaign.Field
     key_properties = ['id']
-    
+
     def __iter__(self):
 
         campaigns = self.account.get_campaigns()
@@ -174,7 +174,7 @@ class Campaigns(Stream):
 class AdsInsights(Stream):
     name = 'adsinsights'
     field_class = objects.adsinsights.AdsInsights.Field
-    key_properties = ['id', 'updated_time']    
+    key_properties = ['id', 'updated_time']
     limit = 100
     time_increment = 1
 
@@ -191,7 +191,7 @@ class AdsInsights(Stream):
         self.actions_attribution_windows = action_attribution_windows
         self.annotated_schema = annotated_schema
         self.account = account
-    
+
     def __iter__(self):
         fields = list(self.fields())
         params={
@@ -202,7 +202,7 @@ class AdsInsights(Stream):
             'fields': fields,
             'time_increment': 1,
             'action_attribution_windows': self.action_attribution_windows,
-            'time_ranges': [{'since':'2017-02-15', 'until':'2017-02-16'}]
+            'time_ranges': [{'since':'2017-02-01', 'until':'2017-03-01'}]
         }
         LOGGER.info('Starting adsinsights job with params {}'.format(params))
         i_async_job = self.account.get_insights(params=params, async=True)
@@ -227,7 +227,7 @@ class AdsInsights(Stream):
             time.sleep(5)
 
         LOGGER.info('results are {}'.format(type(i_async_job.get_result())))
-        for o in i_async_job.get_result():        
+        for o in i_async_job.get_result():
             yield o.export_all_data()
 
 
@@ -257,7 +257,7 @@ def do_sync(account, config, annotated_schemas):
             annotated_schema = annotated_schemas['streams'][stream_name]
             if annotated_schema.get('selected'):
                 streams.append(initialize_stream(stream_name, account, config, annotated_schema))
-            
+
     for s in streams:
         LOGGER.info('Syncing {}'.format(s.name))
         schema = load_schema(s)
@@ -271,7 +271,7 @@ def do_sync(account, config, annotated_schemas):
                 LOGGER.info('Got {} {} records'.format(num_records, s))
 
 def get_abs_path(path):
-    return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)    
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
 
 def load_schema(stream):
     path = get_abs_path('schemas/{}.json'.format(stream.name))
@@ -295,7 +295,7 @@ def do_discover():
         result['streams'][stream.name] = load_schema(stream)
     json.dump(result, sys.stdout, indent=4)
 
-    
+
 def main():
     # singer.write_record('adsinsights', {'a': 1})
     # return
