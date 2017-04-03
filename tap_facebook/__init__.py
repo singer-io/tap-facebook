@@ -61,7 +61,7 @@ def transform_fields(row, schema):
             raise ValueError("Field {} schema missing type".format(field_name))
 
         field_types = field_schema["type"]
-        if not isinstance(field_type, list):
+        if not isinstance(field_types, list):
             field_types = [field_types]
 
         if "null" in field_types:
@@ -73,9 +73,10 @@ def transform_fields(row, schema):
         errors = []
         for field_type in field_types:
             try:
-                rtn[field_name] = transform_field(row[field_name], field_type, field_schema.get("format"))
+                rtn[field_name] = transform_field(
+                    row[field_name], field_type, field_schema.get("format"))
                 break
-            except Exception as e:
+            except Exception as e: # pylint: disable=invalid-name,broad-except
                 errors.append(e)
         else:
             err_msg = "\n\t".join(e.message for e in errors)
@@ -112,9 +113,9 @@ class AdCreative(Stream):
     def __iter__(self):
         ad_creative = self.account.get_ad_creatives()
 
-        LOGGER.info('Getting adcreative fields {}'.format(self.fields()))
+        LOGGER.info('Getting adcreative fields %s', self.fields())
 
-        for a in ad_creative:
+        for a in ad_creative: # pylint: disable=invalid-name
             a.remote_read(fields=self.fields())
             yield a.export_all_data()
 
@@ -129,9 +130,9 @@ class Ads(Stream):
 
     def __iter__(self):
         ads = self.account.get_ads()
-        for a in ads:
-            a.remote_read(fields=self.fields())
-            yield a.export_all_data()
+        for ad in ads: # pylint: disable=invalid-name
+            ad.remote_read(fields=self.fields())
+            yield ad.export_all_data()
 
 
 class AdSets(Stream):
@@ -141,9 +142,9 @@ class AdSets(Stream):
 
     def __iter__(self):
         ad_sets = self.account.get_ad_sets()
-        for a in ad_sets:
-            a.remote_read(fields=self.fields())
-            yield a.export_all_data()
+        for ad_set in ad_sets:
+            ad_set.remote_read(fields=self.fields())
+            yield ad_set.export_all_data()
 
 
 class Campaigns(Stream):
@@ -158,17 +159,18 @@ class Campaigns(Stream):
         fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
 
-        for c in campaigns:
-            c.remote_read(fields=fields)
-            c_out = {'ads': {'data': []}}
+        for campaign in campaigns:
+            campaign.remote_read(fields=fields)
+            campaign_out = {'ads': {'data': []}}
             for k in fields:
-                c_out[k] = c[k]
+                campaign_out[k] = campaign[k]
 
             if pull_ads:
-                for ad in c.get_ads():
-                    c_out['ads']['data'].append({'id': ad['id']})
+                ids = [ad['id'] for ad in campaign.get_ads()]
+                for ad_id in ids:
+                    campaign_out['ads']['data'].append({'id': ad_id})
 
-            yield c_out
+            yield campaign_out
 
 
 class AdsInsights(Stream):
@@ -185,16 +187,17 @@ class AdsInsights(Stream):
                  action_breakdowns=None,
                  level=None,
                  action_attribution_windows=None):
+        super().__init__()
         self.breakdowns = breakdowns
         self.action_breakdowns = action_breakdowns
         self.level = level
-        self.actions_attribution_windows = action_attribution_windows
+        self.action_attribution_windows = action_attribution_windows
         self.annotated_schema = annotated_schema
         self.account = account
 
     def __iter__(self):
         fields = list(self.fields())
-        params={
+        params = {
             'level': self.level,
             'action_breakdowns': self.action_breakdowns,
             'breakdowns': self.breakdowns,
@@ -204,7 +207,7 @@ class AdsInsights(Stream):
             'action_attribution_windows': self.action_attribution_windows,
             'time_ranges': [{'since':'2017-02-01', 'until':'2017-03-01'}]
         }
-        LOGGER.info('Starting adsinsights job with params {}'.format(params))
+        LOGGER.info('Starting adsinsights job with params %s', params)
         i_async_job = self.account.get_insights(params=params, async=True)
 
         status = None
@@ -215,20 +218,22 @@ class AdsInsights(Stream):
             status = job[objects.AsyncJob.Field.async_status]
             percent_complete = job[objects.AsyncJob.Field.async_percent_completion]
             job_id = job[objects.AsyncJob.Field.id]
-            LOGGER.info('Job status: {}; {}% done'
-                        .format(status,
-                                percent_complete))
+            LOGGER.info('Job status: %s; %d%% done', status, percent_complete)
+
 
             if duration > INSIGHTS_MAX_WAIT_TO_START_SECONDS and percent_complete == 0:
-                raise Exception('Insights job {} did not start after {} seconds'.format(job_id, INSIGHTS_MAX_WAIT_TO_START_SECONDS))
+                raise Exception(
+                    'Insights job {} did not start after {} seconds'.format(
+                        job_id, INSIGHTS_MAX_WAIT_TO_START_SECONDS))
 
             elif duration > INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS and status != "Job Completed":
-                raise Exception('Insights job {} did not complete after {} seconds'.format(job_id, INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS))
+                raise Exception(
+                    'Insights job {} did not complete after {} seconds'.format(
+                        job_id, INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS))
             time.sleep(5)
 
-        LOGGER.info('results are {}'.format(type(i_async_job.get_result())))
-        for o in i_async_job.get_result():
-            yield o.export_all_data()
+        for obj in i_async_job.get_result():
+            yield obj.export_all_data()
 
 
 def initialize_stream(stream_name, account, config, annotated_schema):
@@ -258,17 +263,17 @@ def do_sync(account, config, annotated_schemas):
             if annotated_schema.get('selected'):
                 streams.append(initialize_stream(stream_name, account, config, annotated_schema))
 
-    for s in streams:
-        LOGGER.info('Syncing {}'.format(s.name))
-        schema = load_schema(s)
-        singer.write_schema(s.name, schema, s.key_properties)
+    for stream in streams:
+        LOGGER.info('Syncing %s', stream.name)
+        schema = load_schema(stream)
+        singer.write_schema(stream.name, schema, stream.key_properties)
 
         num_records = 0
-        for record in s:
+        for record in stream:
             num_records += 1
-            singer.write_record(s.name, record)
+            singer.write_record(stream.name, record)
             if num_records % 1000 == 0:
-                LOGGER.info('Got {} {} records'.format(num_records, s))
+                LOGGER.info('Got %d %s records', num_records, stream)
 
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
@@ -291,7 +296,7 @@ def do_discover():
                    Campaigns(),
                    AdCreative(),
                    AdsInsights()]:
-        LOGGER.info('Loading schema for {}'.format(stream.name))
+        LOGGER.info('Loading schema for %s', stream.name)
         result['streams'][stream.name] = load_schema(stream)
     json.dump(result, sys.stdout, indent=4)
 
@@ -304,13 +309,13 @@ def main():
     if args.state:
         STATE.update(args.state)
 
-    api = FacebookAdsApi.init(access_token=CONFIG['access_token'])
+    FacebookAdsApi.init(access_token=CONFIG['access_token'])
     user = objects.AdUser(fbid='me')
     accounts = user.get_ad_accounts()
     account = None
-    for a in accounts:
-        if a['account_id'] == CONFIG['account_id']:
-            account = a
+    for acc in accounts:
+        if acc['account_id'] == CONFIG['account_id']:
+            account = acc
     if not account:
         raise Exception("Couldn't find account with id {}".format(CONFIG['account_id']))
 
