@@ -212,12 +212,17 @@ NO_AGGREGATES_OR_UNIQUES = [
 ]
 
 FIELD_SETS = {
-    'no_actions': NO_ACTIONS
+    'no_actions': NO_ACTIONS,
+    'all_fields': ALL_FIELDS,
+    'common_fields': COMMON_FIELDS,
+    'no_aggregates_or_uniques': NO_AGGREGATES_OR_UNIQUES
 }
 
 def random_subset(values):
     res = []
     for value in values:
+        x = random.random()
+        LOGGER.info('X is {}'.format(x))
         if random.random() > 0.5:
             res.append(value)
     return res
@@ -235,9 +240,9 @@ def gen_action_breakdowns():
 
 def gen_breakdowns():
     return random.choice([None,
-                          'age_and_gender',
-                          'country',
-                          'placement_and_device'])
+                          ['age', 'gender'],
+                          ['country'],
+                          ['placement', 'impression_device']])
 
 def gen_action_attribution_windows():
     # default is 1d_view, 28d_click
@@ -300,8 +305,6 @@ def run_tap(config_path, props_path, table, field_set_name, fields):
 def main():
     args = utils.parse_args(tap_facebook.REQUIRED_CONFIG_KEYS)
 
-
-
     with tempfile.TemporaryDirectory(prefix='insights-experiment-') as config_dir:
 
         while True:
@@ -318,11 +321,10 @@ def main():
                 'breakdowns': breakdowns,
                 'action_attribution_windows': action_attribution_windows
             }
-            field_set_name = 'no_actions'
+            field_set_name = random.choise(list(FIELD_SETS.keys()))
             fields = FIELD_SETS[field_set_name]
             config = copy.deepcopy(args.config)
-            config['insight_tables'] = [table]
-
+            # config['insights_tables'] = [table]  Don't vary config right now
             result = run_tap(config_dir, config, table, field_set_name, fields)
 
             json.dump(result, sys.stdout)

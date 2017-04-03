@@ -238,6 +238,7 @@ class AdsInsights(Stream):
 
 def initialize_stream(stream_name, account, config, annotated_schema):
     if stream_name == 'adsinsights':
+        
         return AdsInsights(
             account, annotated_schema,
             breakdowns=config['insights_tables'][0]['breakdowns'],

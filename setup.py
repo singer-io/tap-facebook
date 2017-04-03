@@ -12,6 +12,7 @@ setup(name='tap-facebook',
       install_requires=[
           'singer-python>=0.4.0',
           'requests==2.12.4',
+          'facebookads==2.8.1',
       ],
       entry_points='''
           [console_scripts]
