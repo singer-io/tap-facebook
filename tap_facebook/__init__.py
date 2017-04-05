@@ -27,11 +27,9 @@ STREAMS = set([
     'ads_insights_country',
     'ads_insights_placement_and_device'])
 
-REQUIRED_CONFIG_KEYS = ["start_date", "account_id", "access_token"]
-
+REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 CONFIG = {}
 STATE = {}
-
 LOGGER = singer.get_logger()
 
 
@@ -44,7 +42,7 @@ def get_start(key):
 
 def transform_field(value, field_type, field_format=None):
     if field_format == "date-time":
-        # TODO
+        # TODO: Format date-times
         return value
 
     if field_type == "boolean":
@@ -97,8 +95,6 @@ def transform_fields(row, schema):
 @attr.s
 class Stream(object):
 
-    key_properties = ['id', 'date']
-
     name = attr.ib()
     account = attr.ib()
     annotated_schema = attr.ib()
@@ -120,9 +116,6 @@ class AdCreative(Stream):
 
     def __iter__(self):
         ad_creative = self.account.get_ad_creatives() # pylint: disable=no-member
-
-        LOGGER.info('Getting adcreative fields %s', self.fields())
-
         for a in ad_creative: # pylint: disable=invalid-name
             a.remote_read(fields=self.fields())
             yield a.export_all_data()
@@ -158,12 +151,10 @@ class Campaigns(Stream):
     key_properties = ['id']
 
     def __iter__(self):
-
         campaigns = self.account.get_campaigns() # pylint: disable=no-member
         props = self.fields()
         fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
-        LOGGER.info('Fetching campaigns, with fields %s', fields)
         for campaign in campaigns:
             campaign.remote_read(fields=fields)
             campaign_out = {}
@@ -203,19 +194,20 @@ class AdsInsights(Stream):
         default=ALL_ACTION_ATTRIBUTION_WINDOWS)
     time_increment = attr.ib(default=1)
     limit = attr.ib(default=100)
-
+    # TODO: Customize time ranges
+    time_ranges = attr.ib(default=[{'since':'2017-02-01',
+                                    'until':'2017-03-01'}])
 
     def __iter__(self):
-        fields = list(self.fields())
         params = {
             'level': self.level,
             'action_breakdowns': self.action_breakdowns,
             'breakdowns': self.breakdowns,
-            'limit': 100,
-            'fields': fields,
-            'time_increment': 1,
+            'limit': self.limit,
+            'fields': self.fields,
+            'time_increment': self.time_limit,
             'action_attribution_windows': self.action_attribution_windows,
-            'time_ranges': [{'since':'2017-02-01', 'until':'2017-03-01'}]
+            'time_ranges': self.time_ranges,
         }
         LOGGER.info('Starting adsinsights job with params %s', params)
         i_async_job = self.account.get_insights(params=params, async=True) # pylint: disable=no-member
@@ -229,7 +221,6 @@ class AdsInsights(Stream):
             percent_complete = job[objects.AsyncJob.Field.async_percent_completion]
             job_id = job[objects.AsyncJob.Field.id]
             LOGGER.info('Job status: %s; %d%% done', status, percent_complete)
-
 
             if duration > INSIGHTS_MAX_WAIT_TO_START_SECONDS and percent_complete == 0:
                 raise Exception(
@@ -246,18 +237,18 @@ class AdsInsights(Stream):
             yield obj.export_all_data()
 
 
+insights_breakdowns = {
+    'ads_insights': None,
+    'ads_insights_age_and_gender': ['age', 'gender'],
+    'ads_insights_country': ['country'],
+    'ads_insights_device_and_placement': ['device', 'placement'],    
+}
+            
+            
 def initialize_stream(name, account, annotated_schema): # pylint: disable=too-many-return-statements
-    if name == 'ads_insights':
-        return AdsInsights(name, account, annotated_schema)
-    elif name == 'ads_insights_age_and_gender':
+    if name in insights_breakdowns:
         return AdsInsights(name, account, annotated_schema,
-                           breakdowns=['age', 'gender'])
-    elif name == 'ads_insights_country':
-        return AdsInsights(name, account, annotated_schema,
-                           breakdowns=['country'])
-    elif name == 'ads_insights_placement_and_device':
-        return AdsInsights(name, account, annotated_schema,
-                           breakdowns=['placement', 'device'])
+                           breakdowns=insights_breakdowns[name])
     elif name == 'campaigns':
         return Campaigns(name, account, annotated_schema)
     elif name == 'adsets':
@@ -277,7 +268,7 @@ def do_sync(account, annotated_schemas):
         for name, schema in annotated_schemas['streams'].items()]
 
     for stream in streams:
-        LOGGER.info('Syncing %s', stream.name)
+        LOGGER.info('Syncing %s, fields ', stream.name, stream.fields)
         schema = load_schema(stream)
         singer.write_schema(stream.name, schema, stream.key_properties)
 
@@ -286,10 +277,12 @@ def do_sync(account, annotated_schemas):
             num_records += 1
             singer.write_record(stream.name, record)
             if num_records % 1000 == 0:
-                LOGGER.info('Got %d %s records', num_records, stream)
+                LOGGER.info('Got %d %s records so far', num_records, stream)
+        LOGGER.info('Got %d %s records total', num_records, stream)
 
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
+
 
 def load_schema(stream):
     path = get_abs_path('schemas/{}.json'.format(stream.name))
@@ -315,8 +308,6 @@ def do_discover():
 
 
 def main():
-    # singer.write_record('adsinsights', {'a': 1})
-    # return
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
     CONFIG.update(args.config)
     if args.state:
@@ -338,7 +329,3 @@ def main():
         do_sync(account, args.properties)
     else:
         LOGGER.info("No properties were selected")
-
-
-if __name__ == '__main__':
-    main()
