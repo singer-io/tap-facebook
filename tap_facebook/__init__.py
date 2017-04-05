@@ -6,6 +6,7 @@ import os
 import sys
 import time
 
+import attr
 import requests
 import singer
 from singer import utils
@@ -16,16 +17,15 @@ import facebookads.objects as objects
 INSIGHTS_MAX_WAIT_TO_START_SECONDS = 5 * 60
 INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS = 30 * 60
 
-STREAMS = [
+STREAMS = set([
     'adcreative',
     'ads',
     'adsets',
     'campaigns',
-    'adsinsights',
-    'insights',
-    'insights_age_and_gender',
-    'insights_country',
-    'insights_placement_and_device']
+    'ads_insights',
+    'ads_insights_age_and_gender',
+    'ads_insights_country',
+    'ads_insights_placement_and_device'])
 
 REQUIRED_CONFIG_KEYS = ["start_date", "account_id", "access_token"]
 
@@ -99,6 +99,7 @@ class Stream(object):
 
     key_properties = ['id', 'date']
 
+    name = attr.ib()
     account = attr.ib()
     annotated_schema = attr.ib()
 
@@ -114,7 +115,6 @@ class AdCreative(Stream):
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
     '''
 
-    name = 'adcreative'
     field_class = objects.adcreative.AdCreative.Field
     key_properties = ['id']
 
@@ -132,7 +132,6 @@ class Ads(Stream):
     '''
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
     '''
-    name = 'ads'
     field_class = objects.ad.Ad.Field
     key_properties = ['id', 'updated_time']
 
@@ -144,7 +143,6 @@ class Ads(Stream):
 
 
 class AdSets(Stream):
-    name = 'adsets'
     field_class = objects.adset.AdSet.Field
     key_properties = ['id', 'updated_time']
 
@@ -156,7 +154,6 @@ class AdSets(Stream):
 
 
 class Campaigns(Stream):
-    name = 'campaigns'
     field_class = objects.campaign.Campaign.Field
     key_properties = ['id']
 
@@ -183,12 +180,9 @@ class Campaigns(Stream):
 
 @attr.s
 class AdsInsights(Stream):
-    name = 'adsinsights'
     field_class = objects.adsinsights.AdsInsights.Field
     key_properties = ['id', 'updated_time']
 
-    account = attr.ib()
-    annotated_schema = attr.ib()
     breakdowns = attr.ib(default=None)
     action_breakdowns = attr.ib(default=[
         'action_type',
@@ -247,37 +241,35 @@ class AdsInsights(Stream):
             yield obj.export_all_data()
 
 
-def initialize_stream(stream_name, account, config, annotated_schema):
-    if stream_name == 'insights':
-        return AdsInsights(account, annotated_schema)
-    if stream_name == 'insights_age_and_gender':
-        return AdsInsights(account, annotated_schema,
+def initialize_stream(name, account, config, annotated_schema):
+    if name == 'ads_insights':
+        return AdsInsights(name, account, annotated_schema)
+    if name == 'ads_insights_age_and_gender':
+        return AdsInsights(name, account, annotated_schema,
                            breakdowns=['age', 'gender'])
-    if stream_name == 'insights':
-        return AdsInsights(account, annotated_schema,
+    if name == 'ads_insights_country':
+        return AdsInsights(name, account, annotated_schema,
                            breakdowns=['country'])
-    if stream_name == 'insights':
-        return AdsInsights(account, annotated_schema,
+    if name == 'ads_insights_placement_and_device':
+        return AdsInsights(name, account, annotated_schema,
                            breakdowns=['placement', 'device'])
-    elif stream_name == 'campaigns':
-        return Campaigns(account, annotated_schema)
-    elif stream_name == 'adsets':
-        return AdSets(account, annotated_schema)
-    elif stream_name == 'ads':
-        return Ads(account, annotated_schema)
-    elif stream_name == 'adcreative':
-        return AdCreative(account, annotated_schema)
+    elif name == 'campaigns':
+        return Campaigns(name, account, annotated_schema)
+    elif name == 'adsets':
+        return AdSets(name, account, annotated_schema)
+    elif name == 'ads':
+        return Ads(name, account, annotated_schema)
+    elif name == 'adcreative':
+        return AdCreative(name, account, annotated_schema)
+    raise Exception('Unknown stream {}'.format(name))
 
 
 def do_sync(account, config, annotated_schemas):
-    streams = []
-    for stream_name in STREAMS:
-        annotated_schema = {}
-        if stream_name in annotated_schemas['streams']:
-            annotated_schema = annotated_schemas['streams'][stream_name]
-            if annotated_schema.get('selected'):
-                streams.append(initialize_stream(stream_name, account, config, annotated_schema))
 
+    streams = [
+        initialize_stream(name, account, config, schema)
+        for name,schema in annotated_schemas['streams'].items()]
+    
     for stream in streams:
         LOGGER.info('Syncing %s', stream.name)
         schema = load_schema(stream)
