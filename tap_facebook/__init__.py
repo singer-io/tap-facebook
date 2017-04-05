@@ -205,7 +205,7 @@ class AdsInsights(Stream):
             'breakdowns': self.breakdowns,
             'limit': self.limit,
             'fields': self.fields,
-            'time_increment': self.time_limit,
+            'time_increment': self.time_increment,
             'action_attribution_windows': self.action_attribution_windows,
             'time_ranges': self.time_ranges,
         }
@@ -237,18 +237,18 @@ class AdsInsights(Stream):
             yield obj.export_all_data()
 
 
-insights_breakdowns = {
+INSIGHTS_BREAKDOWNS = {
     'ads_insights': None,
     'ads_insights_age_and_gender': ['age', 'gender'],
     'ads_insights_country': ['country'],
-    'ads_insights_device_and_placement': ['device', 'placement'],    
+    'ads_insights_device_and_placement': ['device', 'placement'],
 }
-            
-            
+
+
 def initialize_stream(name, account, annotated_schema): # pylint: disable=too-many-return-statements
-    if name in insights_breakdowns:
+    if name in INSIGHTS_BREAKDOWNS:
         return AdsInsights(name, account, annotated_schema,
-                           breakdowns=insights_breakdowns[name])
+                           breakdowns=INSIGHTS_BREAKDOWNS[name])
     elif name == 'campaigns':
         return Campaigns(name, account, annotated_schema)
     elif name == 'adsets':
@@ -268,7 +268,7 @@ def do_sync(account, annotated_schemas):
         for name, schema in annotated_schemas['streams'].items()]
 
     for stream in streams:
-        LOGGER.info('Syncing %s, fields ', stream.name, stream.fields)
+        LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields)
         schema = load_schema(stream)
         singer.write_schema(stream.name, schema, stream.key_properties)
 
