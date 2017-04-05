@@ -174,6 +174,12 @@ class Campaigns(Stream):
             yield campaign_out
 
 
+# Table
+# insights
+# insights_age_and_gender
+# insights_country
+# insights_placement_and_device
+            
 class AdsInsights(Stream):
     name = 'adsinsights'
     field_class = objects.adsinsights.AdsInsights.Field
