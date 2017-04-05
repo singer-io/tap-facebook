@@ -1,22 +1,12 @@
 #!/usr/bin/env python3
 
 from operator import itemgetter
-import time
 import json
-import copy
-import random
-import singer
-import os
 import sys
-import subprocess
-from subprocess import Popen, PIPE
-from singer import utils
-import tap_facebook
-import tempfile
 import csv
 
 def translate_breakdown(breakdown):
-    if breakdown == None:
+    if breakdown is None:
         return ''
     if breakdown == ['age', 'gender']:
         return 'ag'
@@ -97,11 +87,12 @@ def main():
     print('p(bd==c) = {}'.format(p_breakdown('c', records)))
     print('p(success and bd=c) = {}'.format(p_success_and_breakdown('c', records)))
     for breakdown in ['', 'ag', 'c', 'pd']:
-        print('p(success | bd={}) = {}'.format(breakdown, p_success_given_breakdown(breakdown, records)))
+        print('p(success | bd={}) = {}'.format(
+            breakdown, p_success_given_breakdown(breakdown, records)))
     for nabd in range(4):
         print('p(success | nabd={}) = {}'.format(nabd, p_success_given_nabd(nabd, records)))
     for naaw in range(6):
-        print('p(success | naaw={}) = {}'.format(naaw, p_success_given_naaw(naaw, records)))                
+        print('p(success | naaw={}) = {}'.format(naaw, p_success_given_naaw(naaw, records)))
 
 
 if __name__ == '__main__':

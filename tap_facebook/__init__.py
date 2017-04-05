@@ -178,6 +178,16 @@ class Campaigns(Stream):
 
             yield campaign_out
 
+
+ALL_ACTION_ATTRIBUTION_WINDOWS = [
+    '1d_click',
+    '7d_click',
+    '28d_click',
+    '1d_view',
+    '7d_view',
+    '28d_view'
+]
+            
 @attr.s
 class AdsInsights(Stream):
     field_class = objects.adsinsights.AdsInsights.Field
@@ -189,13 +199,8 @@ class AdsInsights(Stream):
         'action_target_id',
         'action_destination'])
     level = attr.ib(default=None)
-    action_attribution_windows = attr.ib(default=[
-        '1d_click',
-        '7d_click',
-        '28d_click',
-        '1d_view',
-        '7d_view',
-        '28d_view'])
+    action_attribution_windows = attr.ib(
+        default=ALL_ACTION_ATTRIBUTION_WINDOWS)
     time_increment = attr.ib(default=1)
     limit = attr.ib(default=100)
     

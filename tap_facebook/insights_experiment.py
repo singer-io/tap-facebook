@@ -221,8 +221,6 @@ FIELD_SETS = {
 def random_subset(values):
     res = []
     for value in values:
-        x = random.random()
-        LOGGER.info('X is {}'.format(x))
         if random.random() > 0.5:
             res.append(value)
     return res
@@ -247,13 +245,7 @@ def gen_breakdowns():
 def gen_action_attribution_windows():
     # default is 1d_view, 28d_click
     # None if no action breakdown
-    return random_subset([
-        '1d_click',
-        '7d_click',
-        '28d_click',
-        '1d_view',
-        '7d_view',
-        '28d_view'])
+    return random_subset(tap_facebook.ALL_ACTION_ATTRIBUTION_WINDOWS)
 
 def write_configs_and_run_tap(config_dir, config, table, field_set_name, fields):
     props_path = os.path.join(config_dir, 'properties.json')
@@ -321,7 +313,7 @@ def main():
                 'breakdowns': breakdowns,
                 'action_attribution_windows': action_attribution_windows
             }
-            field_set_name = random.choise(list(FIELD_SETS.keys()))
+            field_set_name = random.choice(list(FIELD_SETS.keys()))
             fields = FIELD_SETS[field_set_name]
             config = copy.deepcopy(args.config)
             # config['insights_tables'] = [table]  Don't vary config right now
