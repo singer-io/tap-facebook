@@ -105,7 +105,7 @@ class Stream(object):
 
     def fields(self):
         if self.annotated_schema:
-            props = self.annotated_schema['properties']
+            props = self.annotated_schema['properties'] # pylint: disable=unsubscriptable-object
             return set([k for k in props if props[k].get('selected')])
         return set()
 
@@ -119,7 +119,7 @@ class AdCreative(Stream):
     key_properties = ['id']
 
     def __iter__(self):
-        ad_creative = self.account.get_ad_creatives()
+        ad_creative = self.account.get_ad_creatives() # pylint: disable=no-member
 
         LOGGER.info('Getting adcreative fields %s', self.fields())
 
@@ -136,7 +136,7 @@ class Ads(Stream):
     key_properties = ['id', 'updated_time']
 
     def __iter__(self):
-        ads = self.account.get_ads()
+        ads = self.account.get_ads() # pylint: disable=no-member
         for ad in ads: # pylint: disable=invalid-name
             ad.remote_read(fields=self.fields())
             yield ad.export_all_data()
@@ -147,7 +147,7 @@ class AdSets(Stream):
     key_properties = ['id', 'updated_time']
 
     def __iter__(self):
-        ad_sets = self.account.get_ad_sets()
+        ad_sets = self.account.get_ad_sets() # pylint: disable=no-member
         for ad_set in ad_sets:
             ad_set.remote_read(fields=self.fields())
             yield ad_set.export_all_data()
@@ -159,7 +159,7 @@ class Campaigns(Stream):
 
     def __iter__(self):
 
-        campaigns = self.account.get_campaigns()
+        campaigns = self.account.get_campaigns() # pylint: disable=no-member
         props = self.fields()
         fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
@@ -187,7 +187,7 @@ ALL_ACTION_ATTRIBUTION_WINDOWS = [
     '7d_view',
     '28d_view'
 ]
-            
+
 @attr.s
 class AdsInsights(Stream):
     field_class = objects.adsinsights.AdsInsights.Field
@@ -203,7 +203,7 @@ class AdsInsights(Stream):
         default=ALL_ACTION_ATTRIBUTION_WINDOWS)
     time_increment = attr.ib(default=1)
     limit = attr.ib(default=100)
-    
+
 
     def __iter__(self):
         fields = list(self.fields())
@@ -218,7 +218,7 @@ class AdsInsights(Stream):
             'time_ranges': [{'since':'2017-02-01', 'until':'2017-03-01'}]
         }
         LOGGER.info('Starting adsinsights job with params %s', params)
-        i_async_job = self.account.get_insights(params=params, async=True)
+        i_async_job = self.account.get_insights(params=params, async=True) # pylint: disable=no-member
 
         status = None
         time_start = time.time()
@@ -246,16 +246,16 @@ class AdsInsights(Stream):
             yield obj.export_all_data()
 
 
-def initialize_stream(name, account, config, annotated_schema):
+def initialize_stream(name, account, annotated_schema): # pylint: disable=too-many-return-statements
     if name == 'ads_insights':
         return AdsInsights(name, account, annotated_schema)
-    if name == 'ads_insights_age_and_gender':
+    elif name == 'ads_insights_age_and_gender':
         return AdsInsights(name, account, annotated_schema,
                            breakdowns=['age', 'gender'])
-    if name == 'ads_insights_country':
+    elif name == 'ads_insights_country':
         return AdsInsights(name, account, annotated_schema,
                            breakdowns=['country'])
-    if name == 'ads_insights_placement_and_device':
+    elif name == 'ads_insights_placement_and_device':
         return AdsInsights(name, account, annotated_schema,
                            breakdowns=['placement', 'device'])
     elif name == 'campaigns':
@@ -266,15 +266,16 @@ def initialize_stream(name, account, config, annotated_schema):
         return Ads(name, account, annotated_schema)
     elif name == 'adcreative':
         return AdCreative(name, account, annotated_schema)
-    raise Exception('Unknown stream {}'.format(name))
+    else:
+        raise Exception('Unknown stream {}'.format(name))
 
 
-def do_sync(account, config, annotated_schemas):
+def do_sync(account, annotated_schemas):
 
     streams = [
-        initialize_stream(name, account, config, schema)
-        for name,schema in annotated_schemas['streams'].items()]
-    
+        initialize_stream(name, account, schema)
+        for name, schema in annotated_schemas['streams'].items()]
+
     for stream in streams:
         LOGGER.info('Syncing %s', stream.name)
         schema = load_schema(stream)
@@ -334,7 +335,7 @@ def main():
     if args.discover:
         do_discover()
     elif args.properties:
-        do_sync(account, CONFIG, args.properties)
+        do_sync(account, args.properties)
     else:
         LOGGER.info("No properties were selected")
 
