@@ -201,13 +201,13 @@ class AdsInsights(Stream):
     def __iter__(self):
         params = {
             'level': self.level,
-            'action_breakdowns': self.action_breakdowns,
-            'breakdowns': self.breakdowns,
+            'action_breakdowns': list(self.action_breakdowns),
+            'breakdowns': list(self.breakdowns),
             'limit': self.limit,
-            'fields': self.fields,
+            'fields': list(self.fields()),
             'time_increment': self.time_increment,
-            'action_attribution_windows': self.action_attribution_windows,
-            'time_ranges': self.time_ranges,
+            'action_attribution_windows': list(self.action_attribution_windows),
+            'time_ranges': list(self.time_ranges),
         }
         LOGGER.info('Starting adsinsights job with params %s', params)
         i_async_job = self.account.get_insights(params=params, async=True) # pylint: disable=no-member
@@ -220,7 +220,7 @@ class AdsInsights(Stream):
             status = job[objects.AsyncJob.Field.async_status]
             percent_complete = job[objects.AsyncJob.Field.async_percent_completion]
             job_id = job[objects.AsyncJob.Field.id]
-            LOGGER.info('Job status: %s; %d%% done', status, percent_complete)
+            LOGGER.info('%s, %d%% done', status, percent_complete)
 
             if duration > INSIGHTS_MAX_WAIT_TO_START_SECONDS and percent_complete == 0:
                 raise Exception(
@@ -238,7 +238,7 @@ class AdsInsights(Stream):
 
 
 INSIGHTS_BREAKDOWNS = {
-    'ads_insights': None,
+    'ads_insights': [],
     'ads_insights_age_and_gender': ['age', 'gender'],
     'ads_insights_country': ['country'],
     'ads_insights_device_and_placement': ['device', 'placement'],
@@ -268,7 +268,7 @@ def do_sync(account, annotated_schemas):
         for name, schema in annotated_schemas['streams'].items()]
 
     for stream in streams:
-        LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields)
+        LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields())
         schema = load_schema(stream)
         singer.write_schema(stream.name, schema, stream.key_properties)
 
@@ -277,8 +277,8 @@ def do_sync(account, annotated_schemas):
             num_records += 1
             singer.write_record(stream.name, record)
             if num_records % 1000 == 0:
-                LOGGER.info('Got %d %s records so far', num_records, stream)
-        LOGGER.info('Got %d %s records total', num_records, stream)
+                LOGGER.info('Got %d %s records so far', num_records, stream.name)
+        LOGGER.info('Got %d %s records total', num_records, stream.name)
 
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
