@@ -1,0 +1,490 @@
+{
+  "type": [
+    "null",
+    "object"
+  ],
+  "properties": {
+    "unique_actions": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "value": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "clicks": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "date_stop": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "ad_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "website_ctr": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "value": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "action_type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "unique_inline_link_click_ctr": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "newsfeed_impressions": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "adset_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "newsfeed_avg_position": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "frequency": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "actions": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "value": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "total_actions": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "account_name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "canvas_avg_view_time": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "unique_inline_link_clicks": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "cost_per_unique_action_type": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "value": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "action_type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "unique_social_impressions": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "inline_post_engagement": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "relevance_score": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "score": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "status": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "positive_feedback": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "negative_feedback": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "social_clicks": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "action_values": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "value": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "campaign_name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "inline_link_clicks": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "campaign_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "unique_social_clicks": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "newsfeed_clicks": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "cpc": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "call_to_action_clicks": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "deeplink_clicks": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "cost_per_total_action": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "ad_name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "cost_per_unique_inline_link_click": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "cpm": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "cost_per_inline_post_engagement": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "inline_link_click_ctr": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "cpp": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "cost_per_action_type": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "value": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "action_type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "unique_link_clicks_ctr": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "social_reach": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "website_clicks": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "spend": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "cost_per_unique_click": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "total_action_value": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "adset_name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "unique_clicks": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "social_spend": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "unique_impressions": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "canvas_avg_view_percent": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "account_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "date_start": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "app_store_clicks": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "social_impressions": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "objective": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "impressions": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "unique_ctr": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "cost_per_inline_link_click": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "ctr": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "reach": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "total_unique_actions": {
+      "type": [
+        "null",
+        "string"
+      ]
+    }
+  }
+}
