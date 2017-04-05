@@ -241,7 +241,7 @@ INSIGHTS_BREAKDOWNS = {
     'ads_insights': [],
     'ads_insights_age_and_gender': ['age', 'gender'],
     'ads_insights_country': ['country'],
-    'ads_insights_device_and_placement': ['device', 'placement'],
+    'ads_insights_placement_and_device': ['placement', 'device'],
 }
 
 
@@ -297,11 +297,10 @@ def load_schema(stream):
 def do_discover():
     LOGGER.info('Loading schemas')
     result = {'streams': {}}
-    for stream in [Ads(),
-                   AdSets(),
-                   Campaigns(),
-                   AdCreative(),
-                   AdsInsights()]:
+    streams = [
+        initialize_stream(name, None, None)
+        for name in STREAMS]
+    for stream in streams:
         LOGGER.info('Loading schema for %s', stream.name)
         result['streams'][stream.name] = load_schema(stream)
     json.dump(result, sys.stdout, indent=4)
