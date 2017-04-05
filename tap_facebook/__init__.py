@@ -158,14 +158,15 @@ class Campaigns(Stream):
         props = self.fields()
         fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
-
+        LOGGER.info('Fetching campaigns, with fields %s', fields)
         for campaign in campaigns:
             campaign.remote_read(fields=fields)
-            campaign_out = {'ads': {'data': []}}
-            for k in fields:
+            campaign_out = {}
+            for k in campaign:
                 campaign_out[k] = campaign[k]
 
             if pull_ads:
+                campaign_out['ads'] = {'data': []}
                 ids = [ad['id'] for ad in campaign.get_ads()]
                 for ad_id in ids:
                     campaign_out['ads']['data'].append({'id': ad_id})
