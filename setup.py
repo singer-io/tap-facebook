@@ -13,6 +13,7 @@ setup(name='tap-facebook',
           'singer-python>=0.4.0',
           'requests==2.12.4',
           'facebookads==2.8.1',
+          'attrs==16.3.0',
       ],
       entry_points='''
           [console_scripts]

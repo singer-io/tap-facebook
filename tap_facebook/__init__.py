@@ -16,7 +16,16 @@ import facebookads.objects as objects
 INSIGHTS_MAX_WAIT_TO_START_SECONDS = 5 * 60
 INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS = 30 * 60
 
-STREAMS = ['adcreative', 'ads', 'adsets', 'campaigns', 'adsinsights']
+STREAMS = [
+    'adcreative',
+    'ads',
+    'adsets',
+    'campaigns',
+    'adsinsights',
+    'insights',
+    'insights_age_and_gender',
+    'insights_country',
+    'insights_placement_and_device']
 
 REQUIRED_CONFIG_KEYS = ["start_date", "account_id", "access_token"]
 
@@ -85,14 +94,13 @@ def transform_fields(row, schema):
 
     return rtn
 
-
+@attr.s
 class Stream(object):
 
     key_properties = ['id', 'date']
 
-    def __init__(self, account=None, annotated_schema=None):
-        self.account = account
-        self.annotated_schema = annotated_schema
+    account = attr.ib()
+    annotated_schema = attr.ib()
 
     def fields(self):
         if self.annotated_schema:
@@ -173,34 +181,30 @@ class Campaigns(Stream):
 
             yield campaign_out
 
-
-# Table
-# insights
-# insights_age_and_gender
-# insights_country
-# insights_placement_and_device
-            
+@attr.s
 class AdsInsights(Stream):
     name = 'adsinsights'
     field_class = objects.adsinsights.AdsInsights.Field
     key_properties = ['id', 'updated_time']
-    limit = 100
-    time_increment = 1
 
-    def __init__(self,
-                 account=None,
-                 annotated_schema=None,
-                 breakdowns=None,
-                 action_breakdowns=None,
-                 level=None,
-                 action_attribution_windows=None):
-        super().__init__()
-        self.breakdowns = breakdowns
-        self.action_breakdowns = action_breakdowns
-        self.level = level
-        self.action_attribution_windows = action_attribution_windows
-        self.annotated_schema = annotated_schema
-        self.account = account
+    account = attr.ib()
+    annotated_schema = attr.ib()
+    breakdowns = attr.ib(default=None)
+    action_breakdowns = attr.ib(default=[
+        'action_type',
+        'action_target_id',
+        'action_destination'])
+    level = attr.ib(default=None)
+    action_attribution_windows = attr.ib(default=[
+        '1d_click',
+        '7d_click',
+        '28d_click',
+        '1d_view',
+        '7d_view',
+        '28d_view'])
+    time_increment = attr.ib(default=1)
+    limit = attr.ib(default=100)
+    
 
     def __iter__(self):
         fields = list(self.fields())
@@ -244,14 +248,17 @@ class AdsInsights(Stream):
 
 
 def initialize_stream(stream_name, account, config, annotated_schema):
-    if stream_name == 'adsinsights':
-        
-        return AdsInsights(
-            account, annotated_schema,
-            breakdowns=config['insights_tables'][0]['breakdowns'],
-            action_breakdowns=config['insights_tables'][0]['action_breakdowns'],
-            level=config['insights_tables'][0]['level'],
-            action_attribution_windows=config['insights_tables'][0]['action_attribution_windows'])
+    if stream_name == 'insights':
+        return AdsInsights(account, annotated_schema)
+    if stream_name == 'insights_age_and_gender':
+        return AdsInsights(account, annotated_schema,
+                           breakdowns=['age', 'gender'])
+    if stream_name == 'insights':
+        return AdsInsights(account, annotated_schema,
+                           breakdowns=['country'])
+    if stream_name == 'insights':
+        return AdsInsights(account, annotated_schema,
+                           breakdowns=['placement', 'device'])
     elif stream_name == 'campaigns':
         return Campaigns(account, annotated_schema)
     elif stream_name == 'adsets':
