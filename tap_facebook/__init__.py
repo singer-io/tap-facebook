@@ -7,6 +7,7 @@ import sys
 import time
 
 import attr
+import pendulum
 import requests
 import singer
 from singer import utils
@@ -184,7 +185,8 @@ class AdsInsights(Stream):
     field_class = objects.adsinsights.AdsInsights.Field
     key_properties = ['id', 'updated_time']
 
-    breakdowns = attr.ib(default=None)
+    start_date = attr.ib()
+    breakdowns = attr.ib()
     action_breakdowns = attr.ib(default=[
         'action_type',
         'action_target_id',
@@ -194,11 +196,16 @@ class AdsInsights(Stream):
         default=ALL_ACTION_ATTRIBUTION_WINDOWS)
     time_increment = attr.ib(default=1)
     limit = attr.ib(default=100)
-    # TODO: Customize time ranges
-    time_ranges = attr.ib(default=[{'since':'2017-02-01',
-                                    'until':'2017-03-01'}])
 
-    def __iter__(self):
+    def start_dates(self):
+        start_date = pendulum.parse(self.start_date)
+        date = start_date.subtract(days=28)
+        while date <= pendulum.now():
+            yield date
+            date.add(days=1)
+
+    
+    def run_job():
         params = {
             'level': self.level,
             'action_breakdowns': list(self.action_breakdowns),
@@ -210,13 +217,12 @@ class AdsInsights(Stream):
             'time_ranges': list(self.time_ranges),
         }
         LOGGER.info('Starting adsinsights job with params %s', params)
-        i_async_job = self.account.get_insights(params=params, async=True) # pylint: disable=no-member
-
+        job = self.account.get_insights(params=params, async=True) # pylint: disable=no-member        
         status = None
         time_start = time.time()
         while status != "Job Completed":
             duration = time.time() - time_start
-            job = i_async_job.remote_read()
+            job = job.remote_read()
             status = job[objects.AsyncJob.Field.async_status]
             percent_complete = job[objects.AsyncJob.Field.async_percent_completion]
             job_id = job[objects.AsyncJob.Field.id]
@@ -232,23 +238,39 @@ class AdsInsights(Stream):
                     'Insights job {} did not complete after {} seconds'.format(
                         job_id, INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS))
             time.sleep(5)
+        return job
 
-        for obj in i_async_job.get_result():
-            yield obj.export_all_data()
+    
+    def __iter__(self):
+        job = self.run_job(job)
+        for start_date in self.start_dates():
+            min_date_start_for_job = None
+            for obj in job.get_result():
+                rec = obj.export_all_data()
+                if not min_date_start_for_job or rec['date_start'] < min_date_start:
+                    min_date_start_for_job = rec['date_start']
+                yield rec
+            if min_date_start_for_job > self.bookmark:
+                self.bookmark = min_date_start_for_job
 
 
 INSIGHTS_BREAKDOWNS = {
     'ads_insights': [],
     'ads_insights_age_and_gender': ['age', 'gender'],
     'ads_insights_country': ['country'],
-    'ads_insights_placement_and_device': ['placement', 'device'],
+    'ads_insights_placement_and_device': ['placement', 'impression_device'],
 }
 
 
 def initialize_stream(name, account, annotated_schema): # pylint: disable=too-many-return-statements
     if name in INSIGHTS_BREAKDOWNS:
+        if name in STATE:
+            bookmark = STATE[name]
+        else:
+            bookmark = CONFIG['start_date']
         return AdsInsights(name, account, annotated_schema,
-                           breakdowns=INSIGHTS_BREAKDOWNS[name])
+                           breakdowns=INSIGHTS_BREAKDOWNS[name],
+                           bookmark=bookmark)
     elif name == 'campaigns':
         return Campaigns(name, account, annotated_schema)
     elif name == 'adsets':
@@ -278,7 +300,9 @@ def do_sync(account, annotated_schemas):
             singer.write_record(stream.name, record)
             if num_records % 1000 == 0:
                 LOGGER.info('Got %d %s records so far', num_records, stream.name)
+        singer.write_state(STATE)
         LOGGER.info('Got %d %s records total', num_records, stream.name)
+        
 
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
@@ -328,3 +352,4 @@ def main():
         do_sync(account, args.properties)
     else:
         LOGGER.info("No properties were selected")
+

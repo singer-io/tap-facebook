@@ -14,6 +14,7 @@ setup(name='tap-facebook',
           'requests==2.12.4',
           'facebookads==2.8.1',
           'attrs==16.3.0',
+          'pendulum==1.2.0',
       ],
       entry_points='''
           [console_scripts]
