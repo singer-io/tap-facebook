@@ -10,7 +10,7 @@ setup(name='tap-facebook',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       py_modules=['tap_facebook'],
       install_requires=[
-          'singer-python>=0.4.0',
+          'singer-python==1.3.0',
           'requests==2.12.4',
           'facebookads==2.8.1',
           'attrs==16.3.0',

@@ -178,31 +178,29 @@ ALL_ACTION_ATTRIBUTION_WINDOWS = [
 ]
 
 ALL_ACTION_BREAKDOWNS = [
-   'action_type',
+    'action_type',
     'action_target_id',
     'action_destination'
 ]
 
-@attr.s
-class State(object):
-    start_date = attr.ib()
-    state = attr.ib()
 
-    def __attrs_post_init__(self):
-        self.start_date = pendulum.parse(self.start_date)
-        if self.state is None:
+class State(object):
+    def __init__(self, start_date, state):
+        self.start_date = pendulum.parse(start_date)
+        if state is None:
             self.state = {}
-        self.state = {k: pendulum.parse(v) for k, v in self.state.items()}
+        else:
+            self.state = {k: pendulum.parse(v) for k, v in state.items()}
 
     def _get(self, stream_name):
         if stream_name in self.state:
             return self.state[stream_name]
         else:
             return self.start_date
-        
+
     def get(self, stream_name):
         return self._get(stream_name).to_date_string()
-    
+
     def advance(self, stream_name, date):
         date = pendulum.parse(date)
         if date > self._get(stream_name):
@@ -224,9 +222,9 @@ class AdsInsights(Stream):
         default=ALL_ACTION_ATTRIBUTION_WINDOWS)
     time_increment = attr.ib(default=1)
     limit = attr.ib(default=100)
-    
+
     def job_params(self):
-        until = pendulum.parse(self.state.get(self.name))
+        until = pendulum.parse(self.state.get(self.name)) # pylint: disable=no-member
         since = until.subtract(days=28)
         while until <= pendulum.now():
             yield {
@@ -243,7 +241,7 @@ class AdsInsights(Stream):
             since = since.add(days=1)
             until = until.add(days=1)
 
-    
+
     def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
         job = self.account.get_insights( # pylint: disable=no-member
@@ -271,19 +269,19 @@ class AdsInsights(Stream):
             time.sleep(5)
         return job
 
-    
+
     def __iter__(self):
         for params in self.job_params():
             job = self.run_job(params)
-            
+
             min_date_start_for_job = None
             for obj in job.get_result():
                 rec = obj.export_all_data()
-                if not min_date_start_for_job or rec['date_start'] < min_date_start:
+                if not min_date_start_for_job or rec['date_start'] < min_date_start_for_job:
                     min_date_start_for_job = rec['date_start']
                 yield singer.RecordMessage(stream=self.name,
                                            record=rec)
-            yield self.state.update(self.name, min_date_start_for_job)
+            yield self.state.update(self.name, min_date_start_for_job) # pylint: disable=no-member
 
 
 INSIGHTS_BREAKDOWNS = {
@@ -295,7 +293,7 @@ INSIGHTS_BREAKDOWNS = {
 
 
 def initialize_stream(name, account, annotated_schema, state): # pylint: disable=too-many-return-statements
-    
+
     if name in INSIGHTS_BREAKDOWNS:
         return AdsInsights(name, account, annotated_schema,
                            state=state,
@@ -331,7 +329,7 @@ def do_sync(account, annotated_schemas, state):
             if num_records % 1000 == 0:
                 LOGGER.info('Got %d %s records so far', num_records, stream.name)
         LOGGER.info('Got %d %s records total', num_records, stream.name)
-        
+
 
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
@@ -361,8 +359,8 @@ def do_discover():
 
 def main():
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
-    start_date   = args.config['start_date']
-    account_id   = args.config['account_id']
+    start_date = args.config['start_date']
+    account_id = args.config['account_id']
     access_token = args.config['access_token']
     state = State(start_date, args.state)
 
@@ -382,4 +380,3 @@ def main():
         do_sync(account, args.properties, state)
     else:
         LOGGER.info("No properties were selected")
-
