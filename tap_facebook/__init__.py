@@ -119,7 +119,8 @@ class AdCreative(Stream):
         ad_creative = self.account.get_ad_creatives() # pylint: disable=no-member
         for a in ad_creative: # pylint: disable=invalid-name
             a.remote_read(fields=self.fields())
-            yield a.export_all_data()
+            yield singer.RecordMessage(stream=self.name,
+                                       record=a.export_all_data())
 
 
 class Ads(Stream):
@@ -133,7 +134,8 @@ class Ads(Stream):
         ads = self.account.get_ads() # pylint: disable=no-member
         for ad in ads: # pylint: disable=invalid-name
             ad.remote_read(fields=self.fields())
-            yield ad.export_all_data()
+            yield singer.RecordMessage(stream=self.name,
+                                       record=ad.export_all_data())
 
 
 class AdSets(Stream):
@@ -144,7 +146,8 @@ class AdSets(Stream):
         ad_sets = self.account.get_ad_sets() # pylint: disable=no-member
         for ad_set in ad_sets:
             ad_set.remote_read(fields=self.fields())
-            yield ad_set.export_all_data()
+            yield singer.RecordMessage(stream=self.name,
+                                       record=ad_set.export_all_data())
 
 
 class Campaigns(Stream):
@@ -168,7 +171,8 @@ class Campaigns(Stream):
                 for ad_id in ids:
                     campaign_out['ads']['data'].append({'id': ad_id})
 
-            yield campaign_out
+            yield singer.RecordMessage(stream=self.name,
+                                       record=campaign_out)
 
 
 ALL_ACTION_ATTRIBUTION_WINDOWS = [
@@ -180,44 +184,52 @@ ALL_ACTION_ATTRIBUTION_WINDOWS = [
     '28d_view'
 ]
 
+ALL_ACTION_BREAKDOWNS = [
+   'action_type',
+    'action_target_id',
+    'action_destination'
+]
+
 @attr.s
 class AdsInsights(Stream):
     field_class = objects.adsinsights.AdsInsights.Field
     key_properties = ['id', 'updated_time']
 
-    start_date = attr.ib()
     breakdowns = attr.ib()
-    action_breakdowns = attr.ib(default=[
-        'action_type',
-        'action_target_id',
-        'action_destination'])
+    action_breakdowns = attr.ib(default=ALL_ACTION_BREAKDOWNS)
     level = attr.ib(default=None)
     action_attribution_windows = attr.ib(
         default=ALL_ACTION_ATTRIBUTION_WINDOWS)
     time_increment = attr.ib(default=1)
     limit = attr.ib(default=100)
 
-    def start_dates(self):
-        start_date = pendulum.parse(self.start_date)
-        date = start_date.subtract(days=28)
-        while date <= pendulum.now():
-            yield date
-            date.add(days=1)
+    def job_params(self):
+        if self.name in STATE:
+            until = pendulum.parse(STATE[name])
+        else:
+            until = pendulum.parse(CONFIG['start_date'])
+        since = until.subtract(days=28)
+        while until <= pendulum.now():
+            yield {
+                'level': self.level,
+                'action_breakdowns': list(self.action_breakdowns),
+                'breakdowns': list(self.breakdowns),
+                'limit': self.limit,
+                'fields': list(self.fields()),
+                'time_increment': self.time_increment,
+                'action_attribution_windows': list(self.action_attribution_windows),
+                'time_ranges': [{'since': since.to_date_string(),
+                                 'until': until.to_date_string()}]
+            }
+            since = since.add(days=1)
+            until = until.add(days=1)
 
     
-    def run_job():
-        params = {
-            'level': self.level,
-            'action_breakdowns': list(self.action_breakdowns),
-            'breakdowns': list(self.breakdowns),
-            'limit': self.limit,
-            'fields': list(self.fields()),
-            'time_increment': self.time_increment,
-            'action_attribution_windows': list(self.action_attribution_windows),
-            'time_ranges': list(self.time_ranges),
-        }
+    def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
-        job = self.account.get_insights(params=params, async=True) # pylint: disable=no-member        
+        job = self.account.get_insights( # pylint: disable=no-member
+            params=params,
+            async=True)
         status = None
         time_start = time.time()
         while status != "Job Completed":
@@ -242,16 +254,19 @@ class AdsInsights(Stream):
 
     
     def __iter__(self):
-        job = self.run_job(job)
-        for start_date in self.start_dates():
+        for params in self.job_params():
+            job = self.run_job(params)
+            
             min_date_start_for_job = None
             for obj in job.get_result():
                 rec = obj.export_all_data()
                 if not min_date_start_for_job or rec['date_start'] < min_date_start:
                     min_date_start_for_job = rec['date_start']
-                yield rec
-            if min_date_start_for_job > self.bookmark:
-                self.bookmark = min_date_start_for_job
+                yield singer.RecordMessage(stream=self.name,
+                                           record=rec)
+        if min_date_start_for_job > STATE[self.name]:
+            STATE[self.name] = min_date_start_for_job
+            yield singer.StateMessage(STATE)
 
 
 INSIGHTS_BREAKDOWNS = {
@@ -264,13 +279,8 @@ INSIGHTS_BREAKDOWNS = {
 
 def initialize_stream(name, account, annotated_schema): # pylint: disable=too-many-return-statements
     if name in INSIGHTS_BREAKDOWNS:
-        if name in STATE:
-            bookmark = STATE[name]
-        else:
-            bookmark = CONFIG['start_date']
         return AdsInsights(name, account, annotated_schema,
-                           breakdowns=INSIGHTS_BREAKDOWNS[name],
-                           bookmark=bookmark)
+                           breakdowns=INSIGHTS_BREAKDOWNS[name])
     elif name == 'campaigns':
         return Campaigns(name, account, annotated_schema)
     elif name == 'adsets':
@@ -295,12 +305,12 @@ def do_sync(account, annotated_schemas):
         singer.write_schema(stream.name, schema, stream.key_properties)
 
         num_records = 0
-        for record in stream:
-            num_records += 1
-            singer.write_record(stream.name, record)
+        for message in stream:
+            if isinstance(message, singer.RecordMessage):
+                num_records += 1
+            singer.write_message(message)
             if num_records % 1000 == 0:
                 LOGGER.info('Got %d %s records so far', num_records, stream.name)
-        singer.write_state(STATE)
         LOGGER.info('Got %d %s records total', num_records, stream.name)
         
 
