@@ -1,19 +1,40 @@
 import itertools
 import unittest
-
+import pendulum
 import tap_facebook
-from tap_facebook import AdsInsights
+from tap_facebook import AdsInsights, State
 
-class TestTapFacebook(unittest.TestCase):
+class TestState(unittest.TestCase):
 
+    def test_get_with_no_initial_state(self):
+        state = State('2017-03-01', None)
+        self.assertEqual(state.get('foo'), '2017-03-01')
+
+    def test_advance_cant_move_backwards(self):
+        state = State('2017-03-01', None)
+        state.advance('foo', '2017-02-01')
+        self.assertEqual(state.get('foo'), '2017-03-01')
+
+    def test_advance_can_move_forward(self):
+        state = State('2017-03-01', None)
+        state.advance('foo', '2017-04-01')
+        self.assertEqual(state.get('foo'), '2017-04-01')
+
+    def test_advance_returns_message(self):
+        state = State('2017-03-01', None)
+        self.assertEqual(state.advance('foo', '2017-04-01').value['foo'],
+                         '2017-04-01')
+
+class TestAdsInsights(unittest.TestCase):
+    
     def test_insights_start_dates(self):
-        tap_facebook.CONFIG['start_date'] = '2017-01-31'
         insights = AdsInsights(
             name='insights',
             account=None,
             breakdowns=[],
             annotated_schema={'selected': True,
-                              'properties': {'something': {'type': 'object'}}})
+                              'properties': {'something': {'type': 'object'}}},
+            state=tap_facebook.State('2017-01-31', None))
         params = list(itertools.islice(insights.job_params(), 5))
         self.assertEqual(params[0]['time_ranges'],
                          [{'since': '2017-01-03',
@@ -23,6 +44,17 @@ class TestTapFacebook(unittest.TestCase):
                          [{'since': '2017-01-07',
                            'until': '2017-02-04'}])
 
+    def test_insights_job_params_stops(self):
+        start_date = tap_facebook.TODAY.subtract(days=2)
+        insights = AdsInsights(
+            name='insights',
+            account=None,
+            breakdowns=[],
+            annotated_schema={'selected': True,
+                              'properties': {'something': {'type': 'object'}}},
+            state=tap_facebook.State(start_date.to_date_string(), None))
+
+        self.assertEqual(3, len(list(insights.job_params())))
 
 
 if __name__ == '__main__':

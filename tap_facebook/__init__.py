@@ -15,6 +15,8 @@ from singer import utils
 from facebookads import FacebookAdsApi
 import facebookads.objects as objects
 
+TODAY = pendulum.today()
+
 INSIGHTS_MAX_WAIT_TO_START_SECONDS = 5 * 60
 INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS = 30 * 60
 
@@ -29,16 +31,7 @@ STREAMS = set([
     'ads_insights_placement_and_device'])
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
-CONFIG = {}
-STATE = {}
 LOGGER = singer.get_logger()
-
-
-def get_start(key):
-    if key not in STATE:
-        STATE[key] = CONFIG['start_date']
-
-    return STATE[key]
 
 
 def transform_field(value, field_type, field_format=None):
@@ -191,10 +184,39 @@ ALL_ACTION_BREAKDOWNS = [
 ]
 
 @attr.s
+class State(object):
+    start_date = attr.ib()
+    state = attr.ib()
+
+    def __attrs_post_init__(self):
+        self.start_date = pendulum.parse(self.start_date)
+        if self.state is None:
+            self.state = {}
+        self.state = {k: pendulum.parse(v) for k, v in self.state.items()}
+
+    def _get(self, stream_name):
+        if stream_name in self.state:
+            return self.state[stream_name]
+        else:
+            return self.start_date
+        
+    def get(self, stream_name):
+        return self._get(stream_name).to_date_string()
+    
+    def advance(self, stream_name, date):
+        date = pendulum.parse(date)
+        if date > self._get(stream_name):
+            self.state[stream_name] = date
+        return singer.StateMessage(
+            value={k: v.to_date_string() for k, v in self.state.items()})
+
+
+@attr.s
 class AdsInsights(Stream):
     field_class = objects.adsinsights.AdsInsights.Field
     key_properties = ['id', 'updated_time']
 
+    state = attr.ib()
     breakdowns = attr.ib()
     action_breakdowns = attr.ib(default=ALL_ACTION_BREAKDOWNS)
     level = attr.ib(default=None)
@@ -202,12 +224,9 @@ class AdsInsights(Stream):
         default=ALL_ACTION_ATTRIBUTION_WINDOWS)
     time_increment = attr.ib(default=1)
     limit = attr.ib(default=100)
-
+    
     def job_params(self):
-        if self.name in STATE:
-            until = pendulum.parse(STATE[name])
-        else:
-            until = pendulum.parse(CONFIG['start_date'])
+        until = pendulum.parse(self.state.get(self.name))
         since = until.subtract(days=28)
         while until <= pendulum.now():
             yield {
@@ -264,9 +283,7 @@ class AdsInsights(Stream):
                     min_date_start_for_job = rec['date_start']
                 yield singer.RecordMessage(stream=self.name,
                                            record=rec)
-        if min_date_start_for_job > STATE[self.name]:
-            STATE[self.name] = min_date_start_for_job
-            yield singer.StateMessage(STATE)
+            yield self.state.update(self.name, min_date_start_for_job)
 
 
 INSIGHTS_BREAKDOWNS = {
@@ -277,9 +294,11 @@ INSIGHTS_BREAKDOWNS = {
 }
 
 
-def initialize_stream(name, account, annotated_schema): # pylint: disable=too-many-return-statements
+def initialize_stream(name, account, annotated_schema, state): # pylint: disable=too-many-return-statements
+    
     if name in INSIGHTS_BREAKDOWNS:
         return AdsInsights(name, account, annotated_schema,
+                           state=state,
                            breakdowns=INSIGHTS_BREAKDOWNS[name])
     elif name == 'campaigns':
         return Campaigns(name, account, annotated_schema)
@@ -293,10 +312,10 @@ def initialize_stream(name, account, annotated_schema): # pylint: disable=too-ma
         raise Exception('Unknown stream {}'.format(name))
 
 
-def do_sync(account, annotated_schemas):
+def do_sync(account, annotated_schemas, state):
 
     streams = [
-        initialize_stream(name, account, schema)
+        initialize_stream(name, account, schema, state)
         for name, schema in annotated_schemas['streams'].items()]
 
     for stream in streams:
@@ -332,7 +351,7 @@ def do_discover():
     LOGGER.info('Loading schemas')
     result = {'streams': {}}
     streams = [
-        initialize_stream(name, None, None)
+        initialize_stream(name, None, None, None)
         for name in STREAMS]
     for stream in streams:
         LOGGER.info('Loading schema for %s', stream.name)
@@ -342,24 +361,25 @@ def do_discover():
 
 def main():
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
-    CONFIG.update(args.config)
-    if args.state:
-        STATE.update(args.state)
+    start_date   = args.config['start_date']
+    account_id   = args.config['account_id']
+    access_token = args.config['access_token']
+    state = State(start_date, args.state)
 
-    FacebookAdsApi.init(access_token=CONFIG['access_token'])
+    FacebookAdsApi.init(access_token=access_token)
     user = objects.AdUser(fbid='me')
     accounts = user.get_ad_accounts()
     account = None
     for acc in accounts:
-        if acc['account_id'] == CONFIG['account_id']:
+        if acc['account_id'] == account_id:
             account = acc
     if not account:
-        raise Exception("Couldn't find account with id {}".format(CONFIG['account_id']))
+        raise Exception("Couldn't find account with id {}".format(account_id))
 
     if args.discover:
         do_discover()
     elif args.properties:
-        do_sync(account, args.properties)
+        do_sync(account, args.properties, state)
     else:
         LOGGER.info("No properties were selected")
 
