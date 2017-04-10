@@ -36,59 +36,6 @@ REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 LOGGER = singer.get_logger()
 
 
-def transform_field(value, field_type, field_format=None):
-    if field_format == "date-time":
-        # TODO: Format date-times
-        return value
-
-    if field_type == "boolean":
-        return bool(value)
-
-    if field_type == "integer":
-        return int(value)
-
-    if field_type == "number":
-        return float(value)
-
-    if field_type == "string":
-        return value
-
-    else:
-        raise ValueError("Unsuppported type {}".format(field_type))
-
-
-def transform_fields(row, schema):
-    rtn = {}
-    for field_name, field_schema in schema['schema']['properties'].items():
-        if "type" not in field_schema:
-            raise ValueError("Field {} schema missing type".format(field_name))
-
-        field_types = field_schema["type"]
-        if not isinstance(field_types, list):
-            field_types = [field_types]
-
-        if "null" in field_types:
-            field_types.remove("null")
-        else:
-            if field_name not in row:
-                raise ValueError("{} not in row and not null".format(field_name))
-
-        errors = []
-        for field_type in field_types:
-            try:
-                rtn[field_name] = transform_field(
-                    row[field_name], field_type, field_schema.get("format"))
-                break
-            except Exception as e: # pylint: disable=invalid-name,broad-except
-                errors.append(e)
-        else:
-            err_msg = "\n\t".join(e.message for e in errors)
-            raise ValueError("Field {} does not match schema {}\nErrors:\n\t{}"
-                             .format(field_name, field_schema, err_msg))
-
-    return rtn
-
-
 @attr.s
 class Stream(object):
 
@@ -97,11 +44,11 @@ class Stream(object):
     annotated_schema = attr.ib()
 
     def fields(self):
-        fields = set()        
+        fields = set()
         if self.annotated_schema:
             props = self.annotated_schema['properties'] # pylint: disable=unsubscriptable-object
-            for k, v in props.items():
-                inclusion = v.get('inclusion')
+            for k, val in props.items():
+                inclusion = val.get('inclusion')
                 if inclusion == 'selected' or inclusion == 'automatic':
                     fields.add(k)
         return fields
@@ -212,20 +159,20 @@ class State(object):
         LOGGER.info('advance(%s, %s)', stream_name, date)
         date = pendulum.parse(date) if date else None
         old_date = self._get(stream_name)
-        
+
         if date is None:
             LOGGER.info('Did not get a date for stream %s '+
-                         ' not advancing bookmark',
-                         stream_name)
+                        ' not advancing bookmark',
+                        stream_name)
         elif date > old_date:
             LOGGER.info('Bookmark for stream %s is currently %s, ' +
-                         'advancing to %s',
-                         stream_name, old_date, date)
+                        'advancing to %s',
+                        stream_name, old_date, date)
             self.state[stream_name] = date
         else:
             LOGGER.info('Bookmark for stream %s is currently %s ' +
-                         'not changing to to %s',
-                         stream_name, old_date, date)
+                        'not changing to to %s',
+                        stream_name, old_date, date)
         return singer.StateMessage(
             value={k: v.to_date_string() for k, v in self.state.items()})
 
@@ -378,7 +325,7 @@ def load_schema(stream):
     return schema
 
 
-def initialize_streams_for_discovery():
+def initialize_streams_for_discovery(): # pylint: disable=invalid-name
     return [initialize_stream(name, None, None, None)
             for name in STREAMS]
 
