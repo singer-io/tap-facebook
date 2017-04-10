@@ -9,6 +9,8 @@ import time
 import attr
 import pendulum
 import requests
+import backoff
+
 import singer
 from singer import utils
 
@@ -208,6 +210,8 @@ class State(object):
         return singer.StateMessage(
             value={k: v.to_date_string() for k, v in self.state.items()})
 
+class InsightsJobTimeout(Exception):
+    pass
 
 @attr.s
 class AdsInsights(Stream):
@@ -223,6 +227,11 @@ class AdsInsights(Stream):
     time_increment = attr.ib(default=1)
     limit = attr.ib(default=100)
 
+    @backoff.on_exception(
+        backoff.expo,
+        (InsightsJobTimeout),
+        max_tries=3,
+        factor=2)
     def job_params(self):
         until = pendulum.parse(self.state.get(self.name)) # pylint: disable=no-member
         since = until.subtract(days=28)
