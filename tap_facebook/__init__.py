@@ -371,16 +371,18 @@ def load_schema(stream):
     return schema
 
 
-def do_discover():
-    LOGGER.info('Loading schemas')
+def discover_schemas():
     result = {'streams': {}}
     streams = [
         initialize_stream(name, None, None, None)
         for name in STREAMS]
     for stream in streams:
         LOGGER.info('Loading schema for %s', stream.name)
-        result['streams'][stream.name] = load_schema(stream)
-    json.dump(result, sys.stdout, indent=4)
+        result['streams'][stream.name] = load_schema(stream)    
+
+def do_discover():
+    LOGGER.info('Loading schemas')
+    json.dump(discover_schemas(), sys.stdout, indent=4)
 
 
 def main():
