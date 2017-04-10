@@ -230,7 +230,7 @@ class InsightsJobTimeout(Exception):
 @attr.s
 class AdsInsights(Stream):
     field_class = objects.adsinsights.AdsInsights.Field
-    key_properties = ['id', 'updated_time']
+    key_properties = ['campaign_id', 'adset_id', 'ad_id', 'date_start']
 
     state = attr.ib()
     breakdowns = attr.ib()
@@ -366,16 +366,20 @@ def load_schema(stream):
     field_class = stream.field_class
     schema = utils.load_json(path)
     for k in schema['properties']:
-        if k in field_class.__dict__:
+        if k in set(stream.key_properties):
+            schema['properties'][k]['inclusion'] = 'automatic'
+        elif k in field_class.__dict__:
             schema['properties'][k]['inclusion'] = 'available'
     return schema
 
 
+def initialize_streams_for_discovery():
+    return [initialize_stream(name, None, None, None)
+            for name in STREAMS]
+
 def discover_schemas():
     result = {'streams': {}}
-    streams = [
-        initialize_stream(name, None, None, None)
-        for name in STREAMS]
+    streams = initialize_streams_for_discovery()
     for stream in streams:
         LOGGER.info('Loading schema for %s', stream.name)
         result['streams'][stream.name] = load_schema(stream)    

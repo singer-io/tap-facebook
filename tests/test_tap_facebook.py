@@ -57,5 +57,26 @@ class TestAdsInsights(unittest.TestCase):
         self.assertEqual(3, len(list(insights.job_params())))
 
 
+class TestPrimaryKeyInclusion(unittest.TestCase):
+
+    def test_primary_keys_automatically_included(self):
+        streams = tap_facebook.initialize_streams_for_discovery()
+        for stream in streams:
+            schema = tap_facebook.load_schema(stream)
+            for prop in stream.key_properties:
+                if prop not in schema['properties']:
+                    self.fail('Stream {} key property {} is not defined'.format(
+                              stream.name, prop))
+                self.assertEqual(
+                    schema['properties'][prop]['inclusion'],
+                    'automatic',
+                    'Stream {} key property {} should be included automatically'.format(
+                        stream.name, prop))
+                    
+            # Get the schema
+            # Find the primary key property defs
+            # Assert that all of their "inclusion" attrs are "automatic"
+
+
 if __name__ == '__main__':
     unittest.main()
