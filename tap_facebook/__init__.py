@@ -204,9 +204,23 @@ class State(object):
         return self._get(stream_name).to_date_string()
 
     def advance(self, stream_name, date):
-        date = pendulum.parse(date)
-        if date > self._get(stream_name):
+        LOGGER.info('advance(%s, %s)', stream_name, date)
+        date = pendulum.parse(date) if date else None
+        old_date = self._get(stream_name)
+        
+        if date is None:
+            LOGGER.info('Did not get a date for stream %s '+
+                         ' not advancing bookmark',
+                         stream_name)
+        elif date > old_date:
+            LOGGER.info('Bookmark for stream %s is currently %s, ' +
+                         'advancing to %s',
+                         stream_name, old_date, date)
             self.state[stream_name] = date
+        else:
+            LOGGER.info('Bookmark for stream %s is currently %s ' +
+                         'not changing to to %s',
+                         stream_name, old_date, date)
         return singer.StateMessage(
             value={k: v.to_date_string() for k, v in self.state.items()})
 
@@ -284,13 +298,16 @@ class AdsInsights(Stream):
             job = self.run_job(params)
 
             min_date_start_for_job = None
+            count = 0
             for obj in job.get_result():
+                count += 1
                 rec = obj.export_all_data()
                 if not min_date_start_for_job or rec['date_start'] < min_date_start_for_job:
                     min_date_start_for_job = rec['date_start']
                 yield singer.RecordMessage(stream=self.name,
                                            record=rec)
-            yield self.state.update(self.name, min_date_start_for_job) # pylint: disable=no-member
+            LOGGER.info('Got %d results for insights job', count)
+            yield self.state.advance(self.name, min_date_start_for_job) # pylint: disable=no-member
 
 
 INSIGHTS_BREAKDOWNS = {
