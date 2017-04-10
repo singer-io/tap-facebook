@@ -382,7 +382,8 @@ def discover_schemas():
     streams = initialize_streams_for_discovery()
     for stream in streams:
         LOGGER.info('Loading schema for %s', stream.name)
-        result['streams'][stream.name] = load_schema(stream)    
+        result['streams'][stream.name] = load_schema(stream)
+    return result
 
 def do_discover():
     LOGGER.info('Loading schemas')
