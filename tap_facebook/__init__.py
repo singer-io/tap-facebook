@@ -88,6 +88,7 @@ def transform_fields(row, schema):
 
     return rtn
 
+
 @attr.s
 class Stream(object):
 
@@ -96,10 +97,14 @@ class Stream(object):
     annotated_schema = attr.ib()
 
     def fields(self):
+        fields = set()        
         if self.annotated_schema:
             props = self.annotated_schema['properties'] # pylint: disable=unsubscriptable-object
-            return set([k for k in props if props[k].get('selected')])
-        return set()
+            for k, v in props.items():
+                inclusion = v.get('inclusion')
+                if inclusion == 'selected' or inclusion == 'automatic':
+                    fields.add(k)
+        return fields
 
 
 class AdCreative(Stream):
@@ -235,7 +240,7 @@ class AdsInsights(Stream):
     state = attr.ib()
     breakdowns = attr.ib()
     action_breakdowns = attr.ib(default=ALL_ACTION_BREAKDOWNS)
-    level = attr.ib(default=None)
+    level = attr.ib(default='ad')
     action_attribution_windows = attr.ib(
         default=ALL_ACTION_ATTRIBUTION_WINDOWS)
     time_increment = attr.ib(default=1)
