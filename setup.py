@@ -11,7 +11,7 @@ setup(name='tap-facebook',
       py_modules=['tap_facebook'],
       install_requires=[
           'attrs==16.3.0',
-          'backoff==1.4.0'
+          'backoff==1.4.0',
           'facebookads==2.8.1',
           'pendulum==1.2.0',
           'requests==2.12.4',
