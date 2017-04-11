@@ -22,7 +22,7 @@ class TestState(unittest.TestCase):
 
     def test_advance_returns_message(self):
         state = State('2017-03-01', None)
-        self.assertEqual(state.advance('foo', '2017-04-01').value['foo'],
+        self.assertEqual(state.advance('foo', '2017-04-01')['foo'],
                          '2017-04-01')
 
 class TestAdsInsights(unittest.TestCase):
