@@ -78,7 +78,6 @@ class Ads(Stream):
 
     def __iter__(self):
         ads = self.account.get_ads() # pylint: disable=no-member
-        schema = load_schema(self)
         for ad in ads: # pylint: disable=invalid-name
             ad.remote_read(fields=self.fields())
             yield {'record': ad.export_all_data()}
