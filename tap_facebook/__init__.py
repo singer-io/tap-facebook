@@ -66,8 +66,7 @@ class AdCreative(Stream):
         ad_creative = self.account.get_ad_creatives() # pylint: disable=no-member
         for a in ad_creative: # pylint: disable=invalid-name
             a.remote_read(fields=self.fields())
-            yield singer.RecordMessage(stream=self.name,
-                                       record=a.export_all_data())
+            yield {'record': a.export_all_data()}
 
 
 class Ads(Stream):
@@ -79,10 +78,10 @@ class Ads(Stream):
 
     def __iter__(self):
         ads = self.account.get_ads() # pylint: disable=no-member
+        schema = load_schema(self)
         for ad in ads: # pylint: disable=invalid-name
             ad.remote_read(fields=self.fields())
-            yield singer.RecordMessage(stream=self.name,
-                                       record=ad.export_all_data())
+            yield {'record': ad.export_all_data()}
 
 
 class AdSets(Stream):
@@ -93,8 +92,7 @@ class AdSets(Stream):
         ad_sets = self.account.get_ad_sets() # pylint: disable=no-member
         for ad_set in ad_sets:
             ad_set.remote_read(fields=self.fields())
-            yield singer.RecordMessage(stream=self.name,
-                                       record=ad_set.export_all_data())
+            yield {'record': ad_set.export_all_data()}
 
 
 class Campaigns(Stream):
@@ -118,8 +116,7 @@ class Campaigns(Stream):
                 for ad_id in ids:
                     campaign_out['ads']['data'].append({'id': ad_id})
 
-            yield singer.RecordMessage(stream=self.name,
-                                       record=campaign_out)
+            yield {'record': campaign_out}
 
 
 ALL_ACTION_ATTRIBUTION_WINDOWS = [
@@ -256,10 +253,9 @@ class AdsInsights(Stream):
                 rec = obj.export_all_data()
                 if not min_date_start_for_job or rec['date_start'] < min_date_start_for_job:
                     min_date_start_for_job = rec['date_start']
-                yield singer.RecordMessage(stream=self.name,
-                                           record=rec)
+                yield {'record': rec}
             LOGGER.info('Got %d results for insights job', count)
-            yield self.state.advance(self.name, min_date_start_for_job) # pylint: disable=no-member
+            yield {'state': self.state.advance(self.name, min_date_start_for_job)} # pylint: disable=no-member
 
 
 INSIGHTS_BREAKDOWNS = {
@@ -301,9 +297,14 @@ def do_sync(account, annotated_schemas, state):
 
         num_records = 0
         for message in stream:
-            if isinstance(message, singer.RecordMessage):
+            if 'record' in message:
                 num_records += 1
-            singer.write_message(message)
+                record = singer.transform.transform(message['record'], schema)
+                singer.write_record(stream.name, record)
+            elif 'state' in message:
+                singer.write_state(message['state'])
+            else:
+                raise Exception('Unrecognized message {}'.format(message))
             if num_records % 1000 == 0:
                 LOGGER.info('Got %d %s records so far', num_records, stream.name)
         LOGGER.info('Got %d %s records total', num_records, stream.name)
