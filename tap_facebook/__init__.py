@@ -170,8 +170,7 @@ class State(object):
             LOGGER.info('Bookmark for stream %s is currently %s ' +
                         'not changing to to %s',
                         stream_name, old_date, date)
-        return singer.StateMessage(
-            value={k: v.to_date_string() for k, v in self.state.items()})
+        return {k: v.to_date_string() for k, v in self.state.items()}
 
 class InsightsJobTimeout(Exception):
     pass
