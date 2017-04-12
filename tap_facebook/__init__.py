@@ -49,7 +49,8 @@ class Stream(object):
             props = self.annotated_schema['properties'] # pylint: disable=unsubscriptable-object
             for k, val in props.items():
                 inclusion = val.get('inclusion')
-                if inclusion == 'selected' or inclusion == 'automatic':
+                selected = val.get('selected')
+                if selected or inclusion == 'automatic':
                     fields.add(k)
         return fields
 
