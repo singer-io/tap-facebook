@@ -283,13 +283,17 @@ def initialize_stream(name, account, annotated_schema, state): # pylint: disable
         raise Exception('Unknown stream {}'.format(name))
 
 
+def get_streams_to_sync(account, annotated_schemas, state):
+    streams = []
+    for name, schema in annotated_schemas['streams'].items():
+        if schema.get('selected'):
+            streams.append(initialize_stream(name, account, schema, state))
+    return streams
+
+
 def do_sync(account, annotated_schemas, state):
 
-    streams = [
-        initialize_stream(name, account, schema, state)
-        for name, schema in annotated_schemas['streams'].items()]
-
-    for stream in streams:
+    for stream in get_streams_to_sync(account, annotated_schemas, state):
         LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields())
         schema = load_schema(stream)
         singer.write_schema(stream.name, schema, stream.key_properties)
