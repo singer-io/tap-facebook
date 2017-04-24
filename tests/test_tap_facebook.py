@@ -26,7 +26,7 @@ class TestState(unittest.TestCase):
                          '2017-04-01')
 
 class TestAdsInsights(unittest.TestCase):
-    
+
     def test_insights_start_dates(self):
         insights = AdsInsights(
             name='insights',
@@ -72,10 +72,26 @@ class TestPrimaryKeyInclusion(unittest.TestCase):
                     'automatic',
                     'Stream {} key property {} should be included automatically'.format(
                         stream.name, prop))
-                    
+
             # Get the schema
             # Find the primary key property defs
             # Assert that all of their "inclusion" attrs are "automatic"
+
+
+class TestGetStreamsToSync(unittest.TestCase):
+
+
+    def test_foo(self):
+        annotated_schemas = {
+            'streams': {
+                'adcreative': {'selected': True},
+                'ads': {'selected': False}
+            }
+        }
+
+        streams_to_sync = tap_facebook.get_streams_to_sync(None, annotated_schemas, None)
+        names_to_sync = [stream.name for stream in streams_to_sync]
+        self.assertEqual(['adcreative'], names_to_sync)
 
 
 if __name__ == '__main__':
