@@ -243,7 +243,8 @@ class AdsInsights(Stream):
 
     def __iter__(self):
         for params in self.job_params():
-            job = self.run_job(params)
+            with singer.stats.Timer(source='insights_job'):
+                job = self.run_job(params)
 
             min_date_start_for_job = None
             count = 0
@@ -298,19 +299,17 @@ def do_sync(account, annotated_schemas, state):
         schema = load_schema(stream)
         singer.write_schema(stream.name, schema, stream.key_properties)
 
-        num_records = 0
-        for message in stream:
-            if 'record' in message:
-                num_records += 1
-                record = singer.transform.transform(message['record'], schema)
-                singer.write_record(stream.name, record)
-            elif 'state' in message:
-                singer.write_state(message['state'])
-            else:
-                raise Exception('Unrecognized message {}'.format(message))
-            if num_records % 1000 == 0:
-                LOGGER.info('Got %d %s records so far', num_records, stream.name)
-        LOGGER.info('Got %d %s records total', num_records, stream.name)
+        with singer.stats.Counter(source=stream) as stats:
+
+            for message in stream:
+                if 'record' in message:
+                    stats.add(record_count=1)
+                    record = singer.transform.transform(message['record'], schema)
+                    singer.write_record(stream.name, record)
+                elif 'state' in message:
+                    singer.write_state(message['state'])
+                else:
+                    raise Exception('Unrecognized message {}'.format(message))
 
 
 def get_abs_path(path):
