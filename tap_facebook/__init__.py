@@ -299,7 +299,7 @@ def do_sync(account, annotated_schemas, state):
         schema = load_schema(stream)
         singer.write_schema(stream.name, schema, stream.key_properties)
 
-        with singer.stats.Timer(source=stream) as stats:
+        with singer.stats.Counter(source=stream) as stats:
 
             for message in stream:
                 if 'record' in message:
