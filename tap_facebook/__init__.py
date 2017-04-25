@@ -12,6 +12,7 @@ import requests
 import backoff
 
 import singer
+import singer.stats
 from singer import utils
 
 from facebookads import FacebookAdsApi
