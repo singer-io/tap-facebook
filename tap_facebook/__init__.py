@@ -147,8 +147,7 @@ class State(object):
     def _get(self, stream_name):
         if stream_name in self.state:
             return self.state[stream_name]
-        else:
-            return self.start_date
+        return self.start_date
 
     def get(self, stream_name):
         return self._get(stream_name).to_date_string()
