@@ -286,7 +286,9 @@ def initialize_stream(name, account, annotated_schema, state): # pylint: disable
 
 def get_streams_to_sync(account, annotated_schemas, state):
     streams = []
-    for name, schema in annotated_schemas['streams'].items():
+    for stream in annotated_schemas['streams']:
+        schema = stream.get('schema')
+        name = stream.get('stream')
         if schema.get('selected'):
             streams.append(initialize_stream(name, account, schema, state))
     return streams
@@ -332,11 +334,13 @@ def initialize_streams_for_discovery(): # pylint: disable=invalid-name
             for name in STREAMS]
 
 def discover_schemas():
-    result = {'streams': {}}
+    result = {'streams': []}
     streams = initialize_streams_for_discovery()
     for stream in streams:
         LOGGER.info('Loading schema for %s', stream.name)
-        result['streams'][stream.name] = load_schema(stream)
+        result['streams'].append({'stream': stream.name,
+                                  'tap_stream_id': stream.name,
+                                  'schema': load_schema(stream)})
     return result
 
 def do_discover():

@@ -81,12 +81,20 @@ class TestPrimaryKeyInclusion(unittest.TestCase):
 class TestGetStreamsToSync(unittest.TestCase):
 
 
-    def test_foo(self):
+    def test_getting_streams_to_sync(self):
         annotated_schemas = {
-            'streams': {
-                'adcreative': {'selected': True},
-                'ads': {'selected': False}
-            }
+            'streams': [
+                {
+                    'stream': 'adcreative',
+                    'tap_stream_id': 'adcreative',
+                    'schema': {'selected': True}
+                },
+                {
+                    'stream': 'ads',
+                    'tap_stream_id': 'ads',
+                    'schema': {'selected': False}
+                }
+            ]
         }
 
         streams_to_sync = tap_facebook.get_streams_to_sync(None, annotated_schemas, None)
