@@ -12,7 +12,7 @@ import requests
 import backoff
 
 import singer
-import singer.stats
+import singer.metrics as metrics
 from singer import utils
 
 from facebookads import FacebookAdsApi
@@ -147,8 +147,7 @@ class State(object):
     def _get(self, stream_name):
         if stream_name in self.state:
             return self.state[stream_name]
-        else:
-            return self.start_date
+        return self.start_date
 
     def get(self, stream_name):
         return self._get(stream_name).to_date_string()
@@ -244,7 +243,7 @@ class AdsInsights(Stream):
 
     def __iter__(self):
         for params in self.job_params():
-            with singer.stats.Timer(source='insights_job'):
+            with metrics.job_timer('insights'):
                 job = self.run_job(params)
 
             min_date_start_for_job = None
@@ -300,11 +299,10 @@ def do_sync(account, annotated_schemas, state):
         schema = load_schema(stream)
         singer.write_schema(stream.name, schema, stream.key_properties)
 
-        with singer.stats.Counter(source=stream.name) as stats:
-
+        with metrics.record_counter(stream.name) as counter:
             for message in stream:
                 if 'record' in message:
-                    stats.add(record_count=1)
+                    counter.increment()
                     record = singer.transform.transform(message['record'], schema)
                     singer.write_record(stream.name, record)
                 elif 'state' in message:

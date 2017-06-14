@@ -10,12 +10,11 @@ def translate_breakdown(breakdown):
         return ''
     if breakdown == ['age', 'gender']:
         return 'ag'
-    elif breakdown == ['country']:
+    if breakdown == ['country']:
         return 'c'
-    elif breakdown == ['placement', 'impression_device']:
+    if breakdown == ['placement', 'impression_device']:
         return 'pd'
-    else:
-        return 'other'
+    return 'other'
 
 def load_records():
     for line in sys.stdin:

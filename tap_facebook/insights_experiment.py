@@ -303,7 +303,7 @@ def main():
             level = gen_level()
             breakdowns = gen_breakdowns()
             action_breakdowns = gen_action_breakdowns()
-            if len(action_breakdowns) == 0:
+            if not action_breakdowns:
                 action_attribution_windows = []
             else:
                 action_attribution_windows = gen_action_attribution_windows()
