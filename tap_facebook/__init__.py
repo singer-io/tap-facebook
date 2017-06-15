@@ -322,7 +322,7 @@ def load_schema(stream):
     field_class = stream.field_class
     schema = utils.load_json(path)
     for k in schema['properties']:
-        if k in set(stream.key_properties):
+        if k in set(stream.key_properties) or k not in field_class.__dict__:
             schema['properties'][k]['inclusion'] = 'automatic'
         elif k in field_class.__dict__:
             schema['properties'][k]['inclusion'] = 'available'
