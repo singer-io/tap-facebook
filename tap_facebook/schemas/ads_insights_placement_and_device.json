@@ -34,7 +34,8 @@
       "type": [
         "null",
         "string"
-      ]
+      ],
+      "format": "date-time"
     },
     "ad_id": {
       "type": [
@@ -71,7 +72,7 @@
     "unique_inline_link_click_ctr": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "newsfeed_impressions": {
@@ -89,13 +90,13 @@
     "newsfeed_avg_position": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "frequency": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "actions": {
@@ -133,7 +134,7 @@
     "canvas_avg_view_time": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "unique_inline_link_clicks": {
@@ -189,7 +190,7 @@
         "score": {
           "type": [
             "null",
-            "string"
+            "number"
           ]
         },
         "status": {
@@ -271,7 +272,7 @@
     "cpc": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "call_to_action_clicks": {
@@ -289,7 +290,7 @@
     "cost_per_total_action": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "ad_name": {
@@ -301,31 +302,31 @@
     "cost_per_unique_inline_link_click": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "cpm": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "cost_per_inline_post_engagement": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "inline_link_click_ctr": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "cpp": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "cost_per_action_type": {
@@ -357,7 +358,7 @@
     "unique_link_clicks_ctr": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "social_reach": {
@@ -375,19 +376,19 @@
     "spend": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "cost_per_unique_click": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "total_action_value": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "adset_name": {
@@ -405,7 +406,7 @@
     "social_spend": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "unique_impressions": {
@@ -417,7 +418,7 @@
     "canvas_avg_view_percent": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "account_id": {
@@ -430,7 +431,8 @@
       "type": [
         "null",
         "string"
-      ]
+      ],
+      "format": "date-time"
     },
     "app_store_clicks": {
       "type": [
@@ -453,25 +455,25 @@
     "impressions": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "unique_ctr": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "cost_per_inline_link_click": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "ctr": {
       "type": [
         "null",
-        "string"
+        "number"
       ]
     },
     "reach": {

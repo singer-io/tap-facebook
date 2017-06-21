@@ -14,7 +14,8 @@
       "type": [
         "null",
         "string"
-      ]
+      ],
+      "format": "date-time"
     },
     "promoted_object": {
       "type": [
@@ -58,18 +59,19 @@
       "type": [
         "null",
         "string"
-      ]
+      ],
+      "format": "date-time"
     },
     "daily_budget": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "budget_remaining": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "effective_status": {
@@ -88,18 +90,20 @@
       "type": [
         "null",
         "string"
-      ]
+      ],
+      "format": "date-time"
     },
     "start_time": {
       "type": [
         "null",
         "string"
-      ]
+      ],
+      "format": "date-time"
     },
     "lifetime_budget": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "targeting": {
