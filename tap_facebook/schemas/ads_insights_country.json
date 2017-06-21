@@ -485,6 +485,12 @@
         "null",
         "string"
       ]
+    },
+    "country": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   }
 }

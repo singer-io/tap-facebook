@@ -289,6 +289,18 @@
         "null",
         "string"
       ]
+    },
+    "url_tags": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "link_url": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   },
   "type": [

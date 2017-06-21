@@ -485,6 +485,18 @@
         "null",
         "string"
       ]
+    },
+    "age": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "gender": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   }
 }

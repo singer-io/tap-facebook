@@ -485,6 +485,18 @@
         "null",
         "string"
       ]
+    },
+    "placement": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "device": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   }
 }
