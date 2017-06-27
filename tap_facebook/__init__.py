@@ -255,6 +255,12 @@ class AdsInsights(Stream):
                     min_date_start_for_job = rec['date_start']
                 yield {'record': rec}
             LOGGER.info('Got %d results for insights job', count)
+
+            # when min_date_start_for_job stays None, we should still update the bookmark using 'until' in time_ranges
+            if min_date_start_for_job == None:
+                for range in params['time_ranges']:
+                    if range['until']:
+                        min_date_start_for_job = range['until']
             yield {'state': self.state.advance(self.name, min_date_start_for_job)} # pylint: disable=no-member
 
 
