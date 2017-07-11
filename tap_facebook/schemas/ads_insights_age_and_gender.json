@@ -473,7 +473,7 @@
     "age": {
       "type": [
         "null",
-        "integer"
+        "string"
       ]
     },
     "gender": {
