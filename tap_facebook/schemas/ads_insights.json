@@ -75,22 +75,10 @@
         "number"
       ]
     },
-    "newsfeed_impressions": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
     "adset_id": {
       "type": [
         "null",
         "string"
-      ]
-    },
-    "newsfeed_avg_position": {
-      "type": [
-        "null",
-        "number"
       ]
     },
     "frequency": {
@@ -258,12 +246,6 @@
       ]
     },
     "unique_social_clicks": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "newsfeed_clicks": {
       "type": [
         "null",
         "string"
