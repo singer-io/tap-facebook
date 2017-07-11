@@ -157,7 +157,7 @@
         }
       }
     },
-    "unique_social_impressions": {
+    "social_reach": {
       "type": [
         "null",
         "string"
@@ -391,7 +391,7 @@
         "number"
       ]
     },
-    "unique_impressions": {
+    "reach": {
       "type": [
         "null",
         "string"
