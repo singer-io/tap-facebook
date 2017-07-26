@@ -276,7 +276,7 @@ INSIGHTS_BREAKDOWNS = {
     'ads_insights_age_and_gender': ['age', 'gender'],
     'ads_insights_country': ['country'],
     'ads_insights_platform_and_device': ['publisher_platform', 'platform_position',
-                                          'impression_device'],
+                                         'impression_device'],
 }
 
 
