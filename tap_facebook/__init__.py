@@ -36,7 +36,7 @@ STREAMS = set([
     'ads_insights',
     'ads_insights_age_and_gender',
     'ads_insights_country',
-    'ads_insights_placement_and_device'])
+    'ads_insights_platform_and_device'])
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 LOGGER = singer.get_logger()
@@ -275,7 +275,7 @@ INSIGHTS_BREAKDOWNS = {
     'ads_insights': [],
     'ads_insights_age_and_gender': ['age', 'gender'],
     'ads_insights_country': ['country'],
-    'ads_insights_placement_and_device': ['publisher_platform', 'platform_position',
+    'ads_insights_platform_and_device': ['publisher_platform', 'platform_position',
                                           'impression_device'],
 }
 
