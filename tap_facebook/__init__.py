@@ -16,7 +16,12 @@ import singer.metrics as metrics
 from singer import utils
 
 from facebookads import FacebookAdsApi
-import facebookads.objects as objects
+import facebookads.adobjects.adcreative as adcreative
+import facebookads.adobjects.ad as fb_ad
+import facebookads.adobjects.adset as adset
+import facebookads.adobjects.campaign as fb_campaign
+import facebookads.adobjects.adsinsights as adsinsights
+import facebookads.adobjects.user as fb_user
 
 TODAY = pendulum.today()
 
@@ -31,7 +36,7 @@ STREAMS = set([
     'ads_insights',
     'ads_insights_age_and_gender',
     'ads_insights_country',
-    'ads_insights_placement_and_device'])
+    'ads_insights_platform_and_device'])
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 LOGGER = singer.get_logger()
@@ -61,7 +66,7 @@ class AdCreative(Stream):
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
     '''
 
-    field_class = objects.adcreative.AdCreative.Field
+    field_class = adcreative.AdCreative.Field
     key_properties = ['id']
 
     def __iter__(self):
@@ -75,7 +80,7 @@ class Ads(Stream):
     '''
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
     '''
-    field_class = objects.ad.Ad.Field
+    field_class = fb_ad.Ad.Field
     key_properties = ['id', 'updated_time']
 
     def __iter__(self):
@@ -86,7 +91,7 @@ class Ads(Stream):
 
 
 class AdSets(Stream):
-    field_class = objects.adset.AdSet.Field
+    field_class = adset.AdSet.Field
     key_properties = ['id', 'updated_time']
 
     def __iter__(self):
@@ -97,7 +102,7 @@ class AdSets(Stream):
 
 
 class Campaigns(Stream):
-    field_class = objects.campaign.Campaign.Field
+    field_class = fb_campaign.Campaign.Field
     key_properties = ['id']
 
     def __iter__(self):
@@ -177,7 +182,7 @@ class InsightsJobTimeout(Exception):
 
 @attr.s
 class AdsInsights(Stream):
-    field_class = objects.adsinsights.AdsInsights.Field
+    field_class = adsinsights.AdsInsights.Field
     key_properties = ['campaign_id', 'adset_id', 'ad_id', 'date_start']
 
     state = attr.ib()
@@ -223,9 +228,10 @@ class AdsInsights(Stream):
         while status != "Job Completed":
             duration = time.time() - time_start
             job = job.remote_read()
-            status = job[objects.AsyncJob.Field.async_status]
-            percent_complete = job[objects.AsyncJob.Field.async_percent_completion]
-            job_id = job[objects.AsyncJob.Field.id]
+            status = job[adsinsights.AdsInsights.Summary.async_status]
+            percent_complete = job[adsinsights.AdsInsights.Summary.
+                                   async_percent_completion]
+            job_id = job[adsinsights.AdsInsights.Summary.id]
             LOGGER.info('%s, %d%% done', status, percent_complete)
 
             if duration > INSIGHTS_MAX_WAIT_TO_START_SECONDS and percent_complete == 0:
@@ -269,7 +275,8 @@ INSIGHTS_BREAKDOWNS = {
     'ads_insights': [],
     'ads_insights_age_and_gender': ['age', 'gender'],
     'ads_insights_country': ['country'],
-    'ads_insights_placement_and_device': ['placement', 'impression_device'],
+    'ads_insights_platform_and_device': ['publisher_platform', 'platform_position',
+                                         'impression_device'],
 }
 
 
@@ -363,7 +370,7 @@ def main():
     state = State(start_date, args.state)
 
     FacebookAdsApi.init(access_token=access_token)
-    user = objects.AdUser(fbid='me')
+    user = fb_user.User(fbid='me')
     accounts = user.get_ad_accounts()
     account = None
     for acc in accounts:

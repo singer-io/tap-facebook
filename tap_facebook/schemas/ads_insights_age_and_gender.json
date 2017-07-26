@@ -75,22 +75,10 @@
         "number"
       ]
     },
-    "newsfeed_impressions": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
     "adset_id": {
       "type": [
         "null",
         "string"
-      ]
-    },
-    "newsfeed_avg_position": {
-      "type": [
-        "null",
-        "number"
       ]
     },
     "frequency": {
@@ -169,7 +157,7 @@
         }
       }
     },
-    "unique_social_impressions": {
+    "social_reach": {
       "type": [
         "null",
         "string"
@@ -258,12 +246,6 @@
       ]
     },
     "unique_social_clicks": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "newsfeed_clicks": {
       "type": [
         "null",
         "string"
@@ -409,7 +391,7 @@
         "number"
       ]
     },
-    "unique_impressions": {
+    "reach": {
       "type": [
         "null",
         "string"
@@ -491,7 +473,8 @@
     "age": {
       "type": [
         "null",
-        "integer"
+        "integer",
+        "string"
       ]
     },
     "gender": {

@@ -12,12 +12,6 @@
         "string"
       ]
     },
-    "creative_id": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
     "image_url": {
       "type": [
         "null",
