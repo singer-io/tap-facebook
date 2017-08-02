@@ -47,6 +47,7 @@ class Stream(object):
 
     name = attr.ib()
     account = attr.ib()
+    stream_alias = attr.ib()
     annotated_schema = attr.ib()
 
     def fields(self):
@@ -280,20 +281,20 @@ INSIGHTS_BREAKDOWNS = {
 }
 
 
-def initialize_stream(name, account, annotated_schema, state): # pylint: disable=too-many-return-statements
+def initialize_stream(name, account, stream_alias, annotated_schema, state): # pylint: disable=too-many-return-statements
 
     if name in INSIGHTS_BREAKDOWNS:
-        return AdsInsights(name, account, annotated_schema,
+        return AdsInsights(name, account, stream_alias, annotated_schema,
                            state=state,
                            breakdowns=INSIGHTS_BREAKDOWNS[name])
     elif name == 'campaigns':
-        return Campaigns(name, account, annotated_schema)
+        return Campaigns(name, account, stream_alias, annotated_schema)
     elif name == 'adsets':
-        return AdSets(name, account, annotated_schema)
+        return AdSets(name, account, stream_alias, annotated_schema)
     elif name == 'ads':
-        return Ads(name, account, annotated_schema)
+        return Ads(name, account, stream_alias, annotated_schema)
     elif name == 'adcreative':
-        return AdCreative(name, account, annotated_schema)
+        return AdCreative(name, account, stream_alias, annotated_schema)
     else:
         raise Exception('Unknown stream {}'.format(name))
 
@@ -303,8 +304,9 @@ def get_streams_to_sync(account, annotated_schemas, state):
     for stream in annotated_schemas['streams']:
         schema = stream.get('schema')
         name = stream.get('stream')
+        stream_alias = stream.get('stream_alias')
         if schema.get('selected'):
-            streams.append(initialize_stream(name, account, schema, state))
+            streams.append(initialize_stream(name, account, stream_alias, schema, state))
     return streams
 
 
@@ -320,7 +322,7 @@ def do_sync(account, annotated_schemas, state):
                 if 'record' in message:
                     counter.increment()
                     record = singer.transform.transform(message['record'], schema)
-                    singer.write_record(stream.name, record)
+                    singer.write_record(stream.name, record, stream.stream_alias)
                 elif 'state' in message:
                     singer.write_state(message['state'])
                 else:
@@ -344,7 +346,7 @@ def load_schema(stream):
 
 
 def initialize_streams_for_discovery(): # pylint: disable=invalid-name
-    return [initialize_stream(name, None, None, None)
+    return [initialize_stream(name, None, None, None, None)
             for name in STREAMS]
 
 def discover_schemas():
