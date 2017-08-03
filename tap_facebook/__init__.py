@@ -14,6 +14,10 @@ import backoff
 import singer
 import singer.metrics as metrics
 from singer import utils
+from singer import (transform,
+                    UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING,
+                    Transformer, _transform_datetime)
+from singer.catalog import Catalog, CatalogEntry
 
 from facebookads import FacebookAdsApi
 import facebookads.adobjects.adcreative as adcreative
@@ -41,6 +45,7 @@ STREAMS = set([
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 LOGGER = singer.get_logger()
 
+CONFIG = {}
 
 @attr.s
 class Stream(object):
@@ -53,10 +58,10 @@ class Stream(object):
     def fields(self):
         fields = set()
         if self.annotated_schema:
-            props = self.annotated_schema['properties'] # pylint: disable=unsubscriptable-object
+            props = self.annotated_schema.properties
             for k, val in props.items():
-                inclusion = val.get('inclusion')
-                selected = val.get('selected')
+                inclusion = val.inclusion
+                selected = val.selected
                 if selected or inclusion == 'automatic':
                     fields.add(k)
         return fields
@@ -141,42 +146,33 @@ ALL_ACTION_BREAKDOWNS = [
     'action_destination'
 ]
 
+def get_start(state, tap_stream_id, bookmark_key):
+    current_bookmark = singer.get_bookmark(state, tap_stream_id, bookmark_key)
+    LOGGER.info("found current bookmark %s", current_bookmark)
+    if current_bookmark is None:
+        LOGGER.info("using start_date instead...%s", CONFIG['start_date'])
+        return CONFIG['start_date']
+    return current_bookmark
 
-class State(object):
-    def __init__(self, start_date, state):
-        self.start_date = pendulum.parse(start_date)
-        if state is None:
-            self.state = {}
-        else:
-            self.state = {k: pendulum.parse(v) for k, v in state.items()}
+def advance_bookmark(state, tap_stream_id, bookmark_key, date):
+    LOGGER.info('advance(%s, %s)', tap_stream_id, date)
+    date = pendulum.parse(date) if date else None
+    current_bookmark = pendulum.parse(get_start(state, tap_stream_id, bookmark_key))
 
-    def _get(self, stream_name):
-        if stream_name in self.state:
-            return self.state[stream_name]
-        return self.start_date
-
-    def get(self, stream_name):
-        return self._get(stream_name).to_date_string()
-
-    def advance(self, stream_name, date):
-        LOGGER.info('advance(%s, %s)', stream_name, date)
-        date = pendulum.parse(date) if date else None
-        old_date = self._get(stream_name)
-
-        if date is None:
-            LOGGER.info('Did not get a date for stream %s '+
-                        ' not advancing bookmark',
-                        stream_name)
-        elif date > old_date:
-            LOGGER.info('Bookmark for stream %s is currently %s, ' +
-                        'advancing to %s',
-                        stream_name, old_date, date)
-            self.state[stream_name] = date
-        else:
-            LOGGER.info('Bookmark for stream %s is currently %s ' +
-                        'not changing to to %s',
-                        stream_name, old_date, date)
-        return {k: v.to_date_string() for k, v in self.state.items()}
+    if date is None:
+        LOGGER.info('Did not get a date for stream %s '+
+                    ' not advancing bookmark',
+                    tap_stream_id)
+    elif date > current_bookmark:
+        LOGGER.info('Bookmark for stream %s is currently %s, ' +
+                    'advancing to %s',
+                    tap_stream_id, current_bookmark, date)
+        state = singer.write_bookmark(state, tap_stream_id, bookmark_key, date.to_date_string())
+    else:
+        LOGGER.info('Bookmark for stream %s is currently %s ' +
+                    'not changing to to %s',
+                    tap_stream_id, current_bookmark, date)
+    return state
 
 class InsightsJobTimeout(Exception):
     pass
@@ -195,13 +191,15 @@ class AdsInsights(Stream):
     time_increment = attr.ib(default=1)
     limit = attr.ib(default=100)
 
+    bookmark_key = "date_start"
+
     @backoff.on_exception(
         backoff.expo,
         (InsightsJobTimeout),
         max_tries=3,
         factor=2)
     def job_params(self):
-        until = pendulum.parse(self.state.get(self.name)) # pylint: disable=no-member
+        until = pendulum.parse(get_start(self.state, self.name, self.bookmark_key))
         since = until.subtract(days=28)
         while until <= pendulum.now():
             yield {
@@ -269,7 +267,7 @@ class AdsInsights(Stream):
                 for time_range in params['time_ranges']:
                     if time_range['until']:
                         min_date_start_for_job = time_range['until']
-            yield {'state': self.state.advance(self.name, min_date_start_for_job)} # pylint: disable=no-member
+            yield {'state': advance_bookmark(self.state, self.name, self.bookmark_key, min_date_start_for_job)} # pylint: disable=no-member
 
 
 INSIGHTS_BREAKDOWNS = {
@@ -299,34 +297,35 @@ def initialize_stream(name, account, stream_alias, annotated_schema, state): # p
         raise Exception('Unknown stream {}'.format(name))
 
 
-def get_streams_to_sync(account, annotated_schemas, state):
+def get_streams_to_sync(account, catalog, state):
     streams = []
-    for stream in annotated_schemas['streams']:
-        schema = stream.get('schema')
-        name = stream.get('stream')
-        stream_alias = stream.get('stream_alias')
-        if schema.get('selected'):
+    for catalog_entry in catalog.streams:
+        schema = catalog_entry.schema
+        name = catalog_entry.stream
+
+        stream_alias = catalog_entry.stream_alias
+        if schema.selected:
             streams.append(initialize_stream(name, account, stream_alias, schema, state))
     return streams
 
-
-def do_sync(account, annotated_schemas, state):
-
-    for stream in get_streams_to_sync(account, annotated_schemas, state):
+def do_sync(account, catalog, state):
+    for stream in get_streams_to_sync(account, catalog, state):
         LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields())
         schema = load_schema(stream)
-        singer.write_schema(stream.name, schema, stream.key_properties)
+        singer.write_schema(stream.name, schema, stream.key_properties, stream.stream_alias)
 
-        with metrics.record_counter(stream.name) as counter:
-            for message in stream:
-                if 'record' in message:
-                    counter.increment()
-                    record = singer.transform.transform(message['record'], schema)
-                    singer.write_record(stream.name, record, stream.stream_alias)
-                elif 'state' in message:
-                    singer.write_state(message['state'])
-                else:
-                    raise Exception('Unrecognized message {}'.format(message))
+        with Transformer(UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING) as transformer:
+            with metrics.record_counter(stream.name) as counter:
+                for message in stream:
+                    if 'record' in message:
+                        counter.increment()
+                        record = transformer.transform(message['record'], schema)
+                        singer.write_record(stream.name, record, stream.stream_alias)
+                    elif 'state' in message:
+                        LOGGER.info("HERE IT IS %s", message['state'])
+                        singer.write_state(message['state'])
+                    else:
+                        raise Exception('Unrecognized message {}'.format(message))
 
 
 def get_abs_path(path):
@@ -366,10 +365,10 @@ def do_discover():
 
 def main():
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
-    start_date = args.config['start_date']
     account_id = args.config['account_id']
     access_token = args.config['access_token']
-    state = State(start_date, args.state)
+
+    CONFIG.update(args.config)
 
     FacebookAdsApi.init(access_token=access_token)
     user = fb_user.User(fbid='me')
@@ -384,6 +383,7 @@ def main():
     if args.discover:
         do_discover()
     elif args.properties:
-        do_sync(account, args.properties, state)
+        catalog = Catalog.from_dict(args.properties)
+        do_sync(account, catalog, args.state)
     else:
         LOGGER.info("No properties were selected")
