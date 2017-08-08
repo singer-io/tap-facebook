@@ -24,6 +24,24 @@
         }
       }
     },
+    "impression_device": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "platform_position": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "publisher_platform": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "clicks": {
       "type": [
         "null",

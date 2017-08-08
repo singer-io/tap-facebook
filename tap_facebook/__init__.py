@@ -180,10 +180,10 @@ class InsightsJobTimeout(Exception):
 @attr.s
 class AdsInsights(Stream):
     field_class = adsinsights.AdsInsights.Field
-    key_properties = ['campaign_id', 'adset_id', 'ad_id', 'date_start']
+    base_properties = ['campaign_id', 'adset_id', 'ad_id', 'date_start']
 
     state = attr.ib()
-    breakdowns = attr.ib()
+    options = attr.ib()
     action_breakdowns = attr.ib(default=ALL_ACTION_BREAKDOWNS)
     level = attr.ib(default='ad')
     action_attribution_windows = attr.ib(
@@ -192,6 +192,12 @@ class AdsInsights(Stream):
     limit = attr.ib(default=100)
 
     bookmark_key = "date_start"
+
+    def __attrs_post_init__(self):
+        self.breakdowns = self.options['breakdowns']
+        self.key_properties = self.base_properties[:]
+        if self.options.get('primary-keys'):
+            self.key_properties.extend(self.options['primary-keys'])
 
     @backoff.on_exception(
         backoff.expo,
@@ -270,21 +276,21 @@ class AdsInsights(Stream):
             yield {'state': advance_bookmark(self.state, self.name, self.bookmark_key, min_date_start_for_job)} # pylint: disable=no-member
 
 
-INSIGHTS_BREAKDOWNS = {
-    'ads_insights': [],
-    'ads_insights_age_and_gender': ['age', 'gender'],
-    'ads_insights_country': ['country'],
-    'ads_insights_platform_and_device': ['publisher_platform', 'platform_position',
-                                         'impression_device'],
+INSIGHTS_BREAKDOWNS_OPTIONS = {
+    'ads_insights': { "breakdowns": []},
+    'ads_insights_age_and_gender': {"breakdowns": ['age', 'gender'], "primary-keys": ['age', 'gender']},
+    'ads_insights_country': {"breakdowns": ['country']},
+    'ads_insights_platform_and_device': {"breakdowns": ['publisher_platform', 'platform_position', 'impression_device'],
+                                         "primary-keys": ['publisher_platform', 'platform_position', 'impression_device']},
 }
 
 
 def initialize_stream(name, account, stream_alias, annotated_schema, state): # pylint: disable=too-many-return-statements
 
-    if name in INSIGHTS_BREAKDOWNS:
+    if name in INSIGHTS_BREAKDOWNS_OPTIONS:
         return AdsInsights(name, account, stream_alias, annotated_schema,
                            state=state,
-                           breakdowns=INSIGHTS_BREAKDOWNS[name])
+                           options=INSIGHTS_BREAKDOWNS_OPTIONS[name])
     elif name == 'campaigns':
         return Campaigns(name, account, stream_alias, annotated_schema)
     elif name == 'adsets':
