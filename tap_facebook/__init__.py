@@ -58,7 +58,7 @@ class Stream(object):
     def fields(self):
         fields = set()
         if self.annotated_schema:
-            props = self.annotated_schema.properties
+            props = self.annotated_schema.properties # pylint: disable=no-member
             for k, val in props.items():
                 inclusion = val.inclusion
                 selected = val.selected
@@ -193,8 +193,10 @@ class AdsInsights(Stream):
 
     bookmark_key = "date_start"
 
-    invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position', 'age', 'gender']
+    invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
+                               'age', 'gender']
 
+    # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
     def __attrs_post_init__(self):
         self.breakdowns = self.options['breakdowns']
         self.key_properties = self.base_properties[:]
@@ -277,15 +279,19 @@ class AdsInsights(Stream):
                 for time_range in params['time_ranges']:
                     if time_range['until']:
                         min_date_start_for_job = time_range['until']
-            yield {'state': advance_bookmark(self.state, self.name, self.bookmark_key, min_date_start_for_job)} # pylint: disable=no-member
+            yield {'state': advance_bookmark(self.state, self.name,
+                                             self.bookmark_key, min_date_start_for_job)} # pylint: disable=no-member
 
 
 INSIGHTS_BREAKDOWNS_OPTIONS = {
-    'ads_insights': { "breakdowns": []},
-    'ads_insights_age_and_gender': {"breakdowns": ['age', 'gender'], "primary-keys": ['age', 'gender']},
+    'ads_insights': {"breakdowns": []},
+    'ads_insights_age_and_gender': {"breakdowns": ['age', 'gender'],
+                                    "primary-keys": ['age', 'gender']},
     'ads_insights_country': {"breakdowns": ['country']},
-    'ads_insights_platform_and_device': {"breakdowns": ['publisher_platform', 'platform_position', 'impression_device'],
-                                         "primary-keys": ['publisher_platform', 'platform_position', 'impression_device']},
+    'ads_insights_platform_and_device': {"breakdowns": ['publisher_platform',
+                                                        'platform_position', 'impression_device'],
+                                         "primary-keys": ['publisher_platform',
+                                                          'platform_position', 'impression_device']}
 }
 
 
@@ -310,7 +316,7 @@ def initialize_stream(name, account, stream_alias, annotated_schema, state): # p
 def get_streams_to_sync(account, catalog, state):
     streams = []
     for stream in STREAMS:
-        selected_stream =  next((s for s in catalog.streams if s.tap_stream_id == stream), None)
+        selected_stream = next((s for s in catalog.streams if s.tap_stream_id == stream), None)
         if selected_stream and selected_stream.schema.selected:
             schema = selected_stream.schema
             name = selected_stream.stream
