@@ -193,6 +193,8 @@ class AdsInsights(Stream):
 
     bookmark_key = "date_start"
 
+    invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position', 'age', 'gender']
+
     def __attrs_post_init__(self):
         self.breakdowns = self.options['breakdowns']
         self.key_properties = self.base_properties[:]
@@ -207,13 +209,15 @@ class AdsInsights(Stream):
     def job_params(self):
         until = pendulum.parse(get_start(self.state, self.name, self.bookmark_key))
         since = until.subtract(days=28)
+
+        # Some automatic fields (primary-keys) cannot be used as 'fields' query params.
         while until <= pendulum.now():
             yield {
                 'level': self.level,
                 'action_breakdowns': list(self.action_breakdowns),
                 'breakdowns': list(self.breakdowns),
                 'limit': self.limit,
-                'fields': list(self.fields()),
+                'fields': list(self.fields().difference(self.invalid_insights_fields)),
                 'time_increment': self.time_increment,
                 'action_attribution_windows': list(self.action_attribution_windows),
                 'time_ranges': [{'since': since.to_date_string(),
