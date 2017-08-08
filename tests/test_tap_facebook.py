@@ -2,28 +2,9 @@ import itertools
 import unittest
 import pendulum
 import tap_facebook
-from tap_facebook import AdsInsights, State
-
-class TestState(unittest.TestCase):
-
-    def test_get_with_no_initial_state(self):
-        state = State('2017-03-01', None)
-        self.assertEqual(state.get('foo'), '2017-03-01')
-
-    def test_advance_cant_move_backwards(self):
-        state = State('2017-03-01', None)
-        state.advance('foo', '2017-02-01')
-        self.assertEqual(state.get('foo'), '2017-03-01')
-
-    def test_advance_can_move_forward(self):
-        state = State('2017-03-01', None)
-        state.advance('foo', '2017-04-01')
-        self.assertEqual(state.get('foo'), '2017-04-01')
-
-    def test_advance_returns_message(self):
-        state = State('2017-03-01', None)
-        self.assertEqual(state.advance('foo', '2017-04-01')['foo'],
-                         '2017-04-01')
+from tap_facebook import AdsInsights
+from singer.catalog import Catalog
+from singer.schema import Schema
 
 class TestAdsInsights(unittest.TestCase):
 
@@ -31,10 +12,11 @@ class TestAdsInsights(unittest.TestCase):
         insights = AdsInsights(
             name='insights',
             account=None,
-            breakdowns=[],
-            annotated_schema={'selected': True,
-                              'properties': {'something': {'type': 'object'}}},
-            state=tap_facebook.State('2017-01-31', None))
+            stream_alias="insights",
+            options={},
+            annotated_schema=Schema.from_dict({'selected': True,
+                              'properties': {'something': {'type': 'object'}}}),
+            state={'bookmarks':{'insights': {'date_start': '2017-01-31'}}})
         params = list(itertools.islice(insights.job_params(), 5))
         self.assertEqual(params[0]['time_ranges'],
                          [{'since': '2017-01-03',
@@ -49,10 +31,11 @@ class TestAdsInsights(unittest.TestCase):
         insights = AdsInsights(
             name='insights',
             account=None,
-            breakdowns=[],
-            annotated_schema={'selected': True,
-                              'properties': {'something': {'type': 'object'}}},
-            state=tap_facebook.State(start_date.to_date_string(), None))
+            stream_alias="insights",
+            options={},
+            annotated_schema=Schema.from_dict({'selected': True,
+                              'properties': {'something': {'type': 'object'}}}),
+            state={'bookmarks':{'insights': {'date_start': start_date.to_date_string()}}})
 
         self.assertEqual(3, len(list(insights.job_params())))
 
@@ -97,7 +80,9 @@ class TestGetStreamsToSync(unittest.TestCase):
             ]
         }
 
-        streams_to_sync = tap_facebook.get_streams_to_sync(None, annotated_schemas, None)
+        catalog = Catalog.from_dict(annotated_schemas)
+
+        streams_to_sync = tap_facebook.get_streams_to_sync(None, catalog, None)
         names_to_sync = [stream.name for stream in streams_to_sync]
         self.assertEqual(['adcreative'], names_to_sync)
 

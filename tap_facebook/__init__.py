@@ -198,7 +198,7 @@ class AdsInsights(Stream):
 
     # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
     def __attrs_post_init__(self):
-        self.breakdowns = self.options['breakdowns']
+        self.breakdowns = self.options.get('breakdowns') or []
         self.key_properties = self.base_properties[:]
         if self.options.get('primary-keys'):
             self.key_properties.extend(self.options['primary-keys'])
