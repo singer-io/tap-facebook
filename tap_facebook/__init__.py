@@ -32,7 +32,7 @@ TODAY = pendulum.today()
 INSIGHTS_MAX_WAIT_TO_START_SECONDS = 5 * 60
 INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS = 30 * 60
 
-STREAMS = set([
+STREAMS = [
     'adcreative',
     'ads',
     'adsets',
@@ -40,7 +40,7 @@ STREAMS = set([
     'ads_insights',
     'ads_insights_age_and_gender',
     'ads_insights_country',
-    'ads_insights_platform_and_device'])
+    'ads_insights_platform_and_device']
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 LOGGER = singer.get_logger()
@@ -309,17 +309,18 @@ def initialize_stream(name, account, stream_alias, annotated_schema, state): # p
 
 def get_streams_to_sync(account, catalog, state):
     streams = []
-    for catalog_entry in catalog.streams:
-        schema = catalog_entry.schema
-        name = catalog_entry.stream
-
-        stream_alias = catalog_entry.stream_alias
-        if schema.selected:
+    for stream in STREAMS:
+        selected_stream =  next((s for s in catalog.streams if s.tap_stream_id == stream), None)
+        if selected_stream and selected_stream.schema.selected:
+            schema = selected_stream.schema
+            name = selected_stream.stream
+            stream_alias = selected_stream.stream_alias
             streams.append(initialize_stream(name, account, stream_alias, schema, state))
     return streams
 
 def do_sync(account, catalog, state):
-    for stream in get_streams_to_sync(account, catalog, state):
+    streams_to_sync = get_streams_to_sync(account, catalog, state)
+    for stream in streams_to_sync:
         LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields())
         schema = load_schema(stream)
         singer.write_schema(stream.name, schema, stream.key_properties, stream.stream_alias)
