@@ -430,7 +430,7 @@
     "social_reach": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "website_clicks": {
@@ -545,7 +545,7 @@
     "reach": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "total_unique_actions": {
