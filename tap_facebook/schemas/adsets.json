@@ -162,6 +162,18 @@
             ]
           }
         },
+        "audience_network_positions": {
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
         "geo_locations": {
           "type": [
             "null",

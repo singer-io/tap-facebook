@@ -156,6 +156,18 @@
             "array"
           ]
         },
+        "audience_network_positions": {
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
         "exclusions": {
           "type": [
             "null",
