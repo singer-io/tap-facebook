@@ -65,13 +65,13 @@
     "daily_budget": {
       "type": [
         "null",
-        "integer"
+        "number"
       ]
     },
     "budget_remaining": {
       "type": [
         "null",
-        "integer"
+        "number"
       ]
     },
     "effective_status": {
@@ -103,7 +103,7 @@
     "lifetime_budget": {
       "type": [
         "null",
-        "integer"
+        "number"
       ]
     },
     "targeting": {

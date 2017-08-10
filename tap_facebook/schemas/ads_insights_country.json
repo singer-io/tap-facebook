@@ -54,7 +54,7 @@
           "value": {
             "type": [
               "null",
-              "string"
+              "number"
             ]
           }
         }
@@ -63,7 +63,7 @@
     "clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "date_stop": {
@@ -93,7 +93,7 @@
           "value": {
             "type": [
               "null",
-              "string"
+              "number"
             ]
           },
           "action_destination": {
@@ -185,7 +185,7 @@
           "value": {
             "type": [
               "null",
-              "string"
+              "number"
             ]
           }
         }
@@ -194,7 +194,7 @@
     "total_actions": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "account_name": {
@@ -212,7 +212,7 @@
     "unique_inline_link_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "cost_per_unique_action_type": {
@@ -244,13 +244,13 @@
     "social_reach": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "inline_post_engagement": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "relevance_score": {
@@ -288,7 +288,7 @@
     "social_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "action_values": {
@@ -320,7 +320,7 @@
     "inline_link_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "campaign_id": {
@@ -332,7 +332,7 @@
     "unique_social_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "cpc": {
@@ -350,7 +350,7 @@
     "deeplink_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "cost_per_total_action": {
@@ -436,7 +436,7 @@
     "website_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "spend": {
@@ -466,7 +466,7 @@
     "unique_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "social_spend": {
@@ -478,7 +478,7 @@
     "reach": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "canvas_avg_view_percent": {
@@ -503,13 +503,13 @@
     "app_store_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "social_impressions": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "objective": {
@@ -551,7 +551,7 @@
     "total_unique_actions": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "country": {
