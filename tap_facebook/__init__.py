@@ -194,7 +194,7 @@ class AdsInsights(Stream):
     bookmark_key = "date_start"
 
     invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
-                               'age', 'gender']
+                               'age', 'gender', 'country', 'placement']
 
     # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
     def __attrs_post_init__(self):
