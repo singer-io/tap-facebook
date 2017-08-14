@@ -15,7 +15,7 @@ setup(name='tap-facebook',
           'facebookads==2.9.2',
           'pendulum==1.2.0',
           'requests==2.12.4',
-          'singer-python==2.1.0',
+          'singer-python==3.1.0',
       ],
       entry_points='''
           [console_scripts]
