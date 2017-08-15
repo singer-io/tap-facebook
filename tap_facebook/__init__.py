@@ -51,7 +51,7 @@ LOGGER = singer.get_logger()
 CONFIG = {}
 
 def transform_datetime_string(dts):
-    return dateutil.parser.parse(dts).astimezone(timezone.utc)
+    return singer.strftime(dateutil.parser.parse(dts).astimezone(timezone.utc))
 
 @attr.s
 class Stream(object):
@@ -330,6 +330,12 @@ def get_streams_to_sync(account, catalog, state):
             streams.append(initialize_stream(name, account, stream_alias, schema, state))
     return streams
 
+def transform_date_hook(data, typ, schema):
+    if typ == 'string' and schema.get('format') == 'date-time' and isinstance(data, str):
+        transformed = transform_datetime_string(data)
+        return transformed
+    return data
+
 def do_sync(account, catalog, state):
     streams_to_sync = get_streams_to_sync(account, catalog, state)
     for stream in streams_to_sync:
@@ -337,7 +343,7 @@ def do_sync(account, catalog, state):
         schema = load_schema(stream)
         singer.write_schema(stream.name, schema, stream.key_properties, stream.stream_alias)
 
-        with Transformer(UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING) as transformer:
+        with Transformer(pre_hook=transform_date_hook) as transformer:
             with metrics.record_counter(stream.name) as counter:
                 for message in stream:
                     if 'record' in message:
