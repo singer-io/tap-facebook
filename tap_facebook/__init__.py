@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 import datetime
+from datetime import timezone
+import dateutil
+
 import json
 import os
 import sys
@@ -46,6 +49,9 @@ REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 LOGGER = singer.get_logger()
 
 CONFIG = {}
+
+def transform_datetime_string(dts):
+    return dateutil.parser.parse(dts).astimezone(timezone.utc)
 
 @attr.s
 class Stream(object):

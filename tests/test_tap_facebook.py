@@ -2,9 +2,11 @@ import itertools
 import unittest
 import pendulum
 import tap_facebook
+
 from tap_facebook import AdsInsights
 from singer.catalog import Catalog
 from singer.schema import Schema
+from singer.utils import strftime
 
 class TestAdsInsights(unittest.TestCase):
 
@@ -86,6 +88,15 @@ class TestGetStreamsToSync(unittest.TestCase):
         names_to_sync = [stream.name for stream in streams_to_sync]
         self.assertEqual(['adcreative'], names_to_sync)
 
+class TestDateTimeParsing(unittest.TestCase):
 
+    def test(self):
+        dt       = '2016-07-07T15:46:48-0400'
+        expected = '2016-07-07T19:46:48.000000Z'
+        self.assertEqual(
+            strftime(tap_facebook.transform_datetime_string(dt)),
+            expected)
+        
+        
 if __name__ == '__main__':
     unittest.main()
