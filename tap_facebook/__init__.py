@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-
-import datetime
-from datetime import timezone
-import dateutil
-
 import json
 import os
 import sys
 import time
+
+import datetime
+from datetime import timezone
+import dateutil
 
 import attr
 import pendulum

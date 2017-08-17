@@ -94,9 +94,9 @@ class TestDateTimeParsing(unittest.TestCase):
         dt       = '2016-07-07T15:46:48-0400'
         expected = '2016-07-07T19:46:48.000000Z'
         self.assertEqual(
-            strftime(tap_facebook.transform_datetime_string(dt)),
+            tap_facebook.transform_datetime_string(dt),
             expected)
-        
-        
+
+
 if __name__ == '__main__':
     unittest.main()
