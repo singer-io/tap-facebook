@@ -33,6 +33,7 @@ TODAY = pendulum.today()
 
 INSIGHTS_MAX_WAIT_TO_START_SECONDS = 5 * 60
 INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS = 30 * 60
+INSIGHTS_MAX_ASYNC_SLEEP_SECONDS = 5 * 60
 
 STREAMS = [
     'adcreative',
@@ -241,6 +242,7 @@ class AdsInsights(Stream):
             async=True)
         status = None
         time_start = time.time()
+        sleep_time = 10
         while status != "Job Completed":
             duration = time.time() - time_start
             job = job.remote_read()
@@ -250,16 +252,21 @@ class AdsInsights(Stream):
             job_id = job[adsinsights.AdsInsights.Summary.id]
             LOGGER.info('%s, %d%% done', status, percent_complete)
 
+            if status == "Job Completed":
+                return job
+
             if duration > INSIGHTS_MAX_WAIT_TO_START_SECONDS and percent_complete == 0:
                 raise Exception(
                     'Insights job {} did not start after {} seconds'.format(
                         job_id, INSIGHTS_MAX_WAIT_TO_START_SECONDS))
-
             elif duration > INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS and status != "Job Completed":
                 raise Exception(
                     'Insights job {} did not complete after {} seconds'.format(
                         job_id, INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS))
-            time.sleep(5)
+            LOGGER.info("sleeping for %d seconds until job is done", sleep_time)
+            time.sleep(sleep_time)
+            if sleep_time < INSIGHTS_MAX_ASYNC_SLEEP_SECONDS:
+                sleep_time = 2 * sleep_time
         return job
 
 
@@ -350,7 +357,6 @@ def do_sync(account, catalog, state):
                         record = transformer.transform(message['record'], schema)
                         singer.write_record(stream.name, record, stream.stream_alias)
                     elif 'state' in message:
-                        LOGGER.info("HERE IT IS %s", message['state'])
                         singer.write_state(message['state'])
                     else:
                         raise Exception('Unrecognized message {}'.format(message))
