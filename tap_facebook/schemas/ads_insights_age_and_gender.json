@@ -15,10 +15,46 @@
           "object"
         ],
         "properties": {
-          "value": {
+          "1d_click": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "7d_click": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "28d_click": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "action_destination": {
             "type": [
               "null",
               "string"
+            ]
+          },
+          "action_target_id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "action_type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "value": {
+            "type": [
+              "null",
+              "number"
             ]
           }
         }
@@ -27,15 +63,14 @@
     "clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "date_stop": {
       "type": [
         "null",
         "string"
-      ],
-      "format": "date-time"
+      ]
     },
     "ad_id": {
       "type": [
@@ -55,6 +90,18 @@
         ],
         "properties": {
           "value": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "action_destination": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "action_target_id": {
             "type": [
               "null",
               "string"
@@ -98,10 +145,46 @@
           "object"
         ],
         "properties": {
-          "value": {
+          "1d_click": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "7d_click": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "28d_click": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "action_destination": {
             "type": [
               "null",
               "string"
+            ]
+          },
+          "action_target_id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "action_type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "value": {
+            "type": [
+              "null",
+              "number"
             ]
           }
         }
@@ -110,7 +193,7 @@
     "total_actions": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "account_name": {
@@ -128,7 +211,7 @@
     "unique_inline_link_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "cost_per_unique_action_type": {
@@ -166,7 +249,7 @@
     "inline_post_engagement": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "relevance_score": {
@@ -204,7 +287,7 @@
     "social_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "action_values": {
@@ -236,7 +319,7 @@
     "inline_link_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "campaign_id": {
@@ -248,7 +331,7 @@
     "unique_social_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "cpc": {
@@ -266,7 +349,7 @@
     "deeplink_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "cost_per_total_action": {
@@ -346,13 +429,13 @@
     "social_reach": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "website_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "spend": {
@@ -382,7 +465,7 @@
     "unique_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "social_spend": {
@@ -394,7 +477,7 @@
     "reach": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "canvas_avg_view_percent": {
@@ -413,19 +496,18 @@
       "type": [
         "null",
         "string"
-      ],
-      "format": "date-time"
+      ]
     },
     "app_store_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "social_impressions": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "objective": {
@@ -461,13 +543,13 @@
     "reach": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "total_unique_actions": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "age": {

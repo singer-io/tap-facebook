@@ -65,14 +65,24 @@
     "daily_budget": {
       "type": [
         "null",
-        "integer"
-      ]
+        "number"
+      ],
+      "maximum": 100000000000000000000000000000000,
+      "minimum": -100000000000000000000000000000000,
+      "multipleOf": 0.000001,
+      "exclusiveMaximum": true,
+      "exclusiveMinimum": true
     },
     "budget_remaining": {
       "type": [
         "null",
-        "integer"
-      ]
+        "number"
+      ],
+      "maximum": 100000000000000000000000000000000,
+      "minimum": -100000000000000000000000000000000,
+      "multipleOf": 0.000001,
+      "exclusiveMaximum": true,
+      "exclusiveMinimum": true
     },
     "effective_status": {
       "type": [
@@ -103,8 +113,13 @@
     "lifetime_budget": {
       "type": [
         "null",
-        "integer"
-      ]
+        "number"
+      ],
+      "maximum": 100000000000000000000000000000000,
+      "minimum": -100000000000000000000000000000000,
+      "multipleOf": 0.000001,
+      "exclusiveMaximum": true,
+      "exclusiveMinimum": true
     },
     "targeting": {
       "type": [
@@ -161,6 +176,18 @@
               "string"
             ]
           }
+        },
+        "audience_network_positions": {
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
         },
         "geo_locations": {
           "type": [

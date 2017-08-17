@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-
-import datetime
 import json
 import os
 import sys
 import time
+
+import datetime
+from datetime import timezone
+import dateutil
 
 import attr
 import pendulum
@@ -14,6 +16,10 @@ import backoff
 import singer
 import singer.metrics as metrics
 from singer import utils
+from singer import (transform,
+                    UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING,
+                    Transformer, _transform_datetime)
+from singer.catalog import Catalog, CatalogEntry
 
 from facebookads import FacebookAdsApi
 import facebookads.adobjects.adcreative as adcreative
@@ -27,8 +33,9 @@ TODAY = pendulum.today()
 
 INSIGHTS_MAX_WAIT_TO_START_SECONDS = 5 * 60
 INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS = 30 * 60
+INSIGHTS_MAX_ASYNC_SLEEP_SECONDS = 5 * 60
 
-STREAMS = set([
+STREAMS = [
     'adcreative',
     'ads',
     'adsets',
@@ -36,26 +43,31 @@ STREAMS = set([
     'ads_insights',
     'ads_insights_age_and_gender',
     'ads_insights_country',
-    'ads_insights_platform_and_device'])
+    'ads_insights_platform_and_device']
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 LOGGER = singer.get_logger()
 
+CONFIG = {}
+
+def transform_datetime_string(dts):
+    return singer.strftime(dateutil.parser.parse(dts).astimezone(timezone.utc))
 
 @attr.s
 class Stream(object):
 
     name = attr.ib()
     account = attr.ib()
+    stream_alias = attr.ib()
     annotated_schema = attr.ib()
 
     def fields(self):
         fields = set()
         if self.annotated_schema:
-            props = self.annotated_schema['properties'] # pylint: disable=unsubscriptable-object
+            props = self.annotated_schema.properties # pylint: disable=no-member
             for k, val in props.items():
-                inclusion = val.get('inclusion')
-                selected = val.get('selected')
+                inclusion = val.inclusion
+                selected = val.selected
                 if selected or inclusion == 'automatic':
                     fields.add(k)
         return fields
@@ -140,42 +152,33 @@ ALL_ACTION_BREAKDOWNS = [
     'action_destination'
 ]
 
+def get_start(state, tap_stream_id, bookmark_key):
+    current_bookmark = singer.get_bookmark(state, tap_stream_id, bookmark_key)
+    LOGGER.info("found current bookmark %s", current_bookmark)
+    if current_bookmark is None:
+        LOGGER.info("using start_date instead...%s", CONFIG['start_date'])
+        return CONFIG['start_date']
+    return current_bookmark
 
-class State(object):
-    def __init__(self, start_date, state):
-        self.start_date = pendulum.parse(start_date)
-        if state is None:
-            self.state = {}
-        else:
-            self.state = {k: pendulum.parse(v) for k, v in state.items()}
+def advance_bookmark(state, tap_stream_id, bookmark_key, date):
+    LOGGER.info('advance(%s, %s)', tap_stream_id, date)
+    date = pendulum.parse(date) if date else None
+    current_bookmark = pendulum.parse(get_start(state, tap_stream_id, bookmark_key))
 
-    def _get(self, stream_name):
-        if stream_name in self.state:
-            return self.state[stream_name]
-        return self.start_date
-
-    def get(self, stream_name):
-        return self._get(stream_name).to_date_string()
-
-    def advance(self, stream_name, date):
-        LOGGER.info('advance(%s, %s)', stream_name, date)
-        date = pendulum.parse(date) if date else None
-        old_date = self._get(stream_name)
-
-        if date is None:
-            LOGGER.info('Did not get a date for stream %s '+
-                        ' not advancing bookmark',
-                        stream_name)
-        elif date > old_date:
-            LOGGER.info('Bookmark for stream %s is currently %s, ' +
-                        'advancing to %s',
-                        stream_name, old_date, date)
-            self.state[stream_name] = date
-        else:
-            LOGGER.info('Bookmark for stream %s is currently %s ' +
-                        'not changing to to %s',
-                        stream_name, old_date, date)
-        return {k: v.to_date_string() for k, v in self.state.items()}
+    if date is None:
+        LOGGER.info('Did not get a date for stream %s '+
+                    ' not advancing bookmark',
+                    tap_stream_id)
+    elif date > current_bookmark:
+        LOGGER.info('Bookmark for stream %s is currently %s, ' +
+                    'advancing to %s',
+                    tap_stream_id, current_bookmark, date)
+        state = singer.write_bookmark(state, tap_stream_id, bookmark_key, date.to_date_string())
+    else:
+        LOGGER.info('Bookmark for stream %s is currently %s ' +
+                    'not changing to to %s',
+                    tap_stream_id, current_bookmark, date)
+    return state
 
 class InsightsJobTimeout(Exception):
     pass
@@ -183,10 +186,10 @@ class InsightsJobTimeout(Exception):
 @attr.s
 class AdsInsights(Stream):
     field_class = adsinsights.AdsInsights.Field
-    key_properties = ['campaign_id', 'adset_id', 'ad_id', 'date_start']
+    base_properties = ['campaign_id', 'adset_id', 'ad_id', 'date_start']
 
     state = attr.ib()
-    breakdowns = attr.ib()
+    options = attr.ib()
     action_breakdowns = attr.ib(default=ALL_ACTION_BREAKDOWNS)
     level = attr.ib(default='ad')
     action_attribution_windows = attr.ib(
@@ -194,21 +197,35 @@ class AdsInsights(Stream):
     time_increment = attr.ib(default=1)
     limit = attr.ib(default=100)
 
+    bookmark_key = "date_start"
+
+    invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
+                               'age', 'gender', 'country', 'placement']
+
+    # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
+    def __attrs_post_init__(self):
+        self.breakdowns = self.options.get('breakdowns') or []
+        self.key_properties = self.base_properties[:]
+        if self.options.get('primary-keys'):
+            self.key_properties.extend(self.options['primary-keys'])
+
     @backoff.on_exception(
         backoff.expo,
         (InsightsJobTimeout),
         max_tries=3,
         factor=2)
     def job_params(self):
-        until = pendulum.parse(self.state.get(self.name)) # pylint: disable=no-member
+        until = pendulum.parse(get_start(self.state, self.name, self.bookmark_key))
         since = until.subtract(days=28)
+
+        # Some automatic fields (primary-keys) cannot be used as 'fields' query params.
         while until <= pendulum.now():
             yield {
                 'level': self.level,
                 'action_breakdowns': list(self.action_breakdowns),
                 'breakdowns': list(self.breakdowns),
                 'limit': self.limit,
-                'fields': list(self.fields()),
+                'fields': list(self.fields().difference(self.invalid_insights_fields)),
                 'time_increment': self.time_increment,
                 'action_attribution_windows': list(self.action_attribution_windows),
                 'time_ranges': [{'since': since.to_date_string(),
@@ -225,6 +242,7 @@ class AdsInsights(Stream):
             async=True)
         status = None
         time_start = time.time()
+        sleep_time = 10
         while status != "Job Completed":
             duration = time.time() - time_start
             job = job.remote_read()
@@ -234,16 +252,21 @@ class AdsInsights(Stream):
             job_id = job[adsinsights.AdsInsights.Summary.id]
             LOGGER.info('%s, %d%% done', status, percent_complete)
 
+            if status == "Job Completed":
+                return job
+
             if duration > INSIGHTS_MAX_WAIT_TO_START_SECONDS and percent_complete == 0:
                 raise Exception(
                     'Insights job {} did not start after {} seconds'.format(
                         job_id, INSIGHTS_MAX_WAIT_TO_START_SECONDS))
-
             elif duration > INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS and status != "Job Completed":
                 raise Exception(
                     'Insights job {} did not complete after {} seconds'.format(
                         job_id, INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS))
-            time.sleep(5)
+            LOGGER.info("sleeping for %d seconds until job is done", sleep_time)
+            time.sleep(sleep_time)
+            if sleep_time < INSIGHTS_MAX_ASYNC_SLEEP_SECONDS:
+                sleep_time = 2 * sleep_time
         return job
 
 
@@ -268,63 +291,75 @@ class AdsInsights(Stream):
                 for time_range in params['time_ranges']:
                     if time_range['until']:
                         min_date_start_for_job = time_range['until']
-            yield {'state': self.state.advance(self.name, min_date_start_for_job)} # pylint: disable=no-member
+            yield {'state': advance_bookmark(self.state, self.name,
+                                             self.bookmark_key, min_date_start_for_job)} # pylint: disable=no-member
 
 
-INSIGHTS_BREAKDOWNS = {
-    'ads_insights': [],
-    'ads_insights_age_and_gender': ['age', 'gender'],
-    'ads_insights_country': ['country'],
-    'ads_insights_platform_and_device': ['publisher_platform', 'platform_position',
-                                         'impression_device'],
+INSIGHTS_BREAKDOWNS_OPTIONS = {
+    'ads_insights': {"breakdowns": []},
+    'ads_insights_age_and_gender': {"breakdowns": ['age', 'gender'],
+                                    "primary-keys": ['age', 'gender']},
+    'ads_insights_country': {"breakdowns": ['country']},
+    'ads_insights_platform_and_device': {"breakdowns": ['publisher_platform',
+                                                        'platform_position', 'impression_device'],
+                                         "primary-keys": ['publisher_platform',
+                                                          'platform_position', 'impression_device']}
 }
 
 
-def initialize_stream(name, account, annotated_schema, state): # pylint: disable=too-many-return-statements
+def initialize_stream(name, account, stream_alias, annotated_schema, state): # pylint: disable=too-many-return-statements
 
-    if name in INSIGHTS_BREAKDOWNS:
-        return AdsInsights(name, account, annotated_schema,
+    if name in INSIGHTS_BREAKDOWNS_OPTIONS:
+        return AdsInsights(name, account, stream_alias, annotated_schema,
                            state=state,
-                           breakdowns=INSIGHTS_BREAKDOWNS[name])
+                           options=INSIGHTS_BREAKDOWNS_OPTIONS[name])
     elif name == 'campaigns':
-        return Campaigns(name, account, annotated_schema)
+        return Campaigns(name, account, stream_alias, annotated_schema)
     elif name == 'adsets':
-        return AdSets(name, account, annotated_schema)
+        return AdSets(name, account, stream_alias, annotated_schema)
     elif name == 'ads':
-        return Ads(name, account, annotated_schema)
+        return Ads(name, account, stream_alias, annotated_schema)
     elif name == 'adcreative':
-        return AdCreative(name, account, annotated_schema)
+        return AdCreative(name, account, stream_alias, annotated_schema)
     else:
         raise Exception('Unknown stream {}'.format(name))
 
 
-def get_streams_to_sync(account, annotated_schemas, state):
+def get_streams_to_sync(account, catalog, state):
     streams = []
-    for stream in annotated_schemas['streams']:
-        schema = stream.get('schema')
-        name = stream.get('stream')
-        if schema.get('selected'):
-            streams.append(initialize_stream(name, account, schema, state))
+    for stream in STREAMS:
+        selected_stream = next((s for s in catalog.streams if s.tap_stream_id == stream), None)
+        if selected_stream and selected_stream.schema.selected:
+            schema = selected_stream.schema
+            name = selected_stream.stream
+            stream_alias = selected_stream.stream_alias
+            streams.append(initialize_stream(name, account, stream_alias, schema, state))
     return streams
 
+def transform_date_hook(data, typ, schema):
+    if typ == 'string' and schema.get('format') == 'date-time' and isinstance(data, str):
+        transformed = transform_datetime_string(data)
+        return transformed
+    return data
 
-def do_sync(account, annotated_schemas, state):
-
-    for stream in get_streams_to_sync(account, annotated_schemas, state):
+def do_sync(account, catalog, state):
+    streams_to_sync = get_streams_to_sync(account, catalog, state)
+    for stream in streams_to_sync:
         LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields())
         schema = load_schema(stream)
-        singer.write_schema(stream.name, schema, stream.key_properties)
+        singer.write_schema(stream.name, schema, stream.key_properties, stream.stream_alias)
 
-        with metrics.record_counter(stream.name) as counter:
-            for message in stream:
-                if 'record' in message:
-                    counter.increment()
-                    record = singer.transform.transform(message['record'], schema)
-                    singer.write_record(stream.name, record)
-                elif 'state' in message:
-                    singer.write_state(message['state'])
-                else:
-                    raise Exception('Unrecognized message {}'.format(message))
+        with Transformer(pre_hook=transform_date_hook) as transformer:
+            with metrics.record_counter(stream.name) as counter:
+                for message in stream:
+                    if 'record' in message:
+                        counter.increment()
+                        record = transformer.transform(message['record'], schema)
+                        singer.write_record(stream.name, record, stream.stream_alias)
+                    elif 'state' in message:
+                        singer.write_state(message['state'])
+                    else:
+                        raise Exception('Unrecognized message {}'.format(message))
 
 
 def get_abs_path(path):
@@ -344,7 +379,7 @@ def load_schema(stream):
 
 
 def initialize_streams_for_discovery(): # pylint: disable=invalid-name
-    return [initialize_stream(name, None, None, None)
+    return [initialize_stream(name, None, None, None, None)
             for name in STREAMS]
 
 def discover_schemas():
@@ -364,10 +399,10 @@ def do_discover():
 
 def main():
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
-    start_date = args.config['start_date']
     account_id = args.config['account_id']
     access_token = args.config['access_token']
-    state = State(start_date, args.state)
+
+    CONFIG.update(args.config)
 
     FacebookAdsApi.init(access_token=access_token)
     user = fb_user.User(fbid='me')
@@ -382,6 +417,7 @@ def main():
     if args.discover:
         do_discover()
     elif args.properties:
-        do_sync(account, args.properties, state)
+        catalog = Catalog.from_dict(args.properties)
+        do_sync(account, catalog, args.state)
     else:
         LOGGER.info("No properties were selected")
