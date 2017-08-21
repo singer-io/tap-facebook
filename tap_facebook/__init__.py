@@ -289,8 +289,8 @@ class AdsInsights(Stream):
             for obj in job.get_result():
                 count += 1
                 rec = obj.export_all_data()
-                if not min_date_start_for_job or rec['date_start'] < min_date_start_for_job:
-                    min_date_start_for_job = rec['date_start']
+                if not min_date_start_for_job or rec['date_stop'] < min_date_start_for_job:
+                    min_date_start_for_job = rec['date_stop']
                 yield {'record': rec}
             LOGGER.info('Got %d results for insights job', count)
 
