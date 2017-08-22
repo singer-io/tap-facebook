@@ -216,10 +216,19 @@ class AdsInsights(Stream):
         factor=2)
     def job_params(self):
         until = pendulum.parse(get_start(self.state, self.name, self.bookmark_key))
-        since = until.subtract(days=28)
+
+        buffer_days = 28
+        if CONFIG.get('insights_buffer_days'):
+            buffer_days = int(CONFIG.get('insights_buffer_days'))
+
+        since = until.subtract(days=buffer_days)
+
+        end_date = pendulum.now()
+        if CONFIG.get('end_date'):
+            end_date = pendulum.parse(CONFIG.get('end_date'))
 
         # Some automatic fields (primary-keys) cannot be used as 'fields' query params.
-        while until <= pendulum.now():
+        while until <= end_date:
             yield {
                 'level': self.level,
                 'action_breakdowns': list(self.action_breakdowns),
@@ -280,8 +289,8 @@ class AdsInsights(Stream):
             for obj in job.get_result():
                 count += 1
                 rec = obj.export_all_data()
-                if not min_date_start_for_job or rec['date_start'] < min_date_start_for_job:
-                    min_date_start_for_job = rec['date_start']
+                if not min_date_start_for_job or rec['date_stop'] < min_date_start_for_job:
+                    min_date_start_for_job = rec['date_stop']
                 yield {'record': rec}
             LOGGER.info('Got %d results for insights job', count)
 
