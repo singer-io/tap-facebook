@@ -152,7 +152,8 @@ ALL_ACTION_ATTRIBUTION_WINDOWS = [
 ALL_ACTION_BREAKDOWNS = [
     'action_type',
     'action_target_id',
-    'action_destination'
+    'action_destination',
+    'action_link_click_destination'
 ]
 
 def get_start(state, tap_stream_id, bookmark_key):
@@ -203,7 +204,8 @@ class AdsInsights(Stream):
     bookmark_key = "date_start"
 
     invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
-                               'age', 'gender', 'country', 'placement']
+                               'age', 'gender', 'country', 'placement', 'click_to_app_deeplink',
+                               'click_to_website', 'click_to_app_store']
 
     # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
     def __attrs_post_init__(self):

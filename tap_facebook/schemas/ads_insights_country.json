@@ -383,7 +383,7 @@
         "string"
       ]
     },
-    "deeplink_clicks": {
+    "click_to_app_deeplink": {
       "type": [
         "null",
         "integer"
@@ -469,7 +469,7 @@
         "integer"
       ]
     },
-    "website_clicks": {
+    "click_to_website": {
       "type": [
         "null",
         "integer"
@@ -536,7 +536,7 @@
       ],
       "format": "date-time"
     },
-    "app_store_clicks": {
+    "click_to_app_store": {
       "type": [
         "null",
         "integer"
