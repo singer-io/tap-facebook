@@ -35,6 +35,8 @@ INSIGHTS_MAX_WAIT_TO_START_SECONDS = 5 * 60
 INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS = 30 * 60
 INSIGHTS_MAX_ASYNC_SLEEP_SECONDS = 5 * 60
 
+RESULT_RETURN_LIMIT = 100
+
 STREAMS = [
     'adcreative',
     'ads',
@@ -87,9 +89,8 @@ class AdCreative(Stream):
     key_properties = ['id']
 
     def __iter__(self):
-        ad_creative = self.account.get_ad_creatives() # pylint: disable=no-member
+        ad_creative = self.account.get_ad_creatives(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
         for a in ad_creative: # pylint: disable=invalid-name
-            a.remote_read(fields=self.fields())
             yield {'record': a.export_all_data()}
 
 
@@ -101,9 +102,8 @@ class Ads(Stream):
     key_properties = ['id', 'updated_time']
 
     def __iter__(self):
-        ads = self.account.get_ads() # pylint: disable=no-member
+        ads = self.account.get_ads(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
         for ad in ads: # pylint: disable=invalid-name
-            ad.remote_read(fields=self.fields())
             yield {'record': ad.export_all_data()}
 
 
@@ -112,9 +112,8 @@ class AdSets(Stream):
     key_properties = ['id', 'updated_time']
 
     def __iter__(self):
-        ad_sets = self.account.get_ad_sets() # pylint: disable=no-member
+        ad_sets = self.account.get_ad_sets(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
         for ad_set in ad_sets:
-            ad_set.remote_read(fields=self.fields())
             yield {'record': ad_set.export_all_data()}
 
 
@@ -123,12 +122,11 @@ class Campaigns(Stream):
     key_properties = ['id']
 
     def __iter__(self):
-        campaigns = self.account.get_campaigns() # pylint: disable=no-member
         props = self.fields()
         fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
+        campaigns = self.account.get_campaigns(fields=fields, params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
         for campaign in campaigns:
-            campaign.remote_read(fields=fields)
             campaign_out = {}
             for k in campaign:
                 campaign_out[k] = campaign[k]
@@ -200,7 +198,7 @@ class AdsInsights(Stream):
     action_attribution_windows = attr.ib(
         default=ALL_ACTION_ATTRIBUTION_WINDOWS)
     time_increment = attr.ib(default=1)
-    limit = attr.ib(default=100)
+    limit = attr.ib(default=RESULT_RETURN_LIMIT)
 
     bookmark_key = "date_start"
 
