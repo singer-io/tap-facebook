@@ -533,7 +533,8 @@
       "type": [
         "null",
         "string"
-      ]
+      ],
+      "format": "date-time"
     },
     "app_store_clicks": {
       "type": [
