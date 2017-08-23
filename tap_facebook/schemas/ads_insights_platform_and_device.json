@@ -106,7 +106,8 @@
       "type": [
         "null",
         "string"
-      ]
+      ],
+      "format": "date-time"
     },
     "ad_id": {
       "type": [

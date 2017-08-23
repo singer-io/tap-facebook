@@ -33,6 +33,24 @@
               "number"
             ]
           },
+          "1d_view": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "7d_view": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "28d_view": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "action_destination": {
             "type": [
               "null",
@@ -70,7 +88,8 @@
       "type": [
         "null",
         "string"
-      ]
+      ],
+      "format": "date-time"
     },
     "ad_id": {
       "type": [
@@ -158,6 +177,24 @@
             ]
           },
           "28d_click": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "1d_view": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "7d_view": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "28d_view": {
             "type": [
               "null",
               "number"
