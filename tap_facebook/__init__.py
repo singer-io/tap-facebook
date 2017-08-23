@@ -220,20 +220,20 @@ class AdsInsights(Stream):
         max_tries=3,
         factor=2)
     def job_params(self):
-        until = pendulum.parse(get_start(self.state, self.name, self.bookmark_key))
+        start_date = pendulum.parse(get_start(self.state, self.name, self.bookmark_key))
 
         buffer_days = 28
         if CONFIG.get('insights_buffer_days'):
             buffer_days = int(CONFIG.get('insights_buffer_days'))
 
-        since = until.subtract(days=buffer_days)
+        buffered_start_date = start_date.subtract(days=buffer_days)
 
         end_date = pendulum.now()
         if CONFIG.get('end_date'):
             end_date = pendulum.parse(CONFIG.get('end_date'))
 
         # Some automatic fields (primary-keys) cannot be used as 'fields' query params.
-        while until <= end_date:
+        while buffered_start_date <= end_date:
             yield {
                 'level': self.level,
                 'action_breakdowns': list(self.action_breakdowns),
@@ -242,11 +242,10 @@ class AdsInsights(Stream):
                 'fields': list(self.fields().difference(self.invalid_insights_fields)),
                 'time_increment': self.time_increment,
                 'action_attribution_windows': list(self.action_attribution_windows),
-                'time_ranges': [{'since': since.to_date_string(),
-                                 'until': until.to_date_string()}]
+                'time_ranges': [{'since': buffered_start_date.to_date_string(),
+                                 'until': buffered_start_date.to_date_string()}]
             }
-            since = since.add(days=1)
-            until = until.add(days=1)
+            buffered_start_date = buffered_start_date.add(days=1)
 
 
     def run_job(self, params):
