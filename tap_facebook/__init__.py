@@ -51,7 +51,12 @@ LOGGER = singer.get_logger()
 CONFIG = {}
 
 def transform_datetime_string(dts):
-    return singer.strftime(dateutil.parser.parse(dts).astimezone(timezone.utc))
+    parsed_dt = dateutil.parser.parse(dts)
+    if parsed_dt.tzinfo is None:
+        parsed_dt = parsed_dt.replace(tzinfo=timezone.utc)
+    else:
+        parsed_dt = parsed_dt.astimezone(timezone.utc)
+    return singer.strftime(parsed_dt)
 
 @attr.s
 class Stream(object):
