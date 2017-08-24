@@ -89,7 +89,8 @@ class AdCreative(Stream):
     key_properties = ['id']
 
     def __iter__(self):
-        ad_creative = self.account.get_ad_creatives(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
+        ad_creative = self.account.get_ad_creatives(fields=self.fields(), # pylint: disable=no-member
+                                                    params={'limit': RESULT_RETURN_LIMIT})
         for a in ad_creative: # pylint: disable=invalid-name
             yield {'record': a.export_all_data()}
 
@@ -112,7 +113,8 @@ class AdSets(Stream):
     key_properties = ['id', 'updated_time']
 
     def __iter__(self):
-        ad_sets = self.account.get_ad_sets(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
+        ad_sets = self.account.get_ad_sets(fields=self.fields(), # pylint: disable=no-member
+                                           params={'limit': RESULT_RETURN_LIMIT})
         for ad_set in ad_sets:
             yield {'record': ad_set.export_all_data()}
 
