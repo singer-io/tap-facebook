@@ -383,12 +383,6 @@
         "integer"
       ]
     },
-    "click_to_app_deeplink": {
-      "type": [
-        "null",
-        "integer"
-      ]
-    },
     "cost_per_total_action": {
       "type": [
         "null",
@@ -469,12 +463,6 @@
         "integer"
       ]
     },
-    "click_to_website": {
-      "type": [
-        "null",
-        "integer"
-      ]
-    },
     "spend": {
       "type": [
         "null",
@@ -535,12 +523,6 @@
         "string"
       ],
       "format": "date-time"
-    },
-    "click_to_app_store": {
-      "type": [
-        "null",
-        "integer"
-      ]
     },
     "social_impressions": {
       "type": [
