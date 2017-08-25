@@ -106,7 +106,8 @@
       "type": [
         "null",
         "string"
-      ]
+      ],
+      "format": "date-time"
     },
     "ad_id": {
       "type": [
@@ -400,12 +401,6 @@
         "string"
       ]
     },
-    "deeplink_clicks": {
-      "type": [
-        "null",
-        "integer"
-      ]
-    },
     "cost_per_total_action": {
       "type": [
         "null",
@@ -486,12 +481,6 @@
         "integer"
       ]
     },
-    "website_clicks": {
-      "type": [
-        "null",
-        "integer"
-      ]
-    },
     "spend": {
       "type": [
         "null",
@@ -550,13 +539,8 @@
       "type": [
         "null",
         "string"
-      ]
-    },
-    "app_store_clicks": {
-      "type": [
-        "null",
-        "integer"
-      ]
+      ],
+      "format": "date-time"
     },
     "social_impressions": {
       "type": [

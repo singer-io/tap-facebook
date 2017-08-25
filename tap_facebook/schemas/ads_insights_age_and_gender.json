@@ -33,6 +33,24 @@
               "number"
             ]
           },
+          "1d_view": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "7d_view": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "28d_view": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "action_destination": {
             "type": [
               "null",
@@ -158,6 +176,24 @@
             ]
           },
           "28d_click": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "1d_view": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "7d_view": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "28d_view": {
             "type": [
               "null",
               "number"
@@ -346,12 +382,6 @@
         "string"
       ]
     },
-    "deeplink_clicks": {
-      "type": [
-        "null",
-        "integer"
-      ]
-    },
     "cost_per_total_action": {
       "type": [
         "null",
@@ -432,12 +462,6 @@
         "integer"
       ]
     },
-    "website_clicks": {
-      "type": [
-        "null",
-        "integer"
-      ]
-    },
     "spend": {
       "type": [
         "null",
@@ -496,12 +520,6 @@
       "type": [
         "null",
         "string"
-      ]
-    },
-    "app_store_clicks": {
-      "type": [
-        "null",
-        "integer"
       ]
     },
     "social_impressions": {

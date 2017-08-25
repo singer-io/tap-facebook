@@ -22,11 +22,11 @@ class TestAdsInsights(unittest.TestCase):
         params = list(itertools.islice(insights.job_params(), 5))
         self.assertEqual(params[0]['time_ranges'],
                          [{'since': '2017-01-03',
-                           'until': '2017-01-31'}])
+                           'until': '2017-01-03'}])
 
         self.assertEqual(params[4]['time_ranges'],
                          [{'since': '2017-01-07',
-                           'until': '2017-02-04'}])
+                           'until': '2017-01-07'}])
 
     def test_insights_job_params_stops(self):
         start_date = tap_facebook.TODAY.subtract(days=2)
@@ -39,7 +39,7 @@ class TestAdsInsights(unittest.TestCase):
                               'properties': {'something': {'type': 'object'}}}),
             state={'bookmarks':{'insights': {'date_start': start_date.to_date_string()}}})
 
-        self.assertEqual(3, len(list(insights.job_params())))
+        self.assertEqual(31, len(list(insights.job_params())))
 
 
 class TestPrimaryKeyInclusion(unittest.TestCase):

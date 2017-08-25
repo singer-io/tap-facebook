@@ -106,6 +106,18 @@
         "object"
       ],
       "properties": {
+        "messenger_positions": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
         "locales": {
           "items": {
             "type": [
@@ -493,6 +505,32 @@
               "object"
             ],
             "properties": {
+              "education_majors": {
+                "items": {
+                  "type": [
+                    "null",
+                    "object"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "id": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  }
+                },
+                "type": [
+                  "null",
+                  "array"
+                ]
+              },
               "interests": {
                 "items": {
                   "type": [
