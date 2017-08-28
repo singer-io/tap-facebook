@@ -395,7 +395,7 @@
           "value": {
             "type": [
               "null",
-              "double"
+              "number"
             ]
           }
         }
