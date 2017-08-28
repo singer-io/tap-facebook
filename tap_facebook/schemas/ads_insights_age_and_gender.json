@@ -337,10 +337,64 @@
           "object"
         ],
         "properties": {
-          "value": {
+          "1d_click": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "7d_click": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "28d_click": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "1d_view": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "7d_view": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "28d_view": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "action_destination": {
             "type": [
               "null",
               "string"
+            ]
+          },
+          "action_target_id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "action_type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "value": {
+            "type": [
+              "null",
+              "number"
             ]
           }
         }
@@ -379,7 +433,7 @@
     "call_to_action_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "cost_per_total_action": {
