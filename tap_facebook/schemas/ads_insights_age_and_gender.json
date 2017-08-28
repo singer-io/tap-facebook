@@ -433,7 +433,7 @@
     "call_to_action_clicks": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "cost_per_total_action": {
