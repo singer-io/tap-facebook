@@ -36,6 +36,24 @@
         "string"
       ]
     },
+    "spend_cap": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "start_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "end_time": {
+      "type": "string",
+      "format": "date-time"
+    },
     "ads": {
       "properties": {
         "data": {
