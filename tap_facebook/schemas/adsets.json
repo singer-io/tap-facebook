@@ -1,195 +1,186 @@
 {
-  "type": [
-    "null",
-    "object"
-  ],
   "properties": {
-    "name": {
+    "recommendations": {
+      "items": {
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "importance": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "string"
+          },
+          "code": {
+            "type": "integer"
+          },
+          "blame_field": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "type": [
+          "null",
+          "object"
+        ]
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    },
+    "pacing_type": {
+      "items": {
+        "type": "string"
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    },
+    "optimization_goal": {
       "type": [
         "null",
         "string"
       ]
     },
-    "end_time": {
+    "lifetime_imps": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "lifetime_frequency_cap": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "is_average_price_pacing": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "is_autobid": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "instagram_actor_id": {
       "type": [
         "null",
         "string"
-      ],
-      "format": "date-time"
+      ]
     },
-    "promoted_object": {
+    "frequency_control_specs": {
+      "items": {
+        "properties": {
+          "max_frequency": {
+            "type": "integer"
+          },
+          "interval_days": {
+            "type": "integer"
+          },
+          "event": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "type": [
         "null",
-        "object"
-      ],
+        "array"
+      ]
+    },
+    "frequency_cap_reset_period": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "frequency_cap": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "creative_sequence": {
+      "items": {
+        "type": "string"
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    },
+    "configured_status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "billing_event": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "bid_amount": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "adlabels": {
+      "items": {
+        "properties": {
+          "updated_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "created_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    },
+    "bid_info": {
       "properties": {
-        "custom_event_type": {
+        "CLICKS": {
           "type": [
             "null",
-            "string"
-          ]
-        },
-        "pixel_id": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "pixel_rule": {
-          "type": [
-            "null",
-            "string"
+            "integer"
           ]
         }
-      }
-    },
-    "id": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "account_id": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "updated_time": {
-      "type": [
-        "null",
-        "string"
-      ],
-      "format": "date-time"
-    },
-    "daily_budget": {
-      "type": [
-        "null",
-        "number"
-      ],
-      "maximum": 100000000000000000000000000000000,
-      "minimum": -100000000000000000000000000000000,
-      "multipleOf": 0.000001,
-      "exclusiveMaximum": true,
-      "exclusiveMinimum": true
-    },
-    "budget_remaining": {
-      "type": [
-        "null",
-        "number"
-      ],
-      "maximum": 100000000000000000000000000000000,
-      "minimum": -100000000000000000000000000000000,
-      "multipleOf": 0.000001,
-      "exclusiveMaximum": true,
-      "exclusiveMinimum": true
-    },
-    "effective_status": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "campaign_id": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "created_time": {
-      "type": [
-        "null",
-        "string"
-      ],
-      "format": "date-time"
-    },
-    "start_time": {
-      "type": [
-        "null",
-        "string"
-      ],
-      "format": "date-time"
-    },
-    "lifetime_budget": {
-      "type": [
-        "null",
-        "number"
-      ],
-      "maximum": 100000000000000000000000000000000,
-      "minimum": -100000000000000000000000000000000,
-      "multipleOf": 0.000001,
-      "exclusiveMaximum": true,
-      "exclusiveMinimum": true
-    },
-    "targeting": {
+      },
       "type": [
         "null",
         "object"
-      ],
+      ]
+    },
+    "targeting": {
       "properties": {
-        "messenger_positions": {
-          "type": [
-            "null",
-            "array"
-          ],
-          "items": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        },
-        "publisher_platforms": {
-          "type": [
-            "null",
-            "array"
-          ],
-          "items": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        },
-        "interests": {
-          "type": [
-            "null",
-            "array"
-          ],
-          "items": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "properties": {
-              "name": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "id": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              }
-            }
-          }
-        },
-        "instagram_positions": {
-          "type": [
-            "null",
-            "array"
-          ],
-          "items": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        },
-        "audience_network_positions": {
+        "facebook_positions": {
           "items": {
             "type": [
               "null",
@@ -201,60 +192,296 @@
             "array"
           ]
         },
-        "geo_locations": {
-          "type": [
-            "null",
-            "object"
-          ],
-          "properties": {
-            "countries": {
-              "type": [
-                "null",
-                "array"
-              ],
-              "items": {
+        "custom_audiences": {
+          "items": {
+            "properties": {
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "name": {
                 "type": [
                   "null",
                   "string"
                 ]
               }
             },
-            "cities": {
-              "type": [
-                "null",
-                "array"
-              ],
-              "items": {
+            "type": [
+              "null",
+              "object"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "flexible_spec": {
+          "items": {
+            "properties": {
+              "work_positions": {
+                "items": {
+                  "properties": {
+                    "id": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "name": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  },
+                  "type": [
+                    "null",
+                    "object"
+                  ]
+                },
                 "type": [
                   "null",
-                  "object"
+                  "array"
+                ]
+              },
+              "interests": {
+                "items": {
+                  "properties": {
+                    "id": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "name": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  },
+                  "type": [
+                    "null",
+                    "object"
+                  ]
+                },
+                "type": [
+                  "null",
+                  "array"
+                ]
+              },
+              "education_majors": {
+                "type": [
+                  "null",
+                  "array"
                 ],
+                "items": {
+                  "properties": {
+                    "id": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    },
+                    "name": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  },
+                  "type": [
+                    "null",
+                    "object"
+                  ]
+                }
+              }
+            },
+            "type": [
+              "null",
+              "object"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "age_min": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "exclusions": {
+          "properties": {
+            "work_employers": {
+              "items": {
                 "properties": {
-                  "name": {
+                  "id": {
                     "type": [
                       "null",
                       "string"
                     ]
                   },
+                  "name": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  }
+                },
+                "type": [
+                  "null",
+                  "object"
+                ]
+              },
+              "type": [
+                "null",
+                "array"
+              ]
+            }
+          },
+          "type": [
+            "null",
+            "object"
+          ]
+        },
+        "age_max": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "device_platforms": {
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "locales": {
+          "items": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "work_positions": {
+          "items": {
+            "properties": {
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            },
+            "type": [
+              "null",
+              "object"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "excluded_connections": {
+          "items": {
+            "properties": {
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            },
+            "type": [
+              "null",
+              "object"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "geo_locations": {
+          "properties": {
+            "regions": {
+              "items": {
+                "properties": {
                   "country": {
                     "type": [
                       "null",
                       "string"
                     ]
                   },
-                  "radius": {
-                    "type": [
-                      "null",
-                      "integer"
-                    ]
-                  },
-                  "region_id": {
+                  "key": {
                     "type": [
                       "null",
                       "string"
                     ]
                   },
-                  "distance_unit": {
+                  "name": {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  }
+                },
+                "type": [
+                  "null",
+                  "object"
+                ]
+              },
+              "type": [
+                "null",
+                "array"
+              ]
+            },
+            "location_types": {
+              "items": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "type": [
+                "null",
+                "array"
+              ]
+            },
+            "cities": {
+              "items": {
+                "properties": {
+                  "key": {
                     "type": [
                       "null",
                       "string"
@@ -266,48 +493,22 @@
                       "string"
                     ]
                   },
-                  "key": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  }
-                }
-              }
-            },
-            "location_types": {
-              "type": [
-                "null",
-                "array"
-              ],
-              "items": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              }
-            },
-            "regions": {
-              "type": [
-                "null",
-                "array"
-              ],
-              "items": {
-                "type": [
-                  "null",
-                  "object"
-                ],
-                "properties": {
-                  "name": {
+                  "distance_unit": {
                     "type": [
                       "null",
                       "string"
                     ]
                   },
-                  "key": {
+                  "region_id": {
                     "type": [
                       "null",
                       "string"
+                    ]
+                  },
+                  "radius": {
+                    "type": [
+                      "null",
+                      "integer"
                     ]
                   },
                   "country": {
@@ -315,253 +516,43 @@
                       "null",
                       "string"
                     ]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "excluded_connections": {
-          "type": [
-            "null",
-            "array"
-          ],
-          "items": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "properties": {
-              "name": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "id": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              }
-            }
-          }
-        },
-        "work_positions": {
-          "type": [
-            "null",
-            "array"
-          ],
-          "items": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "properties": {
-              "name": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "id": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              }
-            }
-          }
-        },
-        "locales": {
-          "type": [
-            "null",
-            "array"
-          ],
-          "items": {
-            "type": [
-              "null",
-              "integer"
-            ]
-          }
-        },
-        "device_platforms": {
-          "type": [
-            "null",
-            "array"
-          ],
-          "items": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        },
-        "age_max": {
-          "type": [
-            "null",
-            "integer"
-          ]
-        },
-        "exclusions": {
-          "type": [
-            "null",
-            "object"
-          ],
-          "properties": {
-            "work_employers": {
-              "type": [
-                "null",
-                "array"
-              ],
-              "items": {
-                "type": [
-                  "null",
-                  "object"
-                ],
-                "properties": {
+                  },
                   "name": {
                     "type": [
                       "null",
                       "string"
                     ]
-                  },
-                  "id": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "age_min": {
-          "type": [
-            "null",
-            "integer"
-          ]
-        },
-        "flexible_spec": {
-          "type": [
-            "null",
-            "array"
-          ],
-          "items": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "properties": {
-              "education_majors": {
-                "items": {
-                  "type": [
-                    "null",
-                    "object"
-                  ],
-                  "properties": {
-                    "name": {
-                      "type": [
-                        "null",
-                        "string"
-                      ]
-                    },
-                    "id": {
-                      "type": [
-                        "null",
-                        "string"
-                      ]
-                    }
                   }
                 },
                 "type": [
                   "null",
-                  "array"
+                  "object"
                 ]
               },
-              "interests": {
+              "type": [
+                "null",
+                "array"
+              ]
+            },
+            "countries": {
+              "items": {
                 "type": [
                   "null",
-                  "array"
-                ],
-                "items": {
-                  "type": [
-                    "null",
-                    "object"
-                  ],
-                  "properties": {
-                    "name": {
-                      "type": [
-                        "null",
-                        "string"
-                      ]
-                    },
-                    "id": {
-                      "type": [
-                        "null",
-                        "string"
-                      ]
-                    }
-                  }
-                }
+                  "string"
+                ]
               },
-              "work_positions": {
-                "type": [
-                  "null",
-                  "array"
-                ],
-                "items": {
-                  "type": [
-                    "null",
-                    "object"
-                  ],
-                  "properties": {
-                    "name": {
-                      "type": [
-                        "null",
-                        "string"
-                      ]
-                    },
-                    "id": {
-                      "type": [
-                        "null",
-                        "string"
-                      ]
-                    }
-                  }
-                }
-              }
+              "type": [
+                "null",
+                "array"
+              ]
             }
-          }
-        },
-        "custom_audiences": {
+          },
           "type": [
             "null",
-            "array"
-          ],
-          "items": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "properties": {
-              "name": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "id": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              }
-            }
-          }
+            "object"
+          ]
         },
-        "facebook_positions": {
+        "audience_network_positions": {
           "type": [
             "null",
             "array"
@@ -572,22 +563,279 @@
               "string"
             ]
           }
+        },
+        "instagram_positions": {
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "interests": {
+          "items": {
+            "properties": {
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            },
+            "type": [
+              "null",
+              "object"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "publisher_platforms": {
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "messenger_positions": {
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
         }
-      }
-    },
-    "bid_info": {
+      },
       "type": [
         "null",
         "object"
-      ],
+      ]
+    },
+    "lifetime_budget": {
+      "exclusiveMinimum": true,
+      "exclusiveMaximum": true,
+      "multipleOf": 1e-06,
+      "minimum": -1e+32,
+      "maximum": 1e+32,
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "start_time": {
+      "format": "date-time",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "created_time": {
+      "format": "date-time",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "campaign_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "effective_status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "budget_remaining": {
+      "exclusiveMinimum": true,
+      "exclusiveMaximum": true,
+      "multipleOf": 1e-06,
+      "minimum": -1e+32,
+      "maximum": 1e+32,
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "daily_budget": {
+      "exclusiveMinimum": true,
+      "exclusiveMaximum": true,
+      "multipleOf": 1e-06,
+      "minimum": -1e+32,
+      "maximum": 1e+32,
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "updated_time": {
+      "format": "date-time",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "account_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "promoted_object": {
       "properties": {
-        "CLICKS": {
+        "product_set_id": {
           "type": [
             "null",
-            "integer"
+            "string"
+          ]
+        },
+        "product_catalog_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "place_page_set_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "pixel_rule": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "pixel_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "page_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "offer_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "object_store_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "event_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "custom_event_type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "application_id": {
+          "type": [
+            "null",
+            "string"
           ]
         }
-      }
+      },
+      "type": [
+        "null",
+        "object"
+      ]
+    },
+    "end_time": {
+      "format": "date-time",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "recurring_budget_semantics": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "rf_prediction_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "rtb_flag": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "source_adset_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "use_new_app_click": {
+      "type": [
+        "null",
+        "boolean"
+      ]
     }
-  }
+  },
+  "type": [
+    "null",
+    "object"
+  ]
 }
