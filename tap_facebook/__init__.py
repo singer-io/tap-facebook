@@ -359,9 +359,10 @@ def transform_date_hook(data, typ, schema):
 
 def do_sync(account, catalog, state):
     streams_to_sync = get_streams_to_sync(account, catalog, state)
+    refs = load_shared_schema_refs()
     for stream in streams_to_sync:
         LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields())
-        schema = load_schema(stream)
+        schema = singer.resolve_schema_references(load_schema(stream), refs)
         singer.write_schema(stream.name, schema, stream.key_properties, stream.stream_alias)
 
         with Transformer(pre_hook=transform_date_hook) as transformer:
