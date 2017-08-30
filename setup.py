@@ -25,6 +25,8 @@ setup(name='tap-facebook',
       package_data = {
           'tap_facebook/schemas': [
               # add schema.json filenames here
+          ],
+          'tap_facebook/schemas/shared': [
           ]
       },
       include_package_data=True,
