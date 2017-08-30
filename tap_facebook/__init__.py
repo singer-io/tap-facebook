@@ -405,15 +405,17 @@ def discover_schemas():
     streams = initialize_streams_for_discovery()
     for stream in streams:
         LOGGER.info('Loading schema for %s', stream.name)
+        schema = singer.resolve_schema_references(load_schema(stream), refs)
         result['streams'].append({'stream': stream.name,
                                   'tap_stream_id': stream.name,
-                                  'schema': singer.resolve_schema_references(load_schema(stream), refs)})
+                                  'schema': schema})
     return result
 
 def load_shared_schema_refs():
     shared_schemas_path = get_abs_path('schemas/shared')
 
-    shared_file_names = [f for f in os.listdir(shared_schemas_path) if os.path.isfile(os.path.join(shared_schemas_path, f))]
+    shared_file_names = [f for f in os.listdir(shared_schemas_path)
+                         if os.path.isfile(os.path.join(shared_schemas_path, f))]
 
     shared_schema_refs = {}
     for shared_file in shared_file_names:
