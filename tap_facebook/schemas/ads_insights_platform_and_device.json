@@ -4,80 +4,17 @@
     "object"
   ],
   "properties": {
-    "unique_actions": {
-      "type": [
-        "null",
-        "array"
-      ],
-      "items": {
-        "type": [
-          "null",
-          "object"
-        ],
-        "properties": {
-          "1d_click": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "7d_click": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "28d_click": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "1d_view": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "7d_view": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "28d_view": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "action_destination": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "action_target_id": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "action_type": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "value": {
-            "type": [
-              "null",
-              "number"
-            ]
-          }
-        }
-      }
-    },
+    "unique_actions": {"$ref": "ads_action_stats.json"},
+    "actions": {"$ref": "ads_action_stats.json"},
+    "action_values": {"$ref": "ads_action_stats.json"},
+    "video_10_sec_watched_actions": {"$ref": "ads_action_stats.json"},
+    "video_15_sec_watched_actions": {"$ref": "ads_action_stats.json"},
+    "video_30_sec_watched_actions": {"$ref": "ads_action_stats.json"},
+    "video_p25_watched_actions": {"$ref": "ads_action_stats.json"},
+    "video_p50_watched_actions": {"$ref": "ads_action_stats.json"},
+    "video_p75_watched_actions": {"$ref": "ads_action_stats.json"},
+    "video_p95_watched_actions": {"$ref": "ads_action_stats.json"},
+    "video_p100_watched_actions": {"$ref": "ads_action_stats.json"},
     "impression_device": {
       "type": [
         "null",
@@ -170,80 +107,6 @@
         "null",
         "number"
       ]
-    },
-    "actions": {
-      "type": [
-        "null",
-        "array"
-      ],
-      "items": {
-        "type": [
-          "null",
-          "object"
-        ],
-        "properties": {
-          "1d_click": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "7d_click": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "28d_click": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "1d_view": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "7d_view": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "28d_view": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "action_destination": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "action_target_id": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "action_type": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "value": {
-            "type": [
-              "null",
-              "number"
-            ]
-          }
-        }
-      }
     },
     "total_actions": {
       "type": [
@@ -344,80 +207,6 @@
         "null",
         "integer"
       ]
-    },
-    "action_values": {
-      "type": [
-        "null",
-        "array"
-      ],
-      "items": {
-        "type": [
-          "null",
-          "object"
-        ],
-        "properties": {
-          "1d_click": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "7d_click": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "28d_click": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "1d_view": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "7d_view": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "28d_view": {
-            "type": [
-              "null",
-              "number"
-            ]
-          },
-          "action_destination": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "action_target_id": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "action_type": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "value": {
-            "type": [
-              "null",
-              "number"
-            ]
-          }
-        }
-      }
     },
     "campaign_name": {
       "type": [
