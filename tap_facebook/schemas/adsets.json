@@ -1,283 +1,29 @@
 {
+  "type": [
+    "null",
+    "object"
+  ],
   "properties": {
-    "recommendations": {
-      "items": {
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "importance": {
-            "type": "string"
-          },
-          "confidence": {
-            "type": "string"
-          },
-          "code": {
-            "type": "integer"
-          },
-          "blame_field": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        },
-        "type": [
-          "null",
-          "object"
-        ]
-      },
-      "type": [
-        "null",
-        "array"
-      ]
-    },
-    "pacing_type": {
-      "items": {
-        "type": "string"
-      },
-      "type": [
-        "null",
-        "array"
-      ]
-    },
-    "optimization_goal": {
+    "name": {
       "type": [
         "null",
         "string"
       ]
     },
-    "lifetime_imps": {
-      "type": [
-        "null",
-        "integer"
-      ]
-    },
-    "lifetime_frequency_cap": {
-      "type": [
-        "null",
-        "integer"
-      ]
-    },
-    "is_average_price_pacing": {
-      "type": [
-        "null",
-        "boolean"
-      ]
-    },
-    "is_autobid": {
-      "type": [
-        "null",
-        "boolean"
-      ]
-    },
-    "instagram_actor_id": {
+    "end_time": {
       "type": [
         "null",
         "string"
-      ]
+      ],
+      "format": "date-time"
     },
-    "frequency_control_specs": {
-      "items": {
-        "properties": {
-          "max_frequency": {
-            "type": "integer"
-          },
-          "interval_days": {
-            "type": "integer"
-          },
-          "event": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "type": [
-        "null",
-        "array"
-      ]
-    },
-    "frequency_cap_reset_period": {
-      "type": [
-        "null",
-        "integer"
-      ]
-    },
-    "frequency_cap": {
-      "type": [
-        "null",
-        "integer"
-      ]
-    },
-    "creative_sequence": {
-      "items": {
-        "type": "string"
-      },
-      "type": [
-        "null",
-        "array"
-      ]
-    },
-    "configured_status": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "billing_event": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "bid_amount": {
-      "type": [
-        "null",
-        "integer"
-      ]
-    },
-    "adlabels": {
-      "items": {
-        "properties": {
-          "updated_time": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "created_time": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "id": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "type": [
-        "null",
-        "array"
-      ]
-    },
-    "bid_info": {
-      "properties": {
-        "CLICKS": {
-          "type": [
-            "null",
-            "integer"
-          ]
-        }
-      },
+    "promoted_object": {
       "type": [
         "null",
         "object"
-      ]
-    },
-    "lifetime_budget": {
-      "exclusiveMinimum": true,
-      "exclusiveMaximum": true,
-      "multipleOf": 1e-06,
-      "minimum": -1e+32,
-      "maximum": 1e+32,
-      "type": [
-        "null",
-        "number"
-      ]
-    },
-    "start_time": {
-      "format": "date-time",
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "created_time": {
-      "format": "date-time",
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "campaign_id": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "effective_status": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "budget_remaining": {
-      "exclusiveMinimum": true,
-      "exclusiveMaximum": true,
-      "multipleOf": 1e-06,
-      "minimum": -1e+32,
-      "maximum": 1e+32,
-      "type": [
-        "null",
-        "number"
-      ]
-    },
-    "daily_budget": {
-      "exclusiveMinimum": true,
-      "exclusiveMaximum": true,
-      "multipleOf": 1e-06,
-      "minimum": -1e+32,
-      "maximum": 1e+32,
-      "type": [
-        "null",
-        "number"
-      ]
-    },
-    "updated_time": {
-      "format": "date-time",
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "account_id": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "id": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "targeting": {"$ref": "targeting.json"},
-    "promoted_object": {
+      ],
       "properties": {
-        "product_set_id": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "product_catalog_id": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "place_page_set_id": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "pixel_rule": {
+        "custom_event_type": {
           "type": [
             "null",
             "string"
@@ -289,100 +35,106 @@
             "string"
           ]
         },
-        "page_id": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "offer_id": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "object_store_url": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "event_id": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "custom_event_type": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "application_id": {
+        "pixel_rule": {
           "type": [
             "null",
             "string"
           ]
         }
-      },
+      }
+    },
+    "id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "account_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "updated_time": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "daily_budget": {
+      "type": [
+        "null",
+        "number"
+      ],
+      "maximum": 100000000000000000000000000000000,
+      "minimum": -100000000000000000000000000000000,
+      "multipleOf": 0.000001,
+      "exclusiveMaximum": true,
+      "exclusiveMinimum": true
+    },
+    "budget_remaining": {
+      "type": [
+        "null",
+        "number"
+      ],
+      "maximum": 100000000000000000000000000000000,
+      "minimum": -100000000000000000000000000000000,
+      "multipleOf": 0.000001,
+      "exclusiveMaximum": true,
+      "exclusiveMinimum": true
+    },
+    "effective_status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "campaign_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "created_time": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "start_time": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "lifetime_budget": {
+      "type": [
+        "null",
+        "number"
+      ],
+      "maximum": 100000000000000000000000000000000,
+      "minimum": -100000000000000000000000000000000,
+      "multipleOf": 0.000001,
+      "exclusiveMaximum": true,
+      "exclusiveMinimum": true
+    },
+    "targeting": { "$ref": "targeting.json"},
+    "bid_info": {
       "type": [
         "null",
         "object"
-      ]
-    },
-    "end_time": {
-      "format": "date-time",
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "name": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "recurring_budget_semantics": {
-      "type": [
-        "null",
-        "boolean"
-      ]
-    },
-    "rf_prediction_id": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "rtb_flag": {
-      "type": [
-        "null",
-        "boolean"
-      ]
-    },
-    "source_adset_id": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "status": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "use_new_app_click": {
-      "type": [
-        "null",
-        "boolean"
-      ]
+      ],
+      "properties": {
+        "CLICKS": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        }
+      }
     }
-  },
-  "type": [
-    "null",
-    "object"
-  ]
+  }
 }
