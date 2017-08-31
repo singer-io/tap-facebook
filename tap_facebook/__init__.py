@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
+import os.path
 import sys
 import time
 
@@ -46,6 +47,7 @@ STREAMS = [
     'ads_insights_age_and_gender',
     'ads_insights_country',
     'ads_insights_platform_and_device']
+
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 LOGGER = singer.get_logger()
@@ -360,9 +362,10 @@ def transform_date_hook(data, typ, schema):
 
 def do_sync(account, catalog, state):
     streams_to_sync = get_streams_to_sync(account, catalog, state)
+    refs = load_shared_schema_refs()
     for stream in streams_to_sync:
         LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields())
-        schema = load_schema(stream)
+        schema = singer.resolve_schema_references(load_schema(stream), refs)
         singer.write_schema(stream.name, schema, stream.key_properties, stream.stream_alias)
 
         with Transformer(pre_hook=transform_date_hook) as transformer:
@@ -399,14 +402,31 @@ def initialize_streams_for_discovery(): # pylint: disable=invalid-name
             for name in STREAMS]
 
 def discover_schemas():
+    # Load Facebook's shared schemas
+    refs = load_shared_schema_refs()
+
     result = {'streams': []}
     streams = initialize_streams_for_discovery()
     for stream in streams:
         LOGGER.info('Loading schema for %s', stream.name)
+        schema = singer.resolve_schema_references(load_schema(stream), refs)
         result['streams'].append({'stream': stream.name,
                                   'tap_stream_id': stream.name,
-                                  'schema': load_schema(stream)})
+                                  'schema': schema})
     return result
+
+def load_shared_schema_refs():
+    shared_schemas_path = get_abs_path('schemas/shared')
+
+    shared_file_names = [f for f in os.listdir(shared_schemas_path)
+                         if os.path.isfile(os.path.join(shared_schemas_path, f))]
+
+    shared_schema_refs = {}
+    for shared_file in shared_file_names:
+        with open(os.path.join(shared_schemas_path, shared_file)) as data_file:
+            shared_schema_refs[shared_file] = json.load(data_file)
+
+    return shared_schema_refs
 
 def do_discover():
     LOGGER.info('Loading schemas')
