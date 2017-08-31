@@ -1,9 +1,40 @@
 {
+  "definitions": {
+    "id_name_pairs": {
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    }
+  },
   "type": [
     "null",
     "object"
   ],
   "properties": {
+    "excluded_custom_audiences": {
+      "$ref": "targeting.json#/definitions/id_name_pairs"
+    },
     "messenger_positions": {
       "type": [
         "null",
@@ -29,30 +60,7 @@
       ]
     },
     "connections": {
-      "items": {
-        "type": [
-          "null",
-          "object"
-        ],
-        "properties": {
-          "name": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "id": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "type": [
-        "null",
-        "array"
-      ]
+      "$ref": "targeting.json#/definitions/id_name_pairs"
     },
     "instagram_positions": {
       "items": {
@@ -85,58 +93,18 @@
       ],
       "properties": {
         "work_employers": {
-          "items": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "properties": {
-              "name": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "id": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              }
-            }
-          },
-          "type": [
-            "null",
-            "array"
-          ]
+          "$ref": "targeting.json#/definitions/id_name_pairs"
+        },
+        "income": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
+        },
+        "user_adclusters": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
         }
       }
     },
     "interests": {
-      "items": {
-        "type": [
-          "null",
-          "object"
-        ],
-        "properties": {
-          "name": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "id": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "type": [
-        "null",
-        "array"
-      ]
+      "$ref": "targeting.json#/definitions/id_name_pairs"
     },
     "geo_locations": {
       "type": [
@@ -259,30 +227,7 @@
       }
     },
     "work_positions": {
-      "items": {
-        "type": [
-          "null",
-          "object"
-        ],
-        "properties": {
-          "name": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "id": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "type": [
-        "null",
-        "array"
-      ]
+      "$ref": "targeting.json#/definitions/id_name_pairs"
     },
     "education_statuses": {
       "items": {
@@ -315,30 +260,7 @@
       ]
     },
     "custom_audiences": {
-      "items": {
-        "type": [
-          "null",
-          "object"
-        ],
-        "properties": {
-          "name": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "id": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "type": [
-        "null",
-        "array"
-      ]
+      "$ref": "targeting.json#/definitions/id_name_pairs"
     },
     "device_platforms": {
       "items": {
@@ -371,30 +293,7 @@
       ]
     },
     "excluded_connections": {
-      "items": {
-        "type": [
-          "null",
-          "object"
-        ],
-        "properties": {
-          "name": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "id": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "type": [
-        "null",
-        "array"
-      ]
+      "$ref": "targeting.json#/definitions/id_name_pairs"
     },
     "flexible_spec": {
       "items": {
@@ -403,83 +302,17 @@
           "object"
         ],
         "properties": {
+          "user_adclusters": {
+            "$ref": "targeting.json#/definitions/id_name_pairs"
+          },
           "education_majors": {
-            "items": {
-              "type": [
-                "null",
-                "object"
-              ],
-              "properties": {
-                "name": {
-                  "type": [
-                    "null",
-                    "string"
-                  ]
-                },
-                "id": {
-                  "type": [
-                    "null",
-                    "string"
-                  ]
-                }
-              }
-            },
-            "type": [
-              "null",
-              "array"
-            ]
+            "$ref": "targeting.json#/definitions/id_name_pairs"
           },
           "interests": {
-            "items": {
-              "type": [
-                "null",
-                "object"
-              ],
-              "properties": {
-                "name": {
-                  "type": [
-                    "null",
-                    "string"
-                  ]
-                },
-                "id": {
-                  "type": [
-                    "null",
-                    "string"
-                  ]
-                }
-              }
-            },
-            "type": [
-              "null",
-              "array"
-            ]
+            "$ref": "targeting.json#/definitions/id_name_pairs"
           },
           "work_positions": {
-            "items": {
-              "type": [
-                "null",
-                "object"
-              ],
-              "properties": {
-                "name": {
-                  "type": [
-                    "null",
-                    "string"
-                  ]
-                },
-                "id": {
-                  "type": [
-                    "null",
-                    "string"
-                  ]
-                }
-              }
-            },
-            "type": [
-              "null",
-              "array"
-            ]
+            "$ref": "targeting.json#/definitions/id_name_pairs"
           }
         }
       },
@@ -489,30 +322,7 @@
       ]
     },
     "friends_of_connections": {
-      "items": {
-        "type": [
-          "null",
-          "object"
-        ],
-        "properties": {
-          "name": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "id": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "type": [
-        "null",
-        "array"
-      ]
+      "$ref": "targeting.json#/definitions/id_name_pairs"
     }
   }
 }
