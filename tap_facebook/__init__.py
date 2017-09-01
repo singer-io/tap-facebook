@@ -111,6 +111,9 @@ class Ads(Stream):
 
 
 class AdSets(Stream):
+    '''
+    doc: https://developers.facebook.com/docs/marketing-api/reference/ad-campaign
+    '''
     field_class = adset.AdSet.Field
     key_properties = ['id', 'updated_time']
 

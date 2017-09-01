@@ -1,0 +1,533 @@
+{
+  "definitions": {
+    "id_name_pairs": {
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    }
+  },
+  "type": [
+    "null",
+    "object"
+  ],
+  "properties": {
+    "excluded_custom_audiences": {
+      "$ref": "targeting.json#/definitions/id_name_pairs"
+    },
+    "messenger_positions": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
+    },
+    "locales": {
+      "items": {
+        "type": [
+          "null",
+          "integer"
+        ]
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    },
+    "connections": {
+      "$ref": "targeting.json#/definitions/id_name_pairs"
+    },
+    "instagram_positions": {
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    },
+    "audience_network_positions": {
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    },
+    "exclusions": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "work_employers": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
+        },
+        "income": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
+        },
+        "user_adclusters": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
+        },
+        "connections": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
+        },
+        "behaviors": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
+        },
+        "interests": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
+        },
+        "custom_audiences": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
+        },
+        "moms": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
+        }
+      }
+    },
+    "interests": {
+      "$ref": "targeting.json#/definitions/id_name_pairs"
+    },
+    "geo_locations": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "regions": {
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "country": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "key": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "countries": {
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "cities": {
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "key": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "distance_unit": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "region": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "country": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "region_id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "radius": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              }
+            }
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "location_types": {
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "zips": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "country": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "key": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "primary_city_id": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "region_id": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              }
+            }
+          }
+        },
+        "custom_locations": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "address_string": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "country": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "distance_unit": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "latitude": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "longitude": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "primary_city_id": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "radius": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "region_id": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "work_positions": {
+      "$ref": "targeting.json#/definitions/id_name_pairs"
+    },
+    "education_statuses": {
+      "items": {
+        "type": [
+          "null",
+          "integer"
+        ]
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    },
+    "publisher_platforms": {
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    },
+    "age_max": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "custom_audiences": {
+      "$ref": "targeting.json#/definitions/id_name_pairs"
+    },
+    "device_platforms": {
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    },
+    "age_min": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "facebook_positions": {
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    },
+    "excluded_connections": {
+      "$ref": "targeting.json#/definitions/id_name_pairs"
+    },
+    "flexible_spec": {
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "user_adclusters": {
+            "$ref": "targeting.json#/definitions/id_name_pairs"
+          },
+          "education_majors": {
+            "$ref": "targeting.json#/definitions/id_name_pairs"
+          },
+          "interests": {
+            "$ref": "targeting.json#/definitions/id_name_pairs"
+          },
+          "work_positions": {
+            "$ref": "targeting.json#/definitions/id_name_pairs"
+          },
+          "work_employers": {
+            "$ref": "targeting.json#/definitions/id_name_pairs"
+          },
+          "connections": {
+            "$ref": "targeting.json#/definitions/id_name_pairs"
+          },
+          "behaviors": {
+            "$ref": "targeting.json#/definitions/id_name_pairs"
+          },
+          "custom_audiences": {
+            "$ref": "targeting.json#/definitions/id_name_pairs"
+          },
+          "income": {
+            "$ref": "targeting.json#/definitions/id_name_pairs"
+          },
+          "family_statuses": {
+            "$ref": "targeting.json#/definitions/id_name_pairs"
+          },
+          "friends_of_connections": {
+            "$ref": "targeting.json#/definitions/id_name_pairs"
+          }
+        }
+      },
+      "type": [
+        "null",
+        "array"
+      ]
+    },
+    "friends_of_connections": {
+      "$ref": "targeting.json#/definitions/id_name_pairs"
+    },
+    "user_os": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
+    },
+    "user_device": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
+    },
+    "excluded_custom_audiences": {
+      "$ref": "targeting.json#/definitions/id_name_pairs"
+    },
+    "excluded_publisher_categories": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
+    },
+    "genders": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "integer"
+        ]
+      }
+    },
+    "targeting_optimization": {
+      "type": [
+        "null",
+        "string"
+      ]
+    }
+  }
+}
