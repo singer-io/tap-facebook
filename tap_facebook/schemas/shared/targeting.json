@@ -522,6 +522,12 @@
           "integer"
         ]
       }
+    },
+    "targeting_optimization": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   }
 }

@@ -40,6 +40,12 @@
             "null",
             "string"
           ]
+        },
+        "page_id": {
+          "type": [
+            "null",
+            "string"
+          ]
         }
       }
     },
@@ -129,6 +135,18 @@
       ],
       "properties": {
         "CLICKS": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "ACTIONS": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "IMPRESSIONS": {
           "type": [
             "null",
             "integer"
