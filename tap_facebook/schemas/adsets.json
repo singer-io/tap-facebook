@@ -46,6 +46,18 @@
             "null",
             "string"
           ]
+        },
+        "object_store_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "application_id": {
+          "type": [
+            "null",
+            "string"
+          ]
         }
       }
     },
@@ -147,6 +159,12 @@
           ]
         },
         "IMPRESSIONS": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "REACH": {
           "type": [
             "null",
             "integer"
