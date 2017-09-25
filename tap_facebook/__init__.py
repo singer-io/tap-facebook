@@ -194,8 +194,8 @@ class InsightsJobTimeout(Exception):
     pass
 
 def log_insights_retry_attempt(details):
-    e = sys.exc_info()[1]
-    LOGGER.info(e.args[0])
+    _, exception, _ = sys.exc_info()
+    LOGGER.info(exception)
     LOGGER.info('Retrying Insights job...')
 
 @attr.s
