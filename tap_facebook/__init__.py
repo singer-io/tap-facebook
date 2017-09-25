@@ -212,6 +212,8 @@ class AdsInsights(Stream):
     invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
                                'age', 'gender', 'country', 'placement']
 
+    can_retry = True
+
     # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
     def __attrs_post_init__(self):
         self.breakdowns = self.options.get('breakdowns') or []
@@ -278,22 +280,38 @@ class AdsInsights(Stream):
                     'Insights job {} did not start after {} seconds'.format(
                         job_id, INSIGHTS_MAX_WAIT_TO_START_SECONDS))
             elif duration > INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS and status != "Job Completed":
-                pretty_error_message = ('Insights job {} did not complete after {} minutes. ' +
-                    'This is an intermittent error and may resolve itself on subsequent queries to the Facebook API. ' +
-                    'You should deselect fields from the schema that are not necessary, ' +
-                    'as that may help improve the reliability of the Facebook API.')
-                raise Exception(pretty_error_message.format(job_id, INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS//60))
+                base_message = 'Insights job {} did not complete after {} minutes. '.format(job_id,
+                                                                                            INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS//60)
+                if self.can_retry:
+                    LOGGER.info(base_message + 'Retrying...')
+                    raise InsightsJobTimeout()
+                else:
+                    pretty_error_message = (base_message +
+                                            'This is an intermittent error and may resolve itself on subsequent queries to ' +
+                                            'the Facebook API. You should deselect fields from the schema that are not ' +
+                                            'necessary, as that may help improve the reliability of the Facebook API.')
+                    raise Exception(pretty_error_message.format(job_id, INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS//60))
             LOGGER.info("sleeping for %d seconds until job is done", sleep_time)
             time.sleep(sleep_time)
             if sleep_time < INSIGHTS_MAX_ASYNC_SLEEP_SECONDS:
                 sleep_time = 2 * sleep_time
         return job
 
+    def run_job_with_retry(self, params):
+        while True:
+            retry = False
+            try:
+                with metrics.job_timer('insights'):
+                    return self.run_job(params)
+            except InsightsJobTimeout:
+                self.can_retry = False
+                retry = True
+            if not retry:
+                break
 
     def __iter__(self):
         for params in self.job_params():
-            with metrics.job_timer('insights'):
-                job = self.run_job(params)
+            job = self.run_job_with_retry(params)
 
             min_date_start_for_job = None
             count = 0
