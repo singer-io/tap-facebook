@@ -193,6 +193,11 @@ def advance_bookmark(state, tap_stream_id, bookmark_key, date):
 class InsightsJobTimeout(Exception):
     pass
 
+def log_insights_retry_attempt(details):
+    e = sys.exc_info()[1]
+    LOGGER.info(e.args[0])
+    LOGGER.info('Retrying Insights job...')
+
 @attr.s
 class AdsInsights(Stream):
     field_class = adsinsights.AdsInsights.Field
@@ -247,18 +252,12 @@ class AdsInsights(Stream):
             }
             buffered_start_date = buffered_start_date.add(days=1)
 
-
-    def log_retry_attempt(details):
-        e = sys.exc_info()[1]
-        LOGGER.info(e.args[0])
-        LOGGER.info('Retrying Insights job...')
-
     @backoff.on_exception(
         backoff.constant,
         InsightsJobTimeout,
         max_tries=2,
         interval=0,
-        on_backoff=log_retry_attempt
+        on_backoff=log_insights_retry_attempt
     )
     def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
