@@ -58,6 +58,18 @@
             "null",
             "string"
           ]
+        },
+        "product_set_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "offer_id": {
+          "type": [
+            "null",
+            "string"
+          ]
         }
       }
     },

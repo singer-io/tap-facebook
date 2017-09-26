@@ -82,6 +82,33 @@
         },
         "work_employers": {
           "$ref": "targeting.json#/definitions/id_name_pairs"
+        },
+        "industries": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
+        },
+        "net_worth": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
+        },
+        "relationship_statuses": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          }
+        },
+        "generation": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
+        },
+        "home_ownership": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
+        },
+        "politics": {
+          "$ref": "targeting.json#/definitions/id_name_pairs"
         }
       }
     }
@@ -342,6 +369,36 @@
         "null",
         "string"
       ]
+    },
+    "net_worth": {
+      "$ref": "targeting.json#/definitions/id_name_pairs"
+    },
+    "politics": {
+      "$ref": "targeting.json#/definitions/id_name_pairs"
+    },
+    "interested_in": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "integer"
+        ]
+      }
+    },
+    "excluded_user_device": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
     }
   }
 }
