@@ -54,6 +54,10 @@ LOGGER = singer.get_logger()
 
 CONFIG = {}
 
+class TapFacebookException(Exception):
+    pass
+
+
 def transform_datetime_string(dts):
     parsed_dt = dateutil.parser.parse(dts)
     if parsed_dt.tzinfo is None:
@@ -190,7 +194,7 @@ def advance_bookmark(state, tap_stream_id, bookmark_key, date):
                     tap_stream_id, current_bookmark, date)
     return state
 
-class InsightsJobTimeout(Exception):
+class InsightsJobTimeout(TapFacebookException):
     pass
 
 def log_insights_retry_attempt(details):
@@ -280,7 +284,7 @@ class AdsInsights(Stream):
                 return job
 
             if duration > INSIGHTS_MAX_WAIT_TO_START_SECONDS and percent_complete == 0:
-                raise Exception(
+                raise TapFacebookException(
                     'Insights job {} did not start after {} seconds'.format(
                         job_id, INSIGHTS_MAX_WAIT_TO_START_SECONDS))
             elif duration > INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS and status != "Job Completed":
@@ -349,7 +353,7 @@ def initialize_stream(name, account, stream_alias, annotated_schema, state): # p
     elif name == 'adcreative':
         return AdCreative(name, account, stream_alias, annotated_schema)
     else:
-        raise Exception('Unknown stream {}'.format(name))
+        raise TapFacebookException('Unknown stream {}'.format(name))
 
 
 def get_streams_to_sync(account, catalog, state):
@@ -387,7 +391,7 @@ def do_sync(account, catalog, state):
                     elif 'state' in message:
                         singer.write_state(message['state'])
                     else:
-                        raise Exception('Unrecognized message {}'.format(message))
+                        raise TapFacebookException('Unrecognized message {}'.format(message))
 
 
 def get_abs_path(path):
@@ -442,7 +446,7 @@ def do_discover():
     json.dump(discover_schemas(), sys.stdout, indent=4)
 
 
-def main():
+def main_impl():
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
     account_id = args.config['account_id']
     access_token = args.config['access_token']
@@ -457,7 +461,7 @@ def main():
         if acc['account_id'] == account_id:
             account = acc
     if not account:
-        raise Exception("Couldn't find account with id {}".format(account_id))
+        raise TapFacebookException("Couldn't find account with id {}".format(account_id))
 
     if args.discover:
         do_discover()
@@ -466,3 +470,14 @@ def main():
         do_sync(account, catalog, args.state)
     else:
         LOGGER.info("No properties were selected")
+
+def main():
+
+    try:
+        main_impl()
+    except TapFacebookException as e:
+        LOGGER.critical(e)
+        sys.exit(1)
+    except Exception as e:
+        LOGGER.critical(e)
+        raise e
