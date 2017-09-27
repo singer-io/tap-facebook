@@ -56,6 +56,12 @@ LOGGER = singer.get_logger()
 
 CONFIG = {}
 
+class TapFacebookException(Exception):
+    pass
+
+class InsightsJobTimeout(TapFacebookException):
+    pass
+
 def transform_datetime_string(dts):
     parsed_dt = dateutil.parser.parse(dts)
     if parsed_dt.tzinfo is None:
@@ -64,14 +70,13 @@ def transform_datetime_string(dts):
         parsed_dt = parsed_dt.astimezone(timezone.utc)
     return singer.strftime(parsed_dt)
 
-class InsightsJobTimeout(Exception):
-    pass
-
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
     def log_retry_attempt(details):
         _, exception, _ = sys.exc_info()
         LOGGER.info(exception)
-        LOGGER.info('Caught retryable error after {tries} tries. Waiting {wait:.0f} more seconds then retrying...'.format(**details))
+        LOGGER.info('Caught retryable error after %s tries. Waiting %s more seconds then retrying...',
+                    details["tries"],
+                    details["wait"])
 
     def should_retry_api_error(exception):
         if isinstance(exception, FacebookRequestError):
@@ -80,18 +85,12 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
             return True
         return False
 
-    def give_up_on_retry(_):
-        _, exception, _ = sys.exc_info()
-        if isinstance(exception, FacebookRequestError):
-            raise Exception(exception.body()) from exception
-
     return backoff.on_exception(
         backoff_type,
         exception,
         jitter=None,
         on_backoff=log_retry_attempt,
         giveup=lambda exc: not should_retry_api_error(exc),
-        on_giveup=give_up_on_retry,
         **wait_gen_kwargs
     )
 
@@ -291,8 +290,7 @@ class AdsInsights(Stream):
             }
             buffered_start_date = buffered_start_date.add(days=1)
 
-    @retry_pattern(backoff.constant, InsightsJobTimeout, max_tries=2)
-    @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout), max_tries=5, factor=5)
     def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
         job = self.account.get_insights( # pylint: disable=no-member
@@ -314,7 +312,7 @@ class AdsInsights(Stream):
                 return job
 
             if duration > INSIGHTS_MAX_WAIT_TO_START_SECONDS and percent_complete == 0:
-                raise Exception(
+                raise TapFacebookException(
                     'Insights job {} did not start after {} seconds'.format(
                         job_id, INSIGHTS_MAX_WAIT_TO_START_SECONDS))
             elif duration > INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS and status != "Job Completed":
@@ -383,7 +381,7 @@ def initialize_stream(name, account, stream_alias, annotated_schema, state): # p
     elif name == 'adcreative':
         return AdCreative(name, account, stream_alias, annotated_schema)
     else:
-        raise Exception('Unknown stream {}'.format(name))
+        raise TapFacebookException('Unknown stream {}'.format(name))
 
 
 def get_streams_to_sync(account, catalog, state):
@@ -421,7 +419,7 @@ def do_sync(account, catalog, state):
                     elif 'state' in message:
                         singer.write_state(message['state'])
                     else:
-                        raise Exception('Unrecognized message {}'.format(message))
+                        raise TapFacebookException('Unrecognized message {}'.format(message))
 
 
 def get_abs_path(path):
@@ -476,7 +474,7 @@ def do_discover():
     json.dump(discover_schemas(), sys.stdout, indent=4)
 
 
-def main():
+def main_impl():
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
     account_id = args.config['account_id']
     access_token = args.config['access_token']
@@ -491,7 +489,7 @@ def main():
         if acc['account_id'] == account_id:
             account = acc
     if not account:
-        raise Exception("Couldn't find account with id {}".format(account_id))
+        raise TapFacebookException("Couldn't find account with id {}".format(account_id))
 
     if args.discover:
         do_discover()
@@ -500,3 +498,15 @@ def main():
         do_sync(account, catalog, args.state)
     else:
         LOGGER.info("No properties were selected")
+
+def main():
+
+    try:
+        main_impl()
+    except TapFacebookException as e:
+        LOGGER.critical(e)
+        sys.exit(1)
+    except Exception as e:
+        for line in str(e).splitlines():
+            LOGGER.critical(line)
+        raise e
