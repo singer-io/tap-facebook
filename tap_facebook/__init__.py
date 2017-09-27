@@ -67,31 +67,32 @@ def transform_datetime_string(dts):
 class InsightsJobTimeout(Exception):
     pass
 
-def give_up_on_retry(_):
-    _, exception, _ = sys.exc_info()
-    if isinstance(exception, FacebookRequestError):
-         raise Exception(exception.body()) from exception
+def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
+    def log_retry_attempt(details):
+        _, exception, _ = sys.exc_info()
+        LOGGER.info(exception)
+        LOGGER.info('Caught retryable error after {tries} tries. Waiting {wait:.0f} more seconds then retrying...'.format(**details))
 
-def should_retry_api_error(exception):
-    if isinstance(exception, FacebookRequestError):
-        return not exception.api_transient_error()
-    elif isinstance(exception, InsightsJobTimeout):
-        return True
-    return False
+    def should_retry_api_error(exception):
+        if isinstance(exception, FacebookRequestError):
+            return exception.api_transient_error()
+        elif isinstance(exception, InsightsJobTimeout):
+            return True
+        return False
 
-def log_insights_retry_attempt(_):
-    _, exception, _ = sys.exc_info()
-    LOGGER.info(exception)
-    LOGGER.info('Caught retryable error, retrying job...')
+    def give_up_on_retry(_):
+        _, exception, _ = sys.exc_info()
+        if isinstance(exception, FacebookRequestError):
+            raise Exception(exception.body()) from exception
 
-retry_pattern = backoff.on_exception(
-        backoff.constant,
-        (InsightsJobTimeout, FacebookRequestError),
-        max_tries=2,
-        interval=10,
-        on_backoff=log_insights_retry_attempt,
-        giveup=should_retry_api_error,
-        on_giveup=give_up_on_retry
+    return backoff.on_exception(
+        backoff_type,
+        exception,
+        jitter=None,
+        on_backoff=log_retry_attempt,
+        giveup=lambda exc: not should_retry_api_error(exc),
+        on_giveup=give_up_on_retry,
+        **wait_gen_kwargs
     )
 
 @attr.s
@@ -123,7 +124,7 @@ class AdCreative(Stream):
     key_properties = ['id']
 
     def __iter__(self):
-        @retry_pattern
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             return self.account.get_ad_creatives(fields=self.fields(), # pylint: disable=no-member
                                                  params={'limit': RESULT_RETURN_LIMIT})
@@ -140,7 +141,7 @@ class Ads(Stream):
     key_properties = ['id', 'updated_time']
 
     def __iter__(self):
-        @retry_pattern
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             return self.account.get_ads(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
         ads = do_request()
@@ -156,7 +157,7 @@ class AdSets(Stream):
     key_properties = ['id', 'updated_time']
 
     def __iter__(self):
-        @retry_pattern
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             return self.account.get_ad_sets(fields=self.fields(), # pylint: disable=no-member
                                             params={'limit': RESULT_RETURN_LIMIT})
@@ -174,7 +175,7 @@ class Campaigns(Stream):
         fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
 
-        @retry_pattern
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             return self.account.get_campaigns(fields=fields, params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
 
@@ -290,7 +291,8 @@ class AdsInsights(Stream):
             }
             buffered_start_date = buffered_start_date.add(days=1)
 
-    @retry_pattern
+    @retry_pattern(backoff.constant, InsightsJobTimeout, max_tries=2)
+    @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
     def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
         job = self.account.get_insights( # pylint: disable=no-member
