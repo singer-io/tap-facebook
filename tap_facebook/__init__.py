@@ -30,6 +30,8 @@ import facebookads.adobjects.campaign as fb_campaign
 import facebookads.adobjects.adsinsights as adsinsights
 import facebookads.adobjects.user as fb_user
 
+from facebookads.exceptions import FacebookRequestError
+
 TODAY = pendulum.today()
 
 INSIGHTS_MAX_WAIT_TO_START_SECONDS = 5 * 60
@@ -57,6 +59,8 @@ CONFIG = {}
 class TapFacebookException(Exception):
     pass
 
+class InsightsJobTimeout(TapFacebookException):
+    pass
 
 def transform_datetime_string(dts):
     parsed_dt = dateutil.parser.parse(dts)
@@ -65,6 +69,30 @@ def transform_datetime_string(dts):
     else:
         parsed_dt = parsed_dt.astimezone(timezone.utc)
     return singer.strftime(parsed_dt)
+
+def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
+    def log_retry_attempt(details):
+        _, exception, _ = sys.exc_info()
+        LOGGER.info(exception)
+        LOGGER.info('Caught retryable error after %s tries. Waiting %s more seconds then retrying...',
+                    details["tries"],
+                    details["wait"])
+
+    def should_retry_api_error(exception):
+        if isinstance(exception, FacebookRequestError):
+            return exception.api_transient_error()
+        elif isinstance(exception, InsightsJobTimeout):
+            return True
+        return False
+
+    return backoff.on_exception(
+        backoff_type,
+        exception,
+        jitter=None,
+        on_backoff=log_retry_attempt,
+        giveup=lambda exc: not should_retry_api_error(exc),
+        **wait_gen_kwargs
+    )
 
 @attr.s
 class Stream(object):
@@ -95,8 +123,11 @@ class AdCreative(Stream):
     key_properties = ['id']
 
     def __iter__(self):
-        ad_creative = self.account.get_ad_creatives(fields=self.fields(), # pylint: disable=no-member
-                                                    params={'limit': RESULT_RETURN_LIMIT})
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+        def do_request():
+            return self.account.get_ad_creatives(fields=self.fields(), # pylint: disable=no-member
+                                                 params={'limit': RESULT_RETURN_LIMIT})
+        ad_creative = do_request()
         for a in ad_creative: # pylint: disable=invalid-name
             yield {'record': a.export_all_data()}
 
@@ -109,7 +140,10 @@ class Ads(Stream):
     key_properties = ['id', 'updated_time']
 
     def __iter__(self):
-        ads = self.account.get_ads(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+        def do_request():
+            return self.account.get_ads(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
+        ads = do_request()
         for ad in ads: # pylint: disable=invalid-name
             yield {'record': ad.export_all_data()}
 
@@ -122,8 +156,11 @@ class AdSets(Stream):
     key_properties = ['id', 'updated_time']
 
     def __iter__(self):
-        ad_sets = self.account.get_ad_sets(fields=self.fields(), # pylint: disable=no-member
-                                           params={'limit': RESULT_RETURN_LIMIT})
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+        def do_request():
+            return self.account.get_ad_sets(fields=self.fields(), # pylint: disable=no-member
+                                            params={'limit': RESULT_RETURN_LIMIT})
+        ad_sets = do_request()
         for ad_set in ad_sets:
             yield {'record': ad_set.export_all_data()}
 
@@ -136,7 +173,12 @@ class Campaigns(Stream):
         props = self.fields()
         fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
-        campaigns = self.account.get_campaigns(fields=fields, params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
+
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+        def do_request():
+            return self.account.get_campaigns(fields=fields, params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
+
+        campaigns = do_request()
         for campaign in campaigns:
             campaign_out = {}
             for k in campaign:
@@ -194,14 +236,6 @@ def advance_bookmark(state, tap_stream_id, bookmark_key, date):
                     tap_stream_id, current_bookmark, date)
     return state
 
-class InsightsJobTimeout(TapFacebookException):
-    pass
-
-def log_insights_retry_attempt(details):
-    _, exception, _ = sys.exc_info()
-    LOGGER.info(exception)
-    LOGGER.info('Retrying Insights job...')
-
 @attr.s
 class AdsInsights(Stream):
     field_class = adsinsights.AdsInsights.Field
@@ -256,13 +290,7 @@ class AdsInsights(Stream):
             }
             buffered_start_date = buffered_start_date.add(days=1)
 
-    @backoff.on_exception(
-        backoff.constant,
-        InsightsJobTimeout,
-        max_tries=2,
-        interval=0,
-        on_backoff=log_insights_retry_attempt
-    )
+    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout), max_tries=5, factor=5)
     def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
         job = self.account.get_insights( # pylint: disable=no-member
@@ -479,5 +507,6 @@ def main():
         LOGGER.critical(e)
         sys.exit(1)
     except Exception as e:
-        LOGGER.critical(e)
+        for line in str(e).splitlines():
+            LOGGER.critical(line)
         raise e
