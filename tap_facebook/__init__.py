@@ -435,8 +435,13 @@ def load_schema(stream):
     for k in schema['properties']:
         if k in set(stream.key_properties):
             schema['properties'][k]['inclusion'] = 'automatic'
-        elif k in field_class.__dict__:
+        else:
+            if k not in field_class.__dict__:
+                LOGGER.warning(
+                    'Property %s.%s is not defined in the facebookads library',
+                    stream.name, k)
             schema['properties'][k]['inclusion'] = 'available'
+
     return schema
 
 
