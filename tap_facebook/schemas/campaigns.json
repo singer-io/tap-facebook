@@ -50,10 +50,6 @@
       "type": "string",
       "format": "date-time"
     },
-    "end_time": {
-      "type": "string",
-      "format": "date-time"
-    },
     "ads": {
       "properties": {
         "data": {

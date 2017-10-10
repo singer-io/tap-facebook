@@ -67,12 +67,6 @@
         "string"
       ]
     },
-    "branded_content_sponsor_page_id": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
     "call_to_action_type": {
       "type": [
         "null",
