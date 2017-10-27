@@ -514,6 +514,7 @@ def main():
         LOGGER.critical(e)
         sys.exit(1)
     except Exception as e:
+        LOGGER.exception(e)
         for line in str(e).splitlines():
             LOGGER.critical(line)
         raise e
