@@ -77,6 +77,18 @@
         "null",
         "object"
       ]
+    },
+    "adlabels": {
+      "type": ["null", "array"],
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"},
+          "created_time": {"type": "string", "format": "date-time"},
+          "updated_time": {"type": "string", "format": "date-time"}
+        }
+      }
     }
   },
   "type": [
