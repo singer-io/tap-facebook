@@ -152,7 +152,7 @@ class Ads(Stream):
         def do_request():
             return self.account.get_ads(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
 
-        current_bookmark = pendulum.parse(get_start(self.state, self.name, "updated_time"))
+        current_bookmark = get_start(self.state, self.name, UPDATED_TIME_KEY)
         ads = do_request()
         max_bookmark = None
         for ad in ads: # pylint: disable=invalid-name
@@ -185,7 +185,7 @@ class AdSets(Stream):
             return self.account.get_ad_sets(fields=self.fields(), # pylint: disable=no-member
                                             params={'limit': RESULT_RETURN_LIMIT})
 
-        current_bookmark = pendulum.parse(get_start(self.state, self.name, "updated_time"))
+        current_bookmark = get_start(self.state, self.name, UPDATED_TIME_KEY)
         ad_sets = do_request()
         max_bookmark = None
         for ad_set in ad_sets:
@@ -218,7 +218,7 @@ class Campaigns(Stream):
         def do_request():
             return self.account.get_campaigns(fields=fields, params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
 
-        current_bookmark = pendulum.parse(get_start(self.state, self.name, "updated_time"))
+        current_bookmark = get_start(self.state, self.name, UPDATED_TIME_KEY)
         campaigns = do_request()
         max_bookmark = None
         for campaign in campaigns:
@@ -261,18 +261,18 @@ ALL_ACTION_BREAKDOWNS = [
 def get_start(state, tap_stream_id, bookmark_key):
     current_bookmark = singer.get_bookmark(state, tap_stream_id, bookmark_key)
     if current_bookmark is None:
-        if tap_stream_id in FULL_TABLE_STREAMS:
-            return str(pendulum.min)
+        if tap_stream_id in INCREMENTAL_STREAMS:
+            return pendulum.min
         else:
             LOGGER.info("using start_date instead...%s", CONFIG['start_date'])
-            return CONFIG['start_date']
+            return pendulum.parse(CONFIG['start_date'])
     LOGGER.info("found current bookmark %s", current_bookmark)
-    return current_bookmark
+    return pendulum.parse(current_bookmark)
 
 def advance_bookmark(state, tap_stream_id, bookmark_key, date):
     LOGGER.info('advance(%s, %s)', tap_stream_id, date)
     date = pendulum.parse(date) if date else None
-    current_bookmark = pendulum.parse(get_start(state, tap_stream_id, bookmark_key))
+    current_bookmark = get_start(state, tap_stream_id, bookmark_key)
 
     if date is None:
         LOGGER.info('Did not get a date for stream %s '+
@@ -316,7 +316,7 @@ class AdsInsights(Stream):
             self.key_properties.extend(self.options['primary-keys'])
 
     def job_params(self):
-        start_date = pendulum.parse(get_start(self.state, self.name, self.bookmark_key))
+        start_date = get_start(self.state, self.name, self.bookmark_key)
 
         buffer_days = 28
         if CONFIG.get('insights_buffer_days'):
