@@ -50,8 +50,8 @@ STREAMS = [
     'ads_insights_country',
     'ads_insights_platform_and_device']
 
-FULL_TABLE_STREAMS = [
-    'adcreative',
+UPDATED_TIME_KEY = 'updated_time'
+INCREMENTAL_STREAMS = [
     'ads',
     'adsets',
     'campaigns']
@@ -145,7 +145,7 @@ class Ads(Stream):
     state = attr.ib()
 
     field_class = fb_ad.Ad.Field
-    key_properties = ['id', 'updated_time']
+    key_properties = ['id']
 
     def __iter__(self):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
@@ -157,7 +157,7 @@ class Ads(Stream):
         max_bookmark = None
         for ad in ads: # pylint: disable=invalid-name
             record = ad.export_all_data()
-            updated_at = pendulum.parse(ad['updated_time'])
+            updated_at = pendulum.parse(ad[UPDATED_TIME_KEY])
 
             if current_bookmark >= updated_at:
                 continue
@@ -166,7 +166,7 @@ class Ads(Stream):
             yield {'record': record}
 
         if max_bookmark:
-            yield {'state': advance_bookmark(self.state, self.name, "updated_time", str(max_bookmark))}
+            yield {'state': advance_bookmark(self.state, self.name, UPDATED_TIME_KEY, str(max_bookmark))}
 
 
 @attr.s
@@ -177,7 +177,7 @@ class AdSets(Stream):
     state = attr.ib()
 
     field_class = adset.AdSet.Field
-    key_properties = ['id', 'updated_time']
+    key_properties = ['id']
 
     def __iter__(self):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
@@ -190,7 +190,7 @@ class AdSets(Stream):
         max_bookmark = None
         for ad_set in ad_sets:
             record = ad_set.export_all_data()
-            updated_at = pendulum.parse(ad_set['updated_time'])
+            updated_at = pendulum.parse(ad_set[UPDATED_TIME_KEY])
 
             if current_bookmark >= updated_at:
                 continue
@@ -199,7 +199,7 @@ class AdSets(Stream):
             yield {'record': record}
 
         if max_bookmark:
-            yield {'state': advance_bookmark(self.state, self.name, "updated_time", str(max_bookmark))}
+            yield {'state': advance_bookmark(self.state, self.name, UPDATED_TIME_KEY, str(max_bookmark))}
 
 
 @attr.s
@@ -232,7 +232,7 @@ class Campaigns(Stream):
                 for ad_id in ids:
                     campaign_out['ads']['data'].append({'id': ad_id})
 
-            updated_at = pendulum.parse(campaign['updated_time'])
+            updated_at = pendulum.parse(campaign[UPDATED_TIME_KEY])
 
             if current_bookmark >= updated_at:
                 continue
@@ -241,7 +241,7 @@ class Campaigns(Stream):
             yield {'record': campaign_out}
 
         if max_bookmark:
-            yield {'state': advance_bookmark(self.state, self.name, "updated_time", str(max_bookmark))}
+            yield {'state': advance_bookmark(self.state, self.name, UPDATED_TIME_KEY, str(max_bookmark))}
 
 ALL_ACTION_ATTRIBUTION_WINDOWS = [
     '1d_click',
@@ -485,7 +485,7 @@ def load_schema(stream):
     field_class = stream.field_class
     schema = utils.load_json(path)
     for k in schema['properties']:
-        if k in set(stream.key_properties):
+        if k in set(stream.key_properties) or k == UPDATED_TIME_KEY:
             schema['properties'][k]['inclusion'] = 'automatic'
         else:
             if k not in field_class.__dict__:
