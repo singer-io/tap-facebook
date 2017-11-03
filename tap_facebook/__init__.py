@@ -252,11 +252,12 @@ def get_start(state, tap_stream_id, bookmark_key):
     current_bookmark = singer.get_bookmark(state, tap_stream_id, bookmark_key)
     if current_bookmark is None:
         if tap_stream_id in INCREMENTAL_STREAMS:
+            LOGGER.info("no bookmark found for %s, will perform full sync...", tap_stream_id)
             return pendulum.min
         else:
-            LOGGER.info("using start_date instead...%s", CONFIG['start_date'])
+            LOGGER.info("no bookmark found for %s, using start_date instead...%s", tap_stream_id, CONFIG['start_date'])
             return pendulum.parse(CONFIG['start_date'])
-    LOGGER.info("found current bookmark %s", current_bookmark)
+    LOGGER.info("found current bookmark for %s:  %s", tap_stream_id, current_bookmark)
     return pendulum.parse(current_bookmark)
 
 def advance_bookmark(state, tap_stream_id, bookmark_key, date):
