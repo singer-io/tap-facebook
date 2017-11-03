@@ -118,6 +118,28 @@ class Stream(object):
                     fields.add(k)
         return fields
 
+@attr.s
+class IncrementalStream(Stream):
+
+    state = attr.ib()
+
+    def __attrs_post_init__(self):
+        self.current_bookmark = get_start(self.state or {}, self.name, UPDATED_TIME_KEY)
+
+    def _iterate(self, recordset, record_preparation):
+        max_bookmark = None
+        for record in recordset:
+            record = record_preparation(record)
+            updated_at = pendulum.parse(record[UPDATED_TIME_KEY])
+
+            if self.current_bookmark >= updated_at:
+                continue
+            if not max_bookmark or updated_at > max_bookmark:
+                max_bookmark = updated_at
+            yield {'record': record}
+
+        if max_bookmark:
+            yield {'state': advance_bookmark(self.state, self.name, UPDATED_TIME_KEY, str(max_bookmark))}
 
 class AdCreative(Stream):
     '''
@@ -137,12 +159,10 @@ class AdCreative(Stream):
             yield {'record': a.export_all_data()}
 
 
-@attr.s
-class Ads(Stream):
+class Ads(IncrementalStream):
     '''
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
     '''
-    state = attr.ib()
 
     field_class = fb_ad.Ad.Field
     key_properties = ['id']
@@ -152,29 +172,18 @@ class Ads(Stream):
         def do_request():
             return self.account.get_ads(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
 
-        current_bookmark = get_start(self.state, self.name, UPDATED_TIME_KEY)
+        def prepare_record(ad):
+            return ad.export_all_data()
+
         ads = do_request()
-        max_bookmark = None
-        for ad in ads: # pylint: disable=invalid-name
-            record = ad.export_all_data()
-            updated_at = pendulum.parse(ad[UPDATED_TIME_KEY])
-
-            if current_bookmark >= updated_at:
-                continue
-            if not max_bookmark or updated_at > max_bookmark:
-                max_bookmark = updated_at
-            yield {'record': record}
-
-        if max_bookmark:
-            yield {'state': advance_bookmark(self.state, self.name, UPDATED_TIME_KEY, str(max_bookmark))}
+        for message in self._iterate(ads, prepare_record):
+            yield message
 
 
-@attr.s
-class AdSets(Stream):
+class AdSets(IncrementalStream):
     '''
     doc: https://developers.facebook.com/docs/marketing-api/reference/ad-campaign
     '''
-    state = attr.ib()
 
     field_class = adset.AdSet.Field
     key_properties = ['id']
@@ -185,26 +194,15 @@ class AdSets(Stream):
             return self.account.get_ad_sets(fields=self.fields(), # pylint: disable=no-member
                                             params={'limit': RESULT_RETURN_LIMIT})
 
-        current_bookmark = get_start(self.state, self.name, UPDATED_TIME_KEY)
+        def prepare_record(ad_set):
+            return ad_set.export_all_data()
+
         ad_sets = do_request()
-        max_bookmark = None
-        for ad_set in ad_sets:
-            record = ad_set.export_all_data()
-            updated_at = pendulum.parse(ad_set[UPDATED_TIME_KEY])
-
-            if current_bookmark >= updated_at:
-                continue
-            if not max_bookmark or updated_at > max_bookmark:
-                max_bookmark = updated_at
-            yield {'record': record}
-
-        if max_bookmark:
-            yield {'state': advance_bookmark(self.state, self.name, UPDATED_TIME_KEY, str(max_bookmark))}
+        for message in self._iterate(ad_sets, prepare_record):
+            yield message
 
 
-@attr.s
-class Campaigns(Stream):
-    state = attr.ib()
+class Campaigns(IncrementalStream):
 
     field_class = fb_campaign.Campaign.Field
     key_properties = ['id']
@@ -218,10 +216,7 @@ class Campaigns(Stream):
         def do_request():
             return self.account.get_campaigns(fields=fields, params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
 
-        current_bookmark = get_start(self.state, self.name, UPDATED_TIME_KEY)
-        campaigns = do_request()
-        max_bookmark = None
-        for campaign in campaigns:
+        def prepare_record(campaign):
             campaign_out = {}
             for k in campaign:
                 campaign_out[k] = campaign[k]
@@ -231,17 +226,12 @@ class Campaigns(Stream):
                 ids = [ad['id'] for ad in campaign.get_ads()]
                 for ad_id in ids:
                     campaign_out['ads']['data'].append({'id': ad_id})
+            return campaign_out
 
-            updated_at = pendulum.parse(campaign[UPDATED_TIME_KEY])
+        campaigns = do_request()
+        for message in self._iterate(campaigns, prepare_record):
+            yield message
 
-            if current_bookmark >= updated_at:
-                continue
-            if not max_bookmark or updated_at > max_bookmark:
-                max_bookmark = updated_at
-            yield {'record': campaign_out}
-
-        if max_bookmark:
-            yield {'state': advance_bookmark(self.state, self.name, UPDATED_TIME_KEY, str(max_bookmark))}
 
 ALL_ACTION_ATTRIBUTION_WINDOWS = [
     '1d_click',
