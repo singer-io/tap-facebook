@@ -165,7 +165,7 @@ class Ads(IncrementalStream):
     '''
 
     field_class = fb_ad.Ad.Field
-    key_properties = ['id']
+    key_properties = ['id', 'updated_time']
 
     def __iter__(self):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
@@ -186,7 +186,7 @@ class AdSets(IncrementalStream):
     '''
 
     field_class = adset.AdSet.Field
-    key_properties = ['id']
+    key_properties = ['id', 'updated_time']
 
     def __iter__(self):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
@@ -475,7 +475,7 @@ def load_schema(stream):
     field_class = stream.field_class
     schema = utils.load_json(path)
     for k in schema['properties']:
-        if k in set(stream.key_properties) or k == UPDATED_TIME_KEY:
+        if k in set(stream.key_properties):
             schema['properties'][k]['inclusion'] = 'automatic'
         else:
             if k not in field_class.__dict__:
