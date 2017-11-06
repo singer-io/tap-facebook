@@ -51,6 +51,7 @@ STREAMS = [
     'ads_insights_platform_and_device']
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
+UPDATED_TIME_KEY = 'updated_time'
 LOGGER = singer.get_logger()
 
 CONFIG = {}
@@ -116,16 +117,15 @@ class Stream(object):
 class IncrementalStream(Stream):
 
     state = attr.ib()
-    UPDATED_TIME_KEY = 'updated_time'
 
     def __attrs_post_init__(self):
-        self.current_bookmark = get_start(self, self.UPDATED_TIME_KEY)
+        self.current_bookmark = get_start(self, UPDATED_TIME_KEY)
 
     def _iterate(self, recordset, record_preparation):
         max_bookmark = None
         for record in recordset:
             record = record_preparation(record)
-            updated_at = pendulum.parse(record[self.UPDATED_TIME_KEY])
+            updated_at = pendulum.parse(record[UPDATED_TIME_KEY])
 
             if self.current_bookmark and self.current_bookmark >= updated_at:
                 continue
@@ -134,7 +134,7 @@ class IncrementalStream(Stream):
             yield {'record': record}
 
         if max_bookmark:
-            yield {'state': advance_bookmark(self, self.UPDATED_TIME_KEY, str(max_bookmark))}
+            yield {'state': advance_bookmark(self, UPDATED_TIME_KEY, str(max_bookmark))}
 
 class AdCreative(Stream):
     '''
@@ -474,7 +474,7 @@ def load_schema(stream):
     field_class = stream.field_class
     schema = utils.load_json(path)
     for k in schema['properties']:
-        if k in set(stream.key_properties):
+        if k in set(stream.key_properties) or k == UPDATED_TIME_KEY:
             schema['properties'][k]['inclusion'] = 'automatic'
         else:
             if k not in field_class.__dict__:
