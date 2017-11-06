@@ -245,7 +245,7 @@ ALL_ACTION_BREAKDOWNS = [
 
 def get_start(stream, bookmark_key):
     tap_stream_id = stream.name
-    state = stream.state
+    state = stream.state or {}
     current_bookmark = singer.get_bookmark(state, tap_stream_id, bookmark_key)
     if current_bookmark is None:
         if isinstance(stream, IncrementalStream):
@@ -258,7 +258,7 @@ def get_start(stream, bookmark_key):
 
 def advance_bookmark(stream, bookmark_key, date):
     tap_stream_id = stream.name
-    state = stream.state
+    state = stream.state or {}
     LOGGER.info('advance(%s, %s)', tap_stream_id, date)
     date = pendulum.parse(date) if date else None
     current_bookmark = get_start(stream, bookmark_key)
