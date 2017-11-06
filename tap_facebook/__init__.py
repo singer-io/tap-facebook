@@ -249,7 +249,6 @@ def get_start(stream, bookmark_key):
     current_bookmark = singer.get_bookmark(state, tap_stream_id, bookmark_key)
     if current_bookmark is None:
         if isinstance(stream, IncrementalStream):
-            LOGGER.info("no bookmark found for %s, will perform full sync...", tap_stream_id)
             return None
         else:
             LOGGER.info("no bookmark found for %s, using start_date instead...%s", tap_stream_id, CONFIG['start_date'])
