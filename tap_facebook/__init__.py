@@ -50,12 +50,6 @@ STREAMS = [
     'ads_insights_country',
     'ads_insights_platform_and_device']
 
-UPDATED_TIME_KEY = 'updated_time'
-INCREMENTAL_STREAMS = [
-    'ads',
-    'adsets',
-    'campaigns']
-
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 LOGGER = singer.get_logger()
 
@@ -122,24 +116,25 @@ class Stream(object):
 class IncrementalStream(Stream):
 
     state = attr.ib()
+    UPDATED_TIME_KEY = 'updated_time'
 
     def __attrs_post_init__(self):
-        self.current_bookmark = get_start(self.state or {}, self.name, UPDATED_TIME_KEY)
+        self.current_bookmark = get_start(self, self.UPDATED_TIME_KEY)
 
     def _iterate(self, recordset, record_preparation):
         max_bookmark = None
         for record in recordset:
             record = record_preparation(record)
-            updated_at = pendulum.parse(record[UPDATED_TIME_KEY])
+            updated_at = pendulum.parse(record[self.UPDATED_TIME_KEY])
 
-            if self.current_bookmark >= updated_at:
+            if self.current_bookmark and self.current_bookmark >= updated_at:
                 continue
             if not max_bookmark or updated_at > max_bookmark:
                 max_bookmark = updated_at
             yield {'record': record}
 
         if max_bookmark:
-            yield {'state': advance_bookmark(self.state, self.name, UPDATED_TIME_KEY, str(max_bookmark))}
+            yield {'state': advance_bookmark(self, self.UPDATED_TIME_KEY, str(max_bookmark))}
 
 class AdCreative(Stream):
     '''
@@ -248,28 +243,32 @@ ALL_ACTION_BREAKDOWNS = [
     'action_destination'
 ]
 
-def get_start(state, tap_stream_id, bookmark_key):
+def get_start(stream, bookmark_key):
+    tap_stream_id = stream.name
+    state = stream.state
     current_bookmark = singer.get_bookmark(state, tap_stream_id, bookmark_key)
     if current_bookmark is None:
-        if tap_stream_id in INCREMENTAL_STREAMS:
+        if isinstance(stream, IncrementalStream):
             LOGGER.info("no bookmark found for %s, will perform full sync...", tap_stream_id)
-            return pendulum.min
+            return None
         else:
             LOGGER.info("no bookmark found for %s, using start_date instead...%s", tap_stream_id, CONFIG['start_date'])
             return pendulum.parse(CONFIG['start_date'])
     LOGGER.info("found current bookmark for %s:  %s", tap_stream_id, current_bookmark)
     return pendulum.parse(current_bookmark)
 
-def advance_bookmark(state, tap_stream_id, bookmark_key, date):
+def advance_bookmark(stream, bookmark_key, date):
+    tap_stream_id = stream.name
+    state = stream.state
     LOGGER.info('advance(%s, %s)', tap_stream_id, date)
     date = pendulum.parse(date) if date else None
-    current_bookmark = get_start(state, tap_stream_id, bookmark_key)
+    current_bookmark = get_start(stream, bookmark_key)
 
     if date is None:
         LOGGER.info('Did not get a date for stream %s '+
                     ' not advancing bookmark',
                     tap_stream_id)
-    elif date > current_bookmark:
+    elif not current_bookmark or date > current_bookmark:
         LOGGER.info('Bookmark for stream %s is currently %s, ' +
                     'advancing to %s',
                     tap_stream_id, current_bookmark, date)
@@ -307,7 +306,7 @@ class AdsInsights(Stream):
             self.key_properties.extend(self.options['primary-keys'])
 
     def job_params(self):
-        start_date = get_start(self.state, self.name, self.bookmark_key)
+        start_date = get_start(self, self.bookmark_key)
 
         buffer_days = 28
         if CONFIG.get('insights_buffer_days'):
@@ -396,8 +395,8 @@ class AdsInsights(Stream):
                 for time_range in params['time_ranges']:
                     if time_range['until']:
                         min_date_start_for_job = time_range['until']
-            yield {'state': advance_bookmark(self.state, self.name,
-                                             self.bookmark_key, min_date_start_for_job)} # pylint: disable=no-member
+            yield {'state': advance_bookmark(self, self.bookmark_key,
+                                             min_date_start_for_job)} # pylint: disable=no-member
 
 
 INSIGHTS_BREAKDOWNS_OPTIONS = {
