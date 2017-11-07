@@ -50,8 +50,8 @@ STREAMS = [
     'ads_insights_country',
     'ads_insights_platform_and_device']
 
-
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
+UPDATED_TIME_KEY = 'updated_time'
 LOGGER = singer.get_logger()
 
 CONFIG = {}
@@ -113,6 +113,28 @@ class Stream(object):
                     fields.add(k)
         return fields
 
+@attr.s
+class IncrementalStream(Stream):
+
+    state = attr.ib()
+
+    def __attrs_post_init__(self):
+        self.current_bookmark = get_start(self, UPDATED_TIME_KEY)
+
+    def _iterate(self, recordset, record_preparation):
+        max_bookmark = None
+        for record in recordset:
+            record = record_preparation(record)
+            updated_at = pendulum.parse(record[UPDATED_TIME_KEY])
+
+            if self.current_bookmark and self.current_bookmark >= updated_at:
+                continue
+            if not max_bookmark or updated_at > max_bookmark:
+                max_bookmark = updated_at
+            yield {'record': record}
+
+        if max_bookmark:
+            yield {'state': advance_bookmark(self, UPDATED_TIME_KEY, str(max_bookmark))}
 
 class AdCreative(Stream):
     '''
@@ -132,10 +154,11 @@ class AdCreative(Stream):
             yield {'record': a.export_all_data()}
 
 
-class Ads(Stream):
+class Ads(IncrementalStream):
     '''
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
     '''
+
     field_class = fb_ad.Ad.Field
     key_properties = ['id', 'updated_time']
 
@@ -143,15 +166,20 @@ class Ads(Stream):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             return self.account.get_ads(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
+
+        def prepare_record(ad):
+            return ad.export_all_data()
+
         ads = do_request()
-        for ad in ads: # pylint: disable=invalid-name
-            yield {'record': ad.export_all_data()}
+        for message in self._iterate(ads, prepare_record):
+            yield message
 
 
-class AdSets(Stream):
+class AdSets(IncrementalStream):
     '''
     doc: https://developers.facebook.com/docs/marketing-api/reference/ad-campaign
     '''
+
     field_class = adset.AdSet.Field
     key_properties = ['id', 'updated_time']
 
@@ -160,12 +188,17 @@ class AdSets(Stream):
         def do_request():
             return self.account.get_ad_sets(fields=self.fields(), # pylint: disable=no-member
                                             params={'limit': RESULT_RETURN_LIMIT})
+
+        def prepare_record(ad_set):
+            return ad_set.export_all_data()
+
         ad_sets = do_request()
-        for ad_set in ad_sets:
-            yield {'record': ad_set.export_all_data()}
+        for message in self._iterate(ad_sets, prepare_record):
+            yield message
 
 
-class Campaigns(Stream):
+class Campaigns(IncrementalStream):
+
     field_class = fb_campaign.Campaign.Field
     key_properties = ['id']
 
@@ -178,8 +211,7 @@ class Campaigns(Stream):
         def do_request():
             return self.account.get_campaigns(fields=fields, params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
 
-        campaigns = do_request()
-        for campaign in campaigns:
+        def prepare_record(campaign):
             campaign_out = {}
             for k in campaign:
                 campaign_out[k] = campaign[k]
@@ -189,8 +221,11 @@ class Campaigns(Stream):
                 ids = [ad['id'] for ad in campaign.get_ads()]
                 for ad_id in ids:
                     campaign_out['ads']['data'].append({'id': ad_id})
+            return campaign_out
 
-            yield {'record': campaign_out}
+        campaigns = do_request()
+        for message in self._iterate(campaigns, prepare_record):
+            yield message
 
 
 ALL_ACTION_ATTRIBUTION_WINDOWS = [
@@ -208,28 +243,35 @@ ALL_ACTION_BREAKDOWNS = [
     'action_destination'
 ]
 
-def get_start(state, tap_stream_id, bookmark_key):
+def get_start(stream, bookmark_key):
+    tap_stream_id = stream.name
+    state = stream.state or {}
     current_bookmark = singer.get_bookmark(state, tap_stream_id, bookmark_key)
-    LOGGER.info("found current bookmark %s", current_bookmark)
     if current_bookmark is None:
-        LOGGER.info("using start_date instead...%s", CONFIG['start_date'])
-        return CONFIG['start_date']
-    return current_bookmark
+        if isinstance(stream, IncrementalStream):
+            return None
+        else:
+            LOGGER.info("no bookmark found for %s, using start_date instead...%s", tap_stream_id, CONFIG['start_date'])
+            return pendulum.parse(CONFIG['start_date'])
+    LOGGER.info("found current bookmark for %s:  %s", tap_stream_id, current_bookmark)
+    return pendulum.parse(current_bookmark)
 
-def advance_bookmark(state, tap_stream_id, bookmark_key, date):
+def advance_bookmark(stream, bookmark_key, date):
+    tap_stream_id = stream.name
+    state = stream.state or {}
     LOGGER.info('advance(%s, %s)', tap_stream_id, date)
     date = pendulum.parse(date) if date else None
-    current_bookmark = pendulum.parse(get_start(state, tap_stream_id, bookmark_key))
+    current_bookmark = get_start(stream, bookmark_key)
 
     if date is None:
         LOGGER.info('Did not get a date for stream %s '+
                     ' not advancing bookmark',
                     tap_stream_id)
-    elif date > current_bookmark:
+    elif not current_bookmark or date > current_bookmark:
         LOGGER.info('Bookmark for stream %s is currently %s, ' +
                     'advancing to %s',
                     tap_stream_id, current_bookmark, date)
-        state = singer.write_bookmark(state, tap_stream_id, bookmark_key, date.to_date_string())
+        state = singer.write_bookmark(state, tap_stream_id, bookmark_key, str(date))
     else:
         LOGGER.info('Bookmark for stream %s is currently %s ' +
                     'not changing to to %s',
@@ -263,7 +305,7 @@ class AdsInsights(Stream):
             self.key_properties.extend(self.options['primary-keys'])
 
     def job_params(self):
-        start_date = pendulum.parse(get_start(self.state, self.name, self.bookmark_key))
+        start_date = get_start(self, self.bookmark_key)
 
         buffer_days = 28
         if CONFIG.get('insights_buffer_days'):
@@ -352,8 +394,8 @@ class AdsInsights(Stream):
                 for time_range in params['time_ranges']:
                     if time_range['until']:
                         min_date_start_for_job = time_range['until']
-            yield {'state': advance_bookmark(self.state, self.name,
-                                             self.bookmark_key, min_date_start_for_job)} # pylint: disable=no-member
+            yield {'state': advance_bookmark(self, self.bookmark_key,
+                                             min_date_start_for_job)} # pylint: disable=no-member
 
 
 INSIGHTS_BREAKDOWNS_OPTIONS = {
@@ -371,15 +413,14 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
 def initialize_stream(name, account, stream_alias, annotated_schema, state): # pylint: disable=too-many-return-statements
 
     if name in INSIGHTS_BREAKDOWNS_OPTIONS:
-        return AdsInsights(name, account, stream_alias, annotated_schema,
-                           state=state,
+        return AdsInsights(name, account, stream_alias, annotated_schema, state=state,
                            options=INSIGHTS_BREAKDOWNS_OPTIONS[name])
     elif name == 'campaigns':
-        return Campaigns(name, account, stream_alias, annotated_schema)
+        return Campaigns(name, account, stream_alias, annotated_schema, state=state)
     elif name == 'adsets':
-        return AdSets(name, account, stream_alias, annotated_schema)
+        return AdSets(name, account, stream_alias, annotated_schema, state=state)
     elif name == 'ads':
-        return Ads(name, account, stream_alias, annotated_schema)
+        return Ads(name, account, stream_alias, annotated_schema, state=state)
     elif name == 'adcreative':
         return AdCreative(name, account, stream_alias, annotated_schema)
     else:
@@ -433,7 +474,7 @@ def load_schema(stream):
     field_class = stream.field_class
     schema = utils.load_json(path)
     for k in schema['properties']:
-        if k in set(stream.key_properties):
+        if k in set(stream.key_properties) or k == UPDATED_TIME_KEY:
             schema['properties'][k]['inclusion'] = 'automatic'
         else:
             if k not in field_class.__dict__:
