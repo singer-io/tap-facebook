@@ -52,15 +52,16 @@ STREAMS = [
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 UPDATED_TIME_KEY = 'updated_time'
+START_DATE_KEY = 'date_start'
 
 BOOKMARK_KEYS = {
     'ads': UPDATED_TIME_KEY,
     'adsets': UPDATED_TIME_KEY,
     'campaigns': UPDATED_TIME_KEY,
-    'ads_insights': 'date_start',
-    'ads_insights_age_and_gender': 'date_start',
-    'ads_insights_country': 'date_start',
-    'ads_insights_platform_and_device:': 'date_start'
+    'ads_insights': START_DATE_KEY,
+    'ads_insights_age_and_gender': START_DATE_KEY,
+    'ads_insights_country': START_DATE_KEY,
+    'ads_insights_platform_and_device:': START_DATE_KEY
 }
 
 LOGGER = singer.get_logger()
@@ -303,7 +304,7 @@ class AdsInsights(Stream):
     time_increment = attr.ib(default=1)
     limit = attr.ib(default=RESULT_RETURN_LIMIT)
 
-    bookmark_key = "date_start"
+    bookmark_key = START_DATE_KEY
 
     invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
                                'age', 'gender', 'country', 'placement']
