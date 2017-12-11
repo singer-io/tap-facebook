@@ -52,6 +52,18 @@ STREAMS = [
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 UPDATED_TIME_KEY = 'updated_time'
+START_DATE_KEY = 'date_start'
+
+BOOKMARK_KEYS = {
+    'ads': UPDATED_TIME_KEY,
+    'adsets': UPDATED_TIME_KEY,
+    'campaigns': UPDATED_TIME_KEY,
+    'ads_insights': START_DATE_KEY,
+    'ads_insights_age_and_gender': START_DATE_KEY,
+    'ads_insights_country': START_DATE_KEY,
+    'ads_insights_platform_and_device:': START_DATE_KEY
+}
+
 LOGGER = singer.get_logger()
 
 CONFIG = {}
@@ -292,7 +304,7 @@ class AdsInsights(Stream):
     time_increment = attr.ib(default=1)
     limit = attr.ib(default=RESULT_RETURN_LIMIT)
 
-    bookmark_key = "date_start"
+    bookmark_key = START_DATE_KEY
 
     invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
                                'age', 'gender', 'country', 'placement']
@@ -450,15 +462,16 @@ def do_sync(account, catalog, state):
     for stream in streams_to_sync:
         LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields())
         schema = singer.resolve_schema_references(load_schema(stream), refs)
-        singer.write_schema(stream.name, schema, stream.key_properties, stream.stream_alias)
-
+        bookmark_key = BOOKMARK_KEYS.get(stream.name)
+        singer.write_schema(stream.name, schema, stream.key_properties, bookmark_key, stream.stream_alias)
         with Transformer(pre_hook=transform_date_hook) as transformer:
             with metrics.record_counter(stream.name) as counter:
                 for message in stream:
                     if 'record' in message:
                         counter.increment()
+                        time_extracted = utils.now()
                         record = transformer.transform(message['record'], schema)
-                        singer.write_record(stream.name, record, stream.stream_alias)
+                        singer.write_record(stream.name, record, stream.stream_alias, time_extracted)
                     elif 'state' in message:
                         singer.write_state(message['state'])
                     else:
