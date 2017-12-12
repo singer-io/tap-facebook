@@ -370,7 +370,7 @@ class AdsInsights(Stream):
                                         'This is an intermittent error and may resolve itself on subsequent queries to the Facebook API. ' +
                                         'You should deselect fields from the schema that are not necessary, ' +
                                         'as that may help improve the reliability of the Facebook API.')
-                raise TapFacebookException(pretty_error_message.format(job_id, INSIGHTS_MAX_WAIT_TO_START_SECONDS))
+                raise InsightsJobTimeout(pretty_error_message.format(job_id, INSIGHTS_MAX_WAIT_TO_START_SECONDS))
             elif duration > INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS and status != "Job Completed":
                 pretty_error_message = ('Insights job {} did not complete after {} seconds. ' +
                                         'This is an intermittent error and may resolve itself on subsequent queries to the Facebook API. ' +
