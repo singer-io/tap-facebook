@@ -1432,12 +1432,6 @@
         "string"
       ]
     },
-    "use_page_actor_override": {
-      "type": [
-        "null",
-        "boolean"
-      ]
-    },
     "video_id": {
       "type": [
         "null",
