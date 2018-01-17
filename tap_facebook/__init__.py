@@ -82,6 +82,17 @@ def transform_datetime_string(dts):
         parsed_dt = parsed_dt.astimezone(timezone.utc)
     return singer.strftime(parsed_dt)
 
+def get_delivery_info_filter(stream_type):
+    retDict = [
+        {
+            "field": stream_type + ".delivery_info",
+            "operator": "IN",
+            "value": ["active", "archived", "completed", "limited", "not_delivering", "deleted", "not_published", "pending_review", "permanently_deleted", "recently_completed", "recently_rejected", "rejected", "scheduled", "inactive"]
+        }
+    ]
+    return retDict
+
+
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
     def log_retry_attempt(details):
         _, exception, _ = sys.exc_info()
@@ -177,7 +188,8 @@ class Ads(IncrementalStream):
     def __iter__(self):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
-            return self.account.get_ads(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
+            return self.account.get_ads(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT,
+                                                                      'filtering': get_delivery_info_filter('ad')}) # pylint: disable=no-member
 
         def prepare_record(ad):
             return ad.export_all_data()
@@ -199,7 +211,8 @@ class AdSets(IncrementalStream):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             return self.account.get_ad_sets(fields=self.fields(), # pylint: disable=no-member
-                                            params={'limit': RESULT_RETURN_LIMIT})
+                                            params={'limit': RESULT_RETURN_LIMIT,
+                                                    'filtering': get_delivery_info_filter('adset')})
 
         def prepare_record(ad_set):
             return ad_set.export_all_data()
@@ -221,7 +234,8 @@ class Campaigns(IncrementalStream):
 
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
-            return self.account.get_campaigns(fields=fields, params={'limit': RESULT_RETURN_LIMIT}) # pylint: disable=no-member
+            return self.account.get_campaigns(fields=fields, params={'limit': RESULT_RETURN_LIMIT,
+                                                                     'filtering': get_delivery_info_filter('campaign')}) # pylint: disable=no-member
 
         def prepare_record(campaign):
             campaign_out = {}
