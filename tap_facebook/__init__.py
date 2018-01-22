@@ -87,7 +87,11 @@ def get_delivery_info_filter(stream_type):
         {
             "field": stream_type + ".delivery_info",
             "operator": "IN",
-            "value": ["active", "archived", "completed", "limited", "not_delivering", "deleted", "not_published", "pending_review", "permanently_deleted", "recently_completed", "recently_rejected", "rejected", "scheduled", "inactive"]
+            "value": ["active", "archived", "completed", "limited",
+                      "not_delivering", "deleted", "not_published",
+                      "pending_review", "permanently_deleted",
+                      "recently_completed", "recently_rejected",
+                      "rejected", "scheduled", "inactive"]
         }
     ]
     return retDict
@@ -188,8 +192,10 @@ class Ads(IncrementalStream):
     def __iter__(self):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
-            return self.account.get_ads(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT,
-                                                                      'filtering': get_delivery_info_filter('ad')}) # pylint: disable=no-member
+            params = {'limit': RESULT_RETURN_LIMIT}
+            if CONFIG.get('include_deleted'):
+                params.update({'filtering': get_delivery_info_filter('ad')})
+            return self.account.get_ads(fields=self.fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(ad):
             return ad.export_all_data()
@@ -210,9 +216,10 @@ class AdSets(IncrementalStream):
     def __iter__(self):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
-            return self.account.get_ad_sets(fields=self.fields(), # pylint: disable=no-member
-                                            params={'limit': RESULT_RETURN_LIMIT,
-                                                    'filtering': get_delivery_info_filter('adset')})
+            params = {'limit': RESULT_RETURN_LIMIT}
+            if CONFIG.get('include_deleted'):
+                params.update({'filtering': get_delivery_info_filter('adset')})
+            return self.account.get_ad_sets(fields=self.fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(ad_set):
             return ad_set.export_all_data()
@@ -234,8 +241,10 @@ class Campaigns(IncrementalStream):
 
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
-            return self.account.get_campaigns(fields=fields, params={'limit': RESULT_RETURN_LIMIT,
-                                                                     'filtering': get_delivery_info_filter('campaign')}) # pylint: disable=no-member
+            params = {'limit': RESULT_RETURN_LIMIT}
+            if CONFIG.get('include_deleted'):
+                params.update({'filtering': get_delivery_info_filter('campaign')})
+            return self.account.get_campaigns(fields=fields, params=params) # pylint: disable=no-member
 
         def prepare_record(campaign):
             campaign_out = {}
