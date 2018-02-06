@@ -193,7 +193,8 @@ class Ads(IncrementalStream):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
-            if CONFIG.get('include_deleted'):
+            include_deleted = CONFIG.get('include_deleted', 'false')
+            if include_deleted.lower() == 'true':
                 params.update({'filtering': get_delivery_info_filter('ad')})
             return self.account.get_ads(fields=self.fields(), params=params) # pylint: disable=no-member
 
@@ -217,7 +218,8 @@ class AdSets(IncrementalStream):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
-            if CONFIG.get('include_deleted'):
+            include_deleted = CONFIG.get('include_deleted', 'false')
+            if include_deleted.lower() == 'true':
                 params.update({'filtering': get_delivery_info_filter('adset')})
             return self.account.get_ad_sets(fields=self.fields(), params=params) # pylint: disable=no-member
 
@@ -242,7 +244,8 @@ class Campaigns(IncrementalStream):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
-            if CONFIG.get('include_deleted'):
+            include_deleted = CONFIG.get('include_deleted', 'false')
+            if include_deleted.lower() == 'true':
                 params.update({'filtering': get_delivery_info_filter('campaign')})
             return self.account.get_campaigns(fields=fields, params=params) # pylint: disable=no-member
 
