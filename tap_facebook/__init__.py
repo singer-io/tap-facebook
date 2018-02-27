@@ -162,7 +162,6 @@ class IncrementalStream(Stream):
     def _iterate(self, recordset, record_preparation):
         max_bookmark = None
         for record in recordset:
-            record = record_preparation(record)
             updated_at = pendulum.parse(record[UPDATED_TIME_KEY])
 
             if self.current_bookmark and self.current_bookmark >= updated_at:
@@ -209,6 +208,8 @@ class Ads(IncrementalStream):
             include_deleted = CONFIG.get('include_deleted', 'false')
             if include_deleted.lower() == 'true':
                 params.update({'filtering': get_delivery_info_filter('ad')})
+            if self.current_bookmark:
+                params['filtering'].append({'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
             return self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(ad):
@@ -234,6 +235,8 @@ class AdSets(IncrementalStream):
             include_deleted = CONFIG.get('include_deleted', 'false')
             if include_deleted.lower() == 'true':
                 params.update({'filtering': get_delivery_info_filter('adset')})
+            if self.current_bookmark:
+                params['filtering'].append({'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
             return self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(ad_set):
@@ -259,6 +262,8 @@ class Campaigns(IncrementalStream):
             include_deleted = CONFIG.get('include_deleted', 'false')
             if include_deleted.lower() == 'true':
                 params.update({'filtering': get_delivery_info_filter('campaign')})
+            if self.current_bookmark:
+                params['filtering'].append({'field': 'campaign.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
             return self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(campaign):
