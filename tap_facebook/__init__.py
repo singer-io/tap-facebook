@@ -254,6 +254,7 @@ class Campaigns(IncrementalStream):
 
     def __iter__(self):
         props = self.fields()
+        fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
 
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
@@ -267,10 +268,7 @@ class Campaigns(IncrementalStream):
             return self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(campaign):
-            campaign_out = campaign.remote_read(fields=self.fields()).export_all_data()
-            #for k in campaign:
-            #    campaign_out[k] = campaign[k]
-
+            campaign_out = campaign.remote_read(fields=fields).export_all_data()
             if pull_ads:
                 campaign_out['ads'] = {'data': []}
                 ids = [ad['id'] for ad in campaign.get_ads()]
