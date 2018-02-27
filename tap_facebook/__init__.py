@@ -129,6 +129,17 @@ class Stream(object):
     stream_alias = attr.ib()
     annotated_schema = attr.ib()
 
+    def automatic_fields(self):
+        fields = set()
+        if self.annotated_schema:
+            props = self.annotated_schema.properties # pylint: disable=no-member
+            for k, val in props.items():
+                inclusion = val.inclusion
+                if inclusion == 'automatic':
+                    fields.add(k)
+        return fields
+
+
     def fields(self):
         fields = set()
         if self.annotated_schema:
@@ -158,6 +169,8 @@ class IncrementalStream(Stream):
                 continue
             if not max_bookmark or updated_at > max_bookmark:
                 max_bookmark = updated_at
+
+            record = record_preparation(record)
             yield {'record': record}
 
         if max_bookmark:
@@ -196,10 +209,10 @@ class Ads(IncrementalStream):
             include_deleted = CONFIG.get('include_deleted', 'false')
             if include_deleted.lower() == 'true':
                 params.update({'filtering': get_delivery_info_filter('ad')})
-            return self.account.get_ads(fields=self.fields(), params=params) # pylint: disable=no-member
+            return self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(ad):
-            return ad.export_all_data()
+            return ad.remote_read(fields=self.fields()).export_all_data()
 
         ads = do_request()
         for message in self._iterate(ads, prepare_record):
@@ -221,10 +234,10 @@ class AdSets(IncrementalStream):
             include_deleted = CONFIG.get('include_deleted', 'false')
             if include_deleted.lower() == 'true':
                 params.update({'filtering': get_delivery_info_filter('adset')})
-            return self.account.get_ad_sets(fields=self.fields(), params=params) # pylint: disable=no-member
+            return self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(ad_set):
-            return ad_set.export_all_data()
+            return ad_set.remote_read(fields=self.fields()).export_all_data()
 
         ad_sets = do_request()
         for message in self._iterate(ad_sets, prepare_record):
@@ -238,7 +251,6 @@ class Campaigns(IncrementalStream):
 
     def __iter__(self):
         props = self.fields()
-        fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
 
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
@@ -247,12 +259,12 @@ class Campaigns(IncrementalStream):
             include_deleted = CONFIG.get('include_deleted', 'false')
             if include_deleted.lower() == 'true':
                 params.update({'filtering': get_delivery_info_filter('campaign')})
-            return self.account.get_campaigns(fields=fields, params=params) # pylint: disable=no-member
+            return self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(campaign):
-            campaign_out = {}
-            for k in campaign:
-                campaign_out[k] = campaign[k]
+            campaign_out = campaign.remote_read(fields=self.fields()).export_all_data()
+            #for k in campaign:
+            #    campaign_out[k] = campaign[k]
 
             if pull_ads:
                 campaign_out['ads'] = {'data': []}
