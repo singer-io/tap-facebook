@@ -83,8 +83,7 @@ def transform_datetime_string(dts):
     return singer.strftime(parsed_dt)
 
 def get_delivery_info_filter(stream_type):
-    retDict = [
-        {
+    return {
             "field": stream_type + ".delivery_info",
             "operator": "IN",
             "value": ["active", "archived", "completed", "limited",
@@ -92,9 +91,7 @@ def get_delivery_info_filter(stream_type):
                       "pending_review", "permanently_deleted",
                       "recently_completed", "recently_rejected",
                       "rejected", "scheduled", "inactive"]
-        }
-    ]
-    return retDict
+    }
 
 
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
@@ -129,6 +126,17 @@ class Stream(object):
     stream_alias = attr.ib()
     annotated_schema = attr.ib()
 
+    def automatic_fields(self):
+        fields = set()
+        if self.annotated_schema:
+            props = self.annotated_schema.properties # pylint: disable=no-member
+            for k, val in props.items():
+                inclusion = val.inclusion
+                if inclusion == 'automatic':
+                    fields.add(k)
+        return fields
+
+
     def fields(self):
         fields = set()
         if self.annotated_schema:
@@ -151,13 +159,14 @@ class IncrementalStream(Stream):
     def _iterate(self, recordset, record_preparation):
         max_bookmark = None
         for record in recordset:
-            record = record_preparation(record)
             updated_at = pendulum.parse(record[UPDATED_TIME_KEY])
 
             if self.current_bookmark and self.current_bookmark >= updated_at:
                 continue
             if not max_bookmark or updated_at > max_bookmark:
                 max_bookmark = updated_at
+
+            record = record_preparation(record)
             yield {'record': record}
 
         if max_bookmark:
@@ -194,12 +203,18 @@ class Ads(IncrementalStream):
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
             include_deleted = CONFIG.get('include_deleted', 'false')
+            filtering_params = []
             if include_deleted.lower() == 'true':
-                params.update({'filtering': get_delivery_info_filter('ad')})
-            return self.account.get_ads(fields=self.fields(), params=params) # pylint: disable=no-member
+                filtering_params.append(get_delivery_info_filter('ad'))
+            if self.current_bookmark:
+                filtering_params.append({'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+
+            if filtering_params:
+                params.update({'filtering': filtering_params})
+            return self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(ad):
-            return ad.export_all_data()
+            return ad.remote_read(fields=self.fields()).export_all_data()
 
         ads = do_request()
         for message in self._iterate(ads, prepare_record):
@@ -219,12 +234,18 @@ class AdSets(IncrementalStream):
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
             include_deleted = CONFIG.get('include_deleted', 'false')
+            filtering_params = []
             if include_deleted.lower() == 'true':
-                params.update({'filtering': get_delivery_info_filter('adset')})
-            return self.account.get_ad_sets(fields=self.fields(), params=params) # pylint: disable=no-member
+                filtering_params.append(get_delivery_info_filter('adset'))
+            if self.current_bookmark:
+                filtering_params.append({'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+
+            if filtering_params:
+                params.update({'filtering': filtering_params})
+            return self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(ad_set):
-            return ad_set.export_all_data()
+            return ad_set.remote_read(fields=self.fields()).export_all_data()
 
         ad_sets = do_request()
         for message in self._iterate(ad_sets, prepare_record):
@@ -245,15 +266,18 @@ class Campaigns(IncrementalStream):
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
             include_deleted = CONFIG.get('include_deleted', 'false')
+            filtering_params = []
             if include_deleted.lower() == 'true':
-                params.update({'filtering': get_delivery_info_filter('campaign')})
-            return self.account.get_campaigns(fields=fields, params=params) # pylint: disable=no-member
+                filtering_params.append(get_delivery_info_filter('campaign'))
+            if self.current_bookmark:
+                filtering_params.append({'field': 'campaign.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+
+            if filtering_params:
+                params.update({'filtering': filtering_params})
+            return self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(campaign):
-            campaign_out = {}
-            for k in campaign:
-                campaign_out[k] = campaign[k]
-
+            campaign_out = campaign.remote_read(fields=fields).export_all_data()
             if pull_ads:
                 campaign_out['ads'] = {'data': []}
                 ids = [ad['id'] for ad in campaign.get_ads()]
