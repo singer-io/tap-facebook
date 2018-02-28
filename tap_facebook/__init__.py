@@ -83,8 +83,7 @@ def transform_datetime_string(dts):
     return singer.strftime(parsed_dt)
 
 def get_delivery_info_filter(stream_type):
-    retDict = [
-        {
+    return {
             "field": stream_type + ".delivery_info",
             "operator": "IN",
             "value": ["active", "archived", "completed", "limited",
@@ -92,9 +91,7 @@ def get_delivery_info_filter(stream_type):
                       "pending_review", "permanently_deleted",
                       "recently_completed", "recently_rejected",
                       "rejected", "scheduled", "inactive"]
-        }
-    ]
-    return retDict
+    }
 
 
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
@@ -206,10 +203,14 @@ class Ads(IncrementalStream):
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
             include_deleted = CONFIG.get('include_deleted', 'false')
+            filtering_params = []
             if include_deleted.lower() == 'true':
-                params.update({'filtering': get_delivery_info_filter('ad')})
+                filtering_params.append(get_delivery_info_filter('ad'))
             if self.current_bookmark:
-                params['filtering'].append({'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+                filtering_params.append({'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+
+            if filtering_params:
+                params.update({'filtering': filtering_params})
             return self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(ad):
@@ -233,10 +234,14 @@ class AdSets(IncrementalStream):
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
             include_deleted = CONFIG.get('include_deleted', 'false')
+            filtering_params = []
             if include_deleted.lower() == 'true':
-                params.update({'filtering': get_delivery_info_filter('adset')})
+                filtering_params.append(get_delivery_info_filter('adset'))
             if self.current_bookmark:
-                params['filtering'].append({'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+                filtering_params.append({'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+
+            if filtering_params:
+                params.update({'filtering': filtering_params})
             return self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(ad_set):
@@ -261,10 +266,14 @@ class Campaigns(IncrementalStream):
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
             include_deleted = CONFIG.get('include_deleted', 'false')
+            filtering_params = []
             if include_deleted.lower() == 'true':
-                params.update({'filtering': get_delivery_info_filter('campaign')})
+                filtering_params.append(get_delivery_info_filter('campaign'))
             if self.current_bookmark:
-                params['filtering'].append({'field': 'campaign.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+                filtering_params.append({'field': 'campaign.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+
+            if filtering_params:
+                params.update({'filtering': filtering_params})
             return self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
         def prepare_record(campaign):
