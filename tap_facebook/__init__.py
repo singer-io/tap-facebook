@@ -213,14 +213,23 @@ class Ads(IncrementalStream):
             params = {'limit': RESULT_RETURN_LIMIT}
             include_deleted = CONFIG.get('include_deleted', 'false')
             filtering_params = []
-            if include_deleted.lower() == 'true':
-                filtering_params.append(get_delivery_info_filter('ad'))
+            ads = []
             if self.current_bookmark:
                 filtering_params.append({'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
-
-            if filtering_params:
+            if include_deleted.lower() == 'true':
+                for del_info_filt in iter_delivery_info_filter('ad'):
+                    if len(filtering_params) > 1:
+                        filtering_params.pop()
+                    filtering_params.append(del_info_filt)
+                    params.update({'filtering': filtering_params})
+                    filt_ads = self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                    ads.extend(filt_ads)
+            elif filtering_params:
                 params.update({'filtering': filtering_params})
-            return self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                ads = self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            else:
+                ads =  self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            return ads
 
         def prepare_record(ad):
             return ad.remote_read(fields=self.fields()).export_all_data()
@@ -244,14 +253,23 @@ class AdSets(IncrementalStream):
             params = {'limit': RESULT_RETURN_LIMIT}
             include_deleted = CONFIG.get('include_deleted', 'false')
             filtering_params = []
-            if include_deleted.lower() == 'true':
-                filtering_params.append(get_delivery_info_filter('adset'))
+            adsets = []
             if self.current_bookmark:
                 filtering_params.append({'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
-
-            if filtering_params:
+            if include_deleted.lower() == 'true':
+                for del_info_filt in iter_delivery_info_filter('adset'):
+                    if len(filtering_params) > 1:
+                        filtering_params.pop()
+                    filtering_params.append(del_info_filt)
+                    params.update({'filtering': filtering_params})
+                    filt_adsets = self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                    adsets.extend(filt_adsets)
+            elif filtering_params:
                 params.update({'filtering': filtering_params})
-            return self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                adsets = self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            else:
+                adsets = self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            return adsets
 
         def prepare_record(ad_set):
             return ad_set.remote_read(fields=self.fields()).export_all_data()
@@ -276,14 +294,23 @@ class Campaigns(IncrementalStream):
             params = {'limit': RESULT_RETURN_LIMIT}
             include_deleted = CONFIG.get('include_deleted', 'false')
             filtering_params = []
-            if include_deleted.lower() == 'true':
-                filtering_params.append(get_delivery_info_filter('campaign'))
+            campaigns = []
             if self.current_bookmark:
                 filtering_params.append({'field': 'campaign.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
-
-            if filtering_params:
+            if include_deleted.lower() == 'true':
+                for del_info_filt in iter_delivery_info_filter('campaign'):
+                    if len(filtering_params) > 1:
+                        filtering_params.pop()
+                    filtering_params.append(del_info_filt)
+                    params.update({'filtering': filtering_params})
+                    filt_campaigns = self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                    campaigns.extend(filt_campaigns)
+            elif filtering_params:
                 params.update({'filtering': filtering_params})
-            return self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                campaigns = self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            else:
+                campaigns = self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            return campaigns
 
         def prepare_record(campaign):
             campaign_out = campaign.remote_read(fields=fields).export_all_data()
