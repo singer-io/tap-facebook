@@ -82,17 +82,26 @@ def transform_datetime_string(dts):
         parsed_dt = parsed_dt.astimezone(timezone.utc)
     return singer.strftime(parsed_dt)
 
-def get_delivery_info_filter(stream_type):
-    return {
-            "field": stream_type + ".delivery_info",
-            "operator": "IN",
-            "value": ["active", "archived", "completed", "limited",
-                      "not_delivering", "deleted", "not_published",
-                      "pending_review", "permanently_deleted",
-                      "recently_completed", "recently_rejected",
-                      "rejected", "scheduled", "inactive"]
+def iter_delivery_info_filter(stream_type):
+    filt = {
+        "field": stream_type + ".delivery_info",
+        "operator": "IN",
     }
 
+    filt_values = [
+        "active", "archived", "completed",
+        "limited", "not_delivering", "deleted",
+        "not_published", "pending_review", "permanently_deleted",
+        "recently_completed", "recently_rejected", "rejected",
+        "scheduled", "inactive"]
+
+    sub_list_length = 3
+    start_index = 0
+    while start_index < len(filt_values):
+        end_index = min((start_index + sub_list_length),(len(filt_values)+1))
+        filt['value'] = filt_values[start_index:end_index]
+        yield filt
+        start_index += sub_list_length
 
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
     def log_retry_attempt(details):
