@@ -98,7 +98,6 @@ def iter_delivery_info_filter(stream_type):
     sub_list_length = 3
     for i in range(0, len(filt_values), sub_list_length):
         filt['value'] = filt_values[i:i+sub_list_length]
-        LOGGER.info(str(filt['value']))
         yield filt
 
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
