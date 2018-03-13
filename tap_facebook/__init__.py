@@ -96,12 +96,10 @@ def iter_delivery_info_filter(stream_type):
         "scheduled", "inactive"]
 
     sub_list_length = 3
-    start_index = 0
-    while start_index < len(filt_values):
-        end_index = min((start_index + sub_list_length),(len(filt_values)+1))
-        filt['value'] = filt_values[start_index:end_index]
+    for i in range(0, len(filt_values), sub_list_length):
+        filt['value'] = filt_values[i:i+sub_list_length]
+        LOGGER.info(str(filt['value']))
         yield filt
-        start_index += sub_list_length
 
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
     def log_retry_attempt(details):
