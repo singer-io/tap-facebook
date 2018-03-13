@@ -82,17 +82,23 @@ def transform_datetime_string(dts):
         parsed_dt = parsed_dt.astimezone(timezone.utc)
     return singer.strftime(parsed_dt)
 
-def get_delivery_info_filter(stream_type):
-    return {
-            "field": stream_type + ".delivery_info",
-            "operator": "IN",
-            "value": ["active", "archived", "completed", "limited",
-                      "not_delivering", "deleted", "not_published",
-                      "pending_review", "permanently_deleted",
-                      "recently_completed", "recently_rejected",
-                      "rejected", "scheduled", "inactive"]
+def iter_delivery_info_filter(stream_type):
+    filt = {
+        "field": stream_type + ".delivery_info",
+        "operator": "IN",
     }
 
+    filt_values = [
+        "active", "archived", "completed",
+        "limited", "not_delivering", "deleted",
+        "not_published", "pending_review", "permanently_deleted",
+        "recently_completed", "recently_rejected", "rejected",
+        "scheduled", "inactive"]
+
+    sub_list_length = 3
+    for i in range(0, len(filt_values), sub_list_length):
+        filt['value'] = filt_values[i:i+sub_list_length]
+        yield filt
 
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
     def log_retry_attempt(details):
@@ -202,21 +208,31 @@ class Ads(IncrementalStream):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
-            include_deleted = CONFIG.get('include_deleted', 'false')
-            filtering_params = []
-            if include_deleted.lower() == 'true':
-                filtering_params.append(get_delivery_info_filter('ad'))
             if self.current_bookmark:
-                filtering_params.append({'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+                params.update({'filtering': [{'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
+            ads =  self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            return ads
 
-            if filtering_params:
-                params.update({'filtering': filtering_params})
-            return self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+        def do_request_multiple():
+            params = {'limit': RESULT_RETURN_LIMIT}
+            bookmark_params = []
+            if self.current_bookmark:
+                bookmark_params.append({'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+            ads = []
+            for del_info_filt in iter_delivery_info_filter('ad'):
+                params.update({'filtering': [del_info_filt] + bookmark_params})
+                filt_ads = self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                ads.extend(filt_ads)
+            return ads
 
         def prepare_record(ad):
             return ad.remote_read(fields=self.fields()).export_all_data()
 
-        ads = do_request()
+        if CONFIG.get('include_deleted', 'false').lower() == 'true':
+            ads = do_request_multiple()
+        else:
+            ads = do_request()
         for message in self._iterate(ads, prepare_record):
             yield message
 
@@ -233,24 +249,34 @@ class AdSets(IncrementalStream):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
-            include_deleted = CONFIG.get('include_deleted', 'false')
-            filtering_params = []
-            if include_deleted.lower() == 'true':
-                filtering_params.append(get_delivery_info_filter('adset'))
             if self.current_bookmark:
-                filtering_params.append({'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+                params.update({'filtering': [{'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
+            adsets =  self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            return adsets
 
-            if filtering_params:
-                params.update({'filtering': filtering_params})
-            return self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+        def do_request_multiple():
+            params = {'limit': RESULT_RETURN_LIMIT}
+            bookmark_params = []
+            if self.current_bookmark:
+                bookmark_params.append({'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+            adsets = []
+            for del_info_filt in iter_delivery_info_filter('adset'):
+                params.update({'filtering': [del_info_filt] + bookmark_params})
+                filt_adsets = self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                adsets.extend(filt_adsets)
+            return adsets
 
         def prepare_record(ad_set):
             return ad_set.remote_read(fields=self.fields()).export_all_data()
 
-        ad_sets = do_request()
+        if CONFIG.get('include_deleted', 'false').lower() == 'true':
+            ad_sets = do_request_multiple()
+        else:
+            ad_sets = do_request()
+
         for message in self._iterate(ad_sets, prepare_record):
             yield message
-
 
 class Campaigns(IncrementalStream):
 
@@ -265,16 +291,23 @@ class Campaigns(IncrementalStream):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
-            include_deleted = CONFIG.get('include_deleted', 'false')
-            filtering_params = []
-            if include_deleted.lower() == 'true':
-                filtering_params.append(get_delivery_info_filter('campaign'))
             if self.current_bookmark:
-                filtering_params.append({'field': 'campaign.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+                params.update({'filtering': [{'field': 'campaign.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
+            campaigns =  self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            return campaigns
 
-            if filtering_params:
-                params.update({'filtering': filtering_params})
-            return self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+        def do_request_multiple():
+            params = {'limit': RESULT_RETURN_LIMIT}
+            bookmark_params = []
+            if self.current_bookmark:
+                bookmark_params.append({'field': 'campaign.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+            campaigns = []
+            for del_info_filt in iter_delivery_info_filter('campaign'):
+                params.update({'filtering': [del_info_filt] + bookmark_params})
+                filt_campaigns = self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                campaigns.extend(filt_campaigns)
+            return campaigns
 
         def prepare_record(campaign):
             campaign_out = campaign.remote_read(fields=fields).export_all_data()
@@ -285,7 +318,11 @@ class Campaigns(IncrementalStream):
                     campaign_out['ads']['data'].append({'id': ad_id})
             return campaign_out
 
-        campaigns = do_request()
+        if CONFIG.get('include_deleted', 'false').lower() == 'true':
+            campaigns = do_request_multiple()
+        else:
+            campaigns = do_request()
+
         for message in self._iterate(campaigns, prepare_record):
             yield message
 
