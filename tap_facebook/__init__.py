@@ -15,6 +15,7 @@ import requests
 import backoff
 
 import singer
+import singer.metadata
 import singer.metrics as metrics
 from singer import utils
 from singer import (transform,
@@ -131,6 +132,7 @@ class Stream(object):
     account = attr.ib()
     stream_alias = attr.ib()
     annotated_schema = attr.ib()
+    metadata = attr.ib()
 
     def automatic_fields(self):
         fields = set()
@@ -509,32 +511,34 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
 }
 
 
-def initialize_stream(name, account, stream_alias, annotated_schema, state): # pylint: disable=too-many-return-statements
-
+def initialize_stream(name, account, stream_alias, annotated_schema, metadata, state): # pylint: disable=too-many-return-statements
     if name in INSIGHTS_BREAKDOWNS_OPTIONS:
-        return AdsInsights(name, account, stream_alias, annotated_schema, state=state,
+        return AdsInsights(name, account, stream_alias, annotated_schema, metadata, state=state,
                            options=INSIGHTS_BREAKDOWNS_OPTIONS[name])
     elif name == 'campaigns':
-        return Campaigns(name, account, stream_alias, annotated_schema, state=state)
+        return Campaigns(name, account, stream_alias, annotated_schema, metadata, state=state)
     elif name == 'adsets':
-        return AdSets(name, account, stream_alias, annotated_schema, state=state)
+        return AdSets(name, account, stream_alias, annotated_schema, metadata, state=state)
     elif name == 'ads':
-        return Ads(name, account, stream_alias, annotated_schema, state=state)
+        return Ads(name, account, stream_alias, annotated_schema, metadata, state=state)
     elif name == 'adcreative':
-        return AdCreative(name, account, stream_alias, annotated_schema)
+        return AdCreative(name, account, stream_alias, annotated_schema, metadata)
     else:
         raise TapFacebookException('Unknown stream {}'.format(name))
 
 
 def get_streams_to_sync(account, catalog, state):
     streams = []
+    import ipdb
+    ipdb.set_trace()
     for stream in STREAMS:
         selected_stream = next((s for s in catalog.streams if s.tap_stream_id == stream), None)
         if selected_stream and selected_stream.schema.selected:
             schema = selected_stream.schema
             name = selected_stream.stream
             stream_alias = selected_stream.stream_alias
-            streams.append(initialize_stream(name, account, stream_alias, schema, state))
+            metadata = singer.metadata.to_map(selected_stream.metadata)
+            streams.append(initialize_stream(name, account, stream_alias, schema, metadata, state))
     return streams
 
 def transform_date_hook(data, typ, schema):
@@ -587,7 +591,7 @@ def load_schema(stream):
 
 
 def initialize_streams_for_discovery(): # pylint: disable=invalid-name
-    return [initialize_stream(name, None, None, None, None)
+    return [initialize_stream(name, None, None, None, None, None)
             for name in STREAMS]
 
 def discover_schemas():
@@ -599,10 +603,31 @@ def discover_schemas():
     for stream in streams:
         LOGGER.info('Loading schema for %s', stream.name)
         schema = singer.resolve_schema_references(load_schema(stream), refs)
+        metadata = foo(stream, schema)
         result['streams'].append({'stream': stream.name,
                                   'tap_stream_id': stream.name,
-                                  'schema': schema})
+                                  'schema': schema,
+                                  'metadata': singer.metadata.to_list(metadata)})
+
     return result
+
+def foo(stream, schema):
+    metadata = singer.metadata.new()
+
+    if BOOKMARK_KEYS.get(stream.name):
+        metadata = singer.metadata.write(metadata, (), 'replication-key', BOOKMARK_KEYS.get(stream.name))
+
+    for field_name, sub_schema in schema['properties'].items():
+        metadata = singer.metadata.write(metadata, ('properties', field_name), 'inclusion', 'available')
+
+    metadata = singer.metadata.write(metadata, (), 'table-key-properties', stream.key_properties)
+    for field_name in stream.key_properties:
+        metadata = singer.metadata.write(metadata, ('properties', field_name), 'inclusion', 'automatic')
+
+    import ipdb
+    ipdb.set_trace()
+    return metadata
+
 
 def load_shared_schema_refs():
     shared_schemas_path = get_abs_path('schemas/shared')
