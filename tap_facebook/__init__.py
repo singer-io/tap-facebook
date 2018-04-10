@@ -48,7 +48,8 @@ STREAMS = [
     'ads_insights',
     'ads_insights_age_and_gender',
     'ads_insights_country',
-    'ads_insights_platform_and_device']
+    'ads_insights_platform_and_device',
+    'ads_insights_region']
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 UPDATED_TIME_KEY = 'updated_time'
@@ -61,7 +62,8 @@ BOOKMARK_KEYS = {
     'ads_insights': START_DATE_KEY,
     'ads_insights_age_and_gender': START_DATE_KEY,
     'ads_insights_country': START_DATE_KEY,
-    'ads_insights_platform_and_device:': START_DATE_KEY
+    'ads_insights_platform_and_device': START_DATE_KEY,
+    'ads_insights_region': START_DATE_KEY
 }
 
 LOGGER = singer.get_logger()
@@ -505,7 +507,8 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
     'ads_insights_platform_and_device': {"breakdowns": ['publisher_platform',
                                                         'platform_position', 'impression_device'],
                                          "primary-keys": ['publisher_platform',
-                                                          'platform_position', 'impression_device']}
+                                                          'platform_position', 'impression_device']},
+    'ads_insights_region': {}
 }
 
 
