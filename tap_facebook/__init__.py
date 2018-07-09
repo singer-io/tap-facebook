@@ -22,15 +22,15 @@ from singer import (transform,
                     Transformer, _transform_datetime)
 from singer.catalog import Catalog, CatalogEntry
 
-from facebookads import FacebookAdsApi
-import facebookads.adobjects.adcreative as adcreative
-import facebookads.adobjects.ad as fb_ad
-import facebookads.adobjects.adset as adset
-import facebookads.adobjects.campaign as fb_campaign
-import facebookads.adobjects.adsinsights as adsinsights
-import facebookads.adobjects.user as fb_user
+from facebook_business import FacebookAdsApi
+import facebook_business.adobjects.adcreative as adcreative
+import facebook_business.adobjects.ad as fb_ad
+import facebook_business.adobjects.adset as adset
+import facebook_business.adobjects.campaign as fb_campaign
+import facebook_business.adobjects.adsinsights as adsinsights
+import facebook_business.adobjects.user as fb_user
 
-from facebookads.exceptions import FacebookRequestError
+from facebook_business.exceptions import FacebookRequestError
 
 TODAY = pendulum.today()
 
@@ -583,7 +583,7 @@ def load_schema(stream):
         else:
             if k not in field_class.__dict__:
                 LOGGER.warning(
-                    'Property %s.%s is not defined in the facebookads library',
+                    'Property %s.%s is not defined in the facebook_business library',
                     stream.name, k)
             schema['properties'][k]['inclusion'] = 'available'
 

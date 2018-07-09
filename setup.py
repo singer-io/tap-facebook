@@ -12,7 +12,7 @@ setup(name='tap-facebook',
       install_requires=[
           'attrs==16.3.0',
           'backoff==1.3.2',
-          'facebookads==2.11.4',
+          'facebook_business==3.0.3',
           'pendulum==1.2.0',
           'requests==2.12.4',
           'singer-python==5.0.2',
