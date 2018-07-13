@@ -34,7 +34,7 @@ from facebook_business.exceptions import FacebookRequestError
 
 TODAY = pendulum.today()
 
-INSIGHTS_MAX_WAIT_TO_START_SECONDS = 1 * 60
+INSIGHTS_MAX_WAIT_TO_START_SECONDS = 2 * 60
 INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS = 30 * 60
 INSIGHTS_MAX_ASYNC_SLEEP_SECONDS = 5 * 60
 
