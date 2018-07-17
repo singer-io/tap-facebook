@@ -73,4 +73,4 @@ You can provide JSON file that contains a date for the streams to force the appl
 
 ---
 
-Copyright &copy; 2017 Stitch
+Copyright &copy; 2018 Stitch
