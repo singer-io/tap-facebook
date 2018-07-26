@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.2
+  * Bump `facebook_business` library to 3.0.5
+  * Remove deprecated fields from ad_insights schemas [FB 2/2018](https://developers.facebook.com/docs/graph-api/changelog/breaking-changes#feb2018)
+
 ## 1.5.1
   * Bump Insights job timeout to 120 seconds in an attempt to more closely match Facebook's API behavior.
 
