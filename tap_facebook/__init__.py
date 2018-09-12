@@ -176,7 +176,6 @@ class IncrementalStream(Stream):
                     max_bookmark = updated_at
 
                 record = record_preparation(record)
-                LOGGER.info("Yielding record in IncrementalStream")
                 yield {'record': record}
 
             if max_bookmark:
@@ -222,7 +221,6 @@ class Ads(IncrementalStream):
             bookmark_params = []
             if self.current_bookmark:
                 bookmark_params.append({'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
-            ads = []
             for del_info_filt in iter_delivery_info_filter('ad'):
                 params.update({'filtering': [del_info_filt] + bookmark_params})
                 filt_ads = self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
@@ -261,7 +259,6 @@ class AdSets(IncrementalStream):
             bookmark_params = []
             if self.current_bookmark:
                 bookmark_params.append({'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
-            adsets = []
             for del_info_filt in iter_delivery_info_filter('adset'):
                 params.update({'filtering': [del_info_filt] + bookmark_params})
                 filt_adsets = self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
@@ -301,7 +298,6 @@ class Campaigns(IncrementalStream):
             bookmark_params = []
             if self.current_bookmark:
                 bookmark_params.append({'field': 'campaign.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
-            campaigns = []
             for del_info_filt in iter_delivery_info_filter('campaign'):
                 params.update({'filtering': [del_info_filt] + bookmark_params})
                 filt_campaigns = self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
