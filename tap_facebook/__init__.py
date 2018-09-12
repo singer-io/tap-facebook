@@ -226,6 +226,7 @@ class Ads(IncrementalStream):
                 filt_ads = self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
                 yield filt_ads
 
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def prepare_record(ad):
             return ad.remote_read(fields=self.fields()).export_all_data()
 
@@ -264,6 +265,7 @@ class AdSets(IncrementalStream):
                 filt_adsets = self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
                 yield filt_adsets
 
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def prepare_record(ad_set):
             return ad_set.remote_read(fields=self.fields()).export_all_data()
 
@@ -303,6 +305,7 @@ class Campaigns(IncrementalStream):
                 filt_campaigns = self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
                 yield filt_campaigns
 
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def prepare_record(campaign):
             campaign_out = campaign.remote_read(fields=fields).export_all_data()
             if pull_ads:
