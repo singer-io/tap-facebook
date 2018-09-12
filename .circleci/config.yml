@@ -1,0 +1,21 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.5.6-jessie-browsers
+    steps:
+      - checkout
+      - run:
+          name: 'Setup virtual env'
+          command: |
+            virtualenv -p python3 ~/.virtualenvs/tap-facebook
+            source ~/.virtualenvs/tap-facebook/bin/activate
+            pip install .
+            pip install pylint
+            pylint tap_facebook -d C,R,W
+      - run:
+          name: 'Unit Tests'
+          command: |
+            source ~/.virtualenvs/tap-facebook/bin/activate
+            pip install nose
+            nosetests
