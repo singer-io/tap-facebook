@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.3
+  * Yield records to IncrementalStreams instead of accumulating them [#47](https://github.com/singer-io/tap-facebook/pull/47)
+
 ## 1.5.2
   * Bump `facebook_business` library to 3.0.5
   * Remove deprecated fields from ad_insights schemas [FB 2/2018](https://developers.facebook.com/docs/graph-api/changelog/breaking-changes#feb2018)
