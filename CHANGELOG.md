@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.4
+  * Add retry_pattern annotations to record_preparation function calls so they don't fall victim to Facebook 500's as often [#48](https://github.com/singer-io/tap-facebook/pull/48)
+
 ## 1.5.3
   * Yield records to IncrementalStreams instead of accumulating them [#47](https://github.com/singer-io/tap-facebook/pull/47)
 
