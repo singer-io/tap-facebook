@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.5
+  * Updates the `should_retry_api_error` function to include the error_subcode 99 when Facebook fails to retrieve Ad data
+
 ## 1.5.4
   * Add retry_pattern annotations to record_preparation function calls so they don't fall victim to Facebook 500's as often [#48](https://github.com/singer-io/tap-facebook/pull/48)
 
