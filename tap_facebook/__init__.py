@@ -370,7 +370,7 @@ def advance_bookmark(stream, bookmark_key, date):
         state = singer.write_bookmark(state, tap_stream_id, bookmark_key, str(date))
     else:
         LOGGER.info('Bookmark for stream %s is currently %s ' +
-                    'not changing to to %s',
+                    'not changing to %s',
                     tap_stream_id, current_bookmark, date)
     return state
 
