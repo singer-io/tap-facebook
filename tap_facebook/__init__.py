@@ -391,7 +391,7 @@ class AdsInsights(Stream):
     bookmark_key = START_DATE_KEY
 
     invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
-                               'age', 'gender', 'country', 'placement', 'region']
+                               'age', 'gender', 'country', 'placement', 'region', 'total_action_value']
 
     # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
     def __attrs_post_init__(self):
@@ -433,17 +433,17 @@ class AdsInsights(Stream):
         LOGGER.info('Starting adsinsights job with params %s', params)
         job = self.account.get_insights( # pylint: disable=no-member
             params=params,
-            async=True)
+            is_async=True)
         status = None
         time_start = time.time()
         sleep_time = 10
         while status != "Job Completed":
             duration = time.time() - time_start
             job = job.remote_read()
-            status = job[adsinsights.AdsInsights.Summary.async_status]
-            percent_complete = job[adsinsights.AdsInsights.Summary.
-                                   async_percent_completion]
-            job_id = job[adsinsights.AdsInsights.Summary.id]
+            status = job['async_status']
+            percent_complete = job['async_percent_completion']
+
+            job_id = job['id']
             LOGGER.info('%s, %d%% done', status, percent_complete)
 
             if status == "Job Completed":
