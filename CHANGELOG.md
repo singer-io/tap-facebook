@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.6
+  * Update version of `requests` to `0.20.0` in response to CVE 2018-18074
+
 ## 1.5.5
   * Updates the `should_retry_api_error` function to include the error_subcode 99 when Facebook fails to retrieve Ad data
 
