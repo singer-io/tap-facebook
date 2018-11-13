@@ -263,12 +263,6 @@
         "number"
       ]
     },
-    "total_action_value": {
-      "type": [
-        "null",
-        "number"
-      ]
-    },
     "adset_name": {
       "type": [
         "null",

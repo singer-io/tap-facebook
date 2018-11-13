@@ -433,17 +433,17 @@ class AdsInsights(Stream):
         LOGGER.info('Starting adsinsights job with params %s', params)
         job = self.account.get_insights( # pylint: disable=no-member
             params=params,
-            async=True)
+            is_async=True)
         status = None
         time_start = time.time()
         sleep_time = 10
         while status != "Job Completed":
             duration = time.time() - time_start
             job = job.remote_read()
-            status = job[adsinsights.AdsInsights.Summary.async_status]
-            percent_complete = job[adsinsights.AdsInsights.Summary.
-                                   async_percent_completion]
-            job_id = job[adsinsights.AdsInsights.Summary.id]
+            status = job['async_status']
+            percent_complete = job['async_percent_completion']
+
+            job_id = job['id']
             LOGGER.info('%s, %d%% done', status, percent_complete)
 
             if status == "Job Completed":
