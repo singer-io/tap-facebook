@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.7
+  * Bump `facebook_business` library to 3.2.0 [#51](https://github.com/singer-io/tap-facebook/pull/51)
+
 ## 1.5.6
   * Update version of `requests` to `0.20.0` in response to CVE 2018-18074
 
