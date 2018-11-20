@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.8
+  * Reduce Insights job wait to fail faster due to Facebook instability.
+
 ## 1.5.7
   * Bump `facebook_business` library to 3.2.0 [#51](https://github.com/singer-io/tap-facebook/pull/51)
 
