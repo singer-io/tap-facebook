@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.9
+  * Restore Insights job timeout, as Facebook seems to have stabilized.
+
 ## 1.5.8
   * Reduce Insights job wait to fail faster due to Facebook instability.
 
