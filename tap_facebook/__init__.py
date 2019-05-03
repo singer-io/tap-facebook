@@ -103,8 +103,17 @@ def iter_delivery_info_filter(stream_type):
         yield filt
 
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
+    # HACK: Workaround added due to bug with Facebook prematurely deprecating 'relevance_score'
+    # Issue being tracked here: https://developers.facebook.com/support/bugs/2489592517771422
+    def is_relevance_score(exception):
+        return exception.body()["error"]["message"] == '(#100) relevance_score is not valid for fields param. please check https://developers.facebook.com/docs/marketing-api/reference/ads-insights/ for all valid values'
+
     def log_retry_attempt(details):
         _, exception, _ = sys.exc_info()
+        if is_relevance_score(exception):
+            LOGGER.info("Detected that 'relevance_score' is not available, removing from Insights export and continuing.")
+            details['args'][1]['fields'].remove('relevance_score')
+            return
         LOGGER.info(exception)
         LOGGER.info('Caught retryable error after %s tries. Waiting %s more seconds then retrying...',
                     details["tries"],
@@ -112,7 +121,7 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
 
     def should_retry_api_error(exception):
         if isinstance(exception, FacebookRequestError):
-            return exception.api_transient_error() or exception.api_error_subcode() == 99
+            return exception.api_transient_error() or exception.api_error_subcode() == 99 or is_relevance_score(exception)
         elif isinstance(exception, InsightsJobTimeout):
             return True
         return False
