@@ -111,9 +111,11 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
     def log_retry_attempt(details):
         _, exception, _ = sys.exc_info()
         if is_relevance_score(exception):
-            LOGGER.info("Detected that 'relevance_score' is not available, removing from Insights export and continuing.")
-            details['args'][1]['fields'].remove('relevance_score')
-            return
+            raise Exception("Due to a bug with Facebook prematurely deprecating 'relevance_score' that is "
+                            "not affecting all tap-facebook users in the same way, you need to "
+                            "deselect `relevance_score` from your Insights export. For further "
+                            "information, please see this Facebook bug report thread: "
+                            "https://developers.facebook.com/support/bugs/2489592517771422.") from exception
         LOGGER.info(exception)
         LOGGER.info('Caught retryable error after %s tries. Waiting %s more seconds then retrying...',
                     details["tries"],
