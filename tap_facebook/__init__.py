@@ -115,7 +115,7 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
                             "not affecting all tap-facebook users in the same way, you need to "
                             "deselect `relevance_score` from your Insights export. For further "
                             "information, please see this Facebook bug report thread: "
-                            "https://developers.facebook.com/support/bugs/2489592517771422.") from exception
+                            "https://developers.facebook.com/support/bugs/2489592517771422") from exception
         LOGGER.info(exception)
         LOGGER.info('Caught retryable error after %s tries. Waiting %s more seconds then retrying...',
                     details["tries"],
