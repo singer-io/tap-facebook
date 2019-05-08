@@ -106,7 +106,10 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
     # HACK: Workaround added due to bug with Facebook prematurely deprecating 'relevance_score'
     # Issue being tracked here: https://developers.facebook.com/support/bugs/2489592517771422
     def is_relevance_score(exception):
-        return exception.body()["error"]["message"] == '(#100) relevance_score is not valid for fields param. please check https://developers.facebook.com/docs/marketing-api/reference/ads-insights/ for all valid values'
+        if getattr(exception, "body", None):
+            return exception.body().get("error", {}).get("message") == '(#100) relevance_score is not valid for fields param. please check https://developers.facebook.com/docs/marketing-api/reference/ads-insights/ for all valid values'
+        else:
+            return False
 
     def log_retry_attempt(details):
         _, exception, _ = sys.exc_info()
