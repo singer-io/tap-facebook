@@ -55,7 +55,7 @@ The following is an example of the required configuration
 
 ### Create a properties file
 
-The properties file will indicate what streams and fields to replicate from the Facebook Marketing API. The Tap takes advantage of the Singer best practices for [schema discovery and property selection](https://github.com/singer-io/getting-started/blob/master/BEST_PRACTICES.md#schema-discovery-and-property-selection).
+The properties file will indicate what streams and fields to replicate from the Facebook Marketing API. The Tap takes advantage of the Singer best practices for [schema discovery and property selection](https://github.com/singer-io/getting-started/blob/master/docs/DISCOVERY_MODE.md#discovery-mode).
 
 ### [Optional] Create the initial state file
 
