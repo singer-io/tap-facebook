@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.12
+  * Bump `facebook_business` library to 3.3.2 (#59)(https://github.com/singer-io/tap-facebook/pull/59)
+
 ## 1.5.9
   * Restore Insights job timeout, as Facebook seems to have stabilized.
 
