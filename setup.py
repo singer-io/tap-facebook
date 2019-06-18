@@ -17,6 +17,13 @@ setup(name='tap-facebook',
           'requests==2.20.0',
           'singer-python==5.0.2',
       ],
+      extras_require={
+          'dev': [
+              'pylint',
+              'nose',
+              'ipdb'
+          ]
+      },
       entry_points='''
           [console_scripts]
           tap-facebook=tap_facebook:main

@@ -2,20 +2,47 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/python:3.5.6-jessie-browsers
+      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:tap-tester
     steps:
       - checkout
       - run:
           name: 'Setup virtual env'
           command: |
-            virtualenv -p python3 ~/.virtualenvs/tap-facebook
-            source ~/.virtualenvs/tap-facebook/bin/activate
-            pip install .
-            pip install pylint
-            pylint tap_facebook -d C,R,W
+            python3 -mvenv /usr/local/share/virtualenvs/tap-facebook
+            source /usr/local/share/virtualenvs/tap-facebook/bin/activate
+            pip install -U 'pip<19.2' setuptools
+            pip install -e .[dev]
       - run:
           name: 'Unit Tests'
           command: |
-            source ~/.virtualenvs/tap-facebook/bin/activate
-            pip install nose
-            nosetests
+            source /usr/local/share/virtualenvs/tap-facebook/bin/activate
+            make
+      - add_ssh_keys
+      - run:
+          name: 'Integration Tests'
+          command: |
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/sandbox dev_env.sh
+            source dev_env.sh
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            run-a-test --tap=tap-facebook \
+                       --target=target-stitch \
+                       --orchestrator=stitch-orchestrator \
+                       --email=harrison+sandboxtest@stitchdata.com \
+                       --password=$SANDBOX_PASSWORD \
+                       --client-id=50 \
+                       tap_tester_facebook_bookmarks
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - build
+  build_daily:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - build
