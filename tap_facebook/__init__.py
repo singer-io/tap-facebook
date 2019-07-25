@@ -49,9 +49,7 @@ STREAMS = [
     'ads_insights_age_and_gender',
     'ads_insights_country',
     'ads_insights_platform_and_device',
-    'ads_insights_region',
-    'ads_insights_dma',
-]
+    'ads_insights_region']
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 UPDATED_TIME_KEY = 'updated_time'
@@ -65,8 +63,7 @@ BOOKMARK_KEYS = {
     'ads_insights_age_and_gender': START_DATE_KEY,
     'ads_insights_country': START_DATE_KEY,
     'ads_insights_platform_and_device': START_DATE_KEY,
-    'ads_insights_region': START_DATE_KEY,
-    'ads_insights_dma': START_DATE_KEY,
+    'ads_insights_region': START_DATE_KEY
 }
 
 LOGGER = singer.get_logger()
@@ -408,7 +405,7 @@ class AdsInsights(Stream):
     bookmark_key = START_DATE_KEY
 
     invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
-                               'age', 'gender', 'country', 'placement', 'region', 'dma']
+                               'age', 'gender', 'country', 'placement', 'region']
 
     # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
     def __attrs_post_init__(self):
@@ -521,9 +518,7 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
                                          "primary-keys": ['publisher_platform',
                                                           'platform_position', 'impression_device']},
     'ads_insights_region': {'breakdowns': ['region'],
-                            'primary-keys': ['region']},
-    'ads_insights_dma': {"breakdowns": ['dma'],
-                         "primary-keys": ['dma']},
+                            'primary-keys': ['region']}
 }
 
 
