@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.0
+  * Replaced `annotated_schema` with Singer `metadata`
+    * Fixed unit tests to also use `metadata`
+  * Added integration tests to CircleCI
+
 ## 1.6.0
   * Add DMA breakdown
 
