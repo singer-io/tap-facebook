@@ -16,7 +16,7 @@ import backoff
 
 import singer
 import singer.metrics as metrics
-from singer import utils
+from singer import utils, metadata
 from singer import (transform,
                     UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING,
                     Transformer, _transform_datetime)
@@ -145,32 +145,34 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
 
 @attr.s
 class Stream(object):
-
     name = attr.ib()
     account = attr.ib()
     stream_alias = attr.ib()
-    annotated_schema = attr.ib()
+    catalog_entry = attr.ib()
 
     def automatic_fields(self):
         fields = set()
-        if self.annotated_schema:
-            props = self.annotated_schema.properties # pylint: disable=no-member
-            for k, val in props.items():
-                inclusion = val.inclusion
-                if inclusion == 'automatic':
-                    fields.add(k)
+        if self.catalog_entry:
+            props = metadata.to_map(self.catalog_entry.metadata)
+            for breadcrumb, data in props.items():
+                if len(breadcrumb) != 2:
+                    continue # Skip root and nested metadata
+
+                if data.get('inclusion') == 'automatic':
+                    fields.add(breadcrumb[1])
         return fields
 
 
     def fields(self):
         fields = set()
-        if self.annotated_schema:
-            props = self.annotated_schema.properties # pylint: disable=no-member
-            for k, val in props.items():
-                inclusion = val.inclusion
-                selected = val.selected
-                if selected or inclusion == 'automatic':
-                    fields.add(k)
+        if self.catalog_entry:
+            props = metadata.to_map(self.catalog_entry.metadata)
+            for breadcrumb, data in props.items():
+                if len(breadcrumb) != 2:
+                    continue # Skip root and nested metadata
+
+                if data.get('selected') or data.get('inclusion') == 'automatic':
+                    fields.add(breadcrumb[1])
         return fields
 
 @attr.s
@@ -527,19 +529,22 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
 }
 
 
-def initialize_stream(name, account, stream_alias, annotated_schema, state): # pylint: disable=too-many-return-statements
+def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many-return-statements
+
+    name = catalog_entry.stream
+    stream_alias = catalog_entry.stream_alias
 
     if name in INSIGHTS_BREAKDOWNS_OPTIONS:
-        return AdsInsights(name, account, stream_alias, annotated_schema, state=state,
+        return AdsInsights(name, account, stream_alias, catalog_entry, state=state,
                            options=INSIGHTS_BREAKDOWNS_OPTIONS[name])
     elif name == 'campaigns':
-        return Campaigns(name, account, stream_alias, annotated_schema, state=state)
+        return Campaigns(name, account, stream_alias, catalog_entry, state=state)
     elif name == 'adsets':
-        return AdSets(name, account, stream_alias, annotated_schema, state=state)
+        return AdSets(name, account, stream_alias, catalog_entry, state=state)
     elif name == 'ads':
-        return Ads(name, account, stream_alias, annotated_schema, state=state)
+        return Ads(name, account, stream_alias, catalog_entry, state=state)
     elif name == 'adcreative':
-        return AdCreative(name, account, stream_alias, annotated_schema)
+        return AdCreative(name, account, stream_alias, catalog_entry)
     else:
         raise TapFacebookException('Unknown stream {}'.format(name))
 
@@ -547,12 +552,12 @@ def initialize_stream(name, account, stream_alias, annotated_schema, state): # p
 def get_streams_to_sync(account, catalog, state):
     streams = []
     for stream in STREAMS:
-        selected_stream = next((s for s in catalog.streams if s.tap_stream_id == stream), None)
-        if selected_stream and selected_stream.schema.selected:
-            schema = selected_stream.schema
-            name = selected_stream.stream
-            stream_alias = selected_stream.stream_alias
-            streams.append(initialize_stream(name, account, stream_alias, schema, state))
+        catalog_entry = next((s for s in catalog.streams if s.tap_stream_id == stream), None)
+        if catalog_entry and catalog_entry.is_selected():
+            # TODO: Don't need name and stream_alias since it's on catalog_entry
+            name = catalog_entry.stream
+            stream_alias = catalog_entry.stream_alias
+            streams.append(initialize_stream(account, catalog_entry, state))
     return streams
 
 def transform_date_hook(data, typ, schema):
@@ -591,21 +596,18 @@ def load_schema(stream):
     path = get_abs_path('schemas/{}.json'.format(stream.name))
     field_class = stream.field_class
     schema = utils.load_json(path)
+
     for k in schema['properties']:
-        if k in set(stream.key_properties) or k == UPDATED_TIME_KEY:
-            schema['properties'][k]['inclusion'] = 'automatic'
-        else:
-            if k not in field_class.__dict__:
-                LOGGER.warning(
-                    'Property %s.%s is not defined in the facebook_business library',
-                    stream.name, k)
-            schema['properties'][k]['inclusion'] = 'available'
+        if k not in field_class.__dict__:
+            LOGGER.warning(
+                'Property %s.%s is not defined in the facebook_business library',
+                stream.name, k)
 
     return schema
 
 
 def initialize_streams_for_discovery(): # pylint: disable=invalid-name
-    return [initialize_stream(name, None, None, None, None)
+    return [initialize_stream(None, CatalogEntry(stream=name), None)
             for name in STREAMS]
 
 def discover_schemas():
@@ -617,9 +619,18 @@ def discover_schemas():
     for stream in streams:
         LOGGER.info('Loading schema for %s', stream.name)
         schema = singer.resolve_schema_references(load_schema(stream), refs)
+
+        mdata = metadata.to_map(metadata.get_standard_metadata(schema,
+                                               key_properties=stream.key_properties))
+
+        bookmark_key = BOOKMARK_KEYS.get(stream.name)
+        if bookmark_key == UPDATED_TIME_KEY:
+            mdata = metadata.write(mdata, ('properties', bookmark_key), 'inclusion', 'automatic')
+
         result['streams'].append({'stream': stream.name,
                                   'tap_stream_id': stream.name,
-                                  'schema': schema})
+                                  'schema': schema,
+                                  'metadata': metadata.to_list(mdata)})
     return result
 
 def load_shared_schema_refs():

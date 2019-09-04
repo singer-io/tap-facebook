@@ -11,12 +11,19 @@ setup(name='tap-facebook',
       py_modules=['tap_facebook'],
       install_requires=[
           'attrs==16.3.0',
-          'backoff==1.3.2',
+          'backoff==1.8.0',
           'facebook_business==3.3.2',
           'pendulum==1.2.0',
           'requests==2.20.0',
-          'singer-python==5.0.2',
+          'singer-python==5.8.1',
       ],
+      extras_require={
+          'dev': [
+              'pylint',
+              'ipdb',
+              'nose',
+          ]
+      },
       entry_points='''
           [console_scripts]
           tap-facebook=tap_facebook:main

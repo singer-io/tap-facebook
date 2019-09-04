@@ -4,7 +4,7 @@ import pendulum
 import tap_facebook
 
 from tap_facebook import AdsInsights
-from singer.catalog import Catalog
+from singer.catalog import Catalog, CatalogEntry
 from singer.schema import Schema
 from singer.utils import strftime
 
@@ -16,8 +16,9 @@ class TestAdsInsights(unittest.TestCase):
             account=None,
             stream_alias="insights",
             options={},
-            annotated_schema=Schema.from_dict({'selected': True,
-                              'properties': {'something': {'type': 'object'}}}),
+            catalog_entry=CatalogEntry(schema={'properties': {'something': {'type': 'object'}}},
+                                       metadata=[{'breadcrumb': ('properties', 'something'),
+                                                  'metadata': {'selected' : True}}]),
             state={'bookmarks':{'insights': {'date_start': '2017-01-31'}}})
         params = list(itertools.islice(insights.job_params(), 5))
         self.assertEqual(params[0]['time_ranges'],
@@ -35,8 +36,9 @@ class TestAdsInsights(unittest.TestCase):
             account=None,
             stream_alias="insights",
             options={},
-            annotated_schema=Schema.from_dict({'selected': True,
-                              'properties': {'something': {'type': 'object'}}}),
+            catalog_entry=CatalogEntry(schema={'properties': {'something': {'type': 'object'}}},
+                                       metadata=[{'breadcrumb': ('properties', 'something'),
+                                                  'metadata': {'selected' : True}}]),
             state={'bookmarks':{'insights': {'date_start': start_date.to_date_string()}}})
 
         self.assertEqual(31, len(list(insights.job_params())))
@@ -45,44 +47,39 @@ class TestAdsInsights(unittest.TestCase):
 class TestPrimaryKeyInclusion(unittest.TestCase):
 
     def test_primary_keys_automatically_included(self):
-        streams = tap_facebook.initialize_streams_for_discovery()
-        for stream in streams:
-            schema = tap_facebook.load_schema(stream)
-            for prop in stream.key_properties:
-                if prop not in schema['properties']:
-                    self.fail('Stream {} key property {} is not defined'.format(
-                              stream.name, prop))
-                self.assertEqual(
-                    schema['properties'][prop]['inclusion'],
-                    'automatic',
-                    'Stream {} key property {} should be included automatically'.format(
-                        stream.name, prop))
-
-            # Get the schema
-            # Find the primary key property defs
-            # Assert that all of their "inclusion" attrs are "automatic"
-
+        streams = tap_facebook.initialize_streams_for_discovery() # Make this list for the key_properties
+        catalog = tap_facebook.discover_schemas()['streams']
+        for catalog_entry in catalog:
+            streamObject = [stream for stream in streams if stream.name == catalog_entry['stream']][0]
+            key_prop_breadcrumbs = {('properties', x) for x in streamObject.key_properties} # Enumerate the breadcrumbs for key properties
+            for field in catalog_entry['metadata']: # Check that all key properties are automatic inclusion
+                if field['breadcrumb'] in key_prop_breadcrumbs:
+                    self.assertEqual(field['metadata']['inclusion'], 'automatic')
 
 class TestGetStreamsToSync(unittest.TestCase):
 
 
     def test_getting_streams_to_sync(self):
-        annotated_schemas = {
+        catalog_entry= {
             'streams': [
                 {
                     'stream': 'adcreative',
                     'tap_stream_id': 'adcreative',
-                    'schema': {'selected': True}
+                    'schema': {},
+                    'metadata': [{'breadcrumb': (),
+                                  'metadata': {'selected': True}}]
                 },
                 {
                     'stream': 'ads',
                     'tap_stream_id': 'ads',
-                    'schema': {'selected': False}
+                    'schema': {},
+                    'metadata': [{'breadcrumb': (),
+                                  'metadata': {'selected': False}}]
                 }
             ]
         }
 
-        catalog = Catalog.from_dict(annotated_schemas)
+        catalog = Catalog.from_dict(catalog_entry)
 
         streams_to_sync = tap_facebook.get_streams_to_sync(None, catalog, None)
         names_to_sync = [stream.name for stream in streams_to_sync]
