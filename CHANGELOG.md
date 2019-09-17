@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.1
+  * Bump `facebook_business` library to 4.0.5
+  * Remove deprecated `video_p95_watched_actions` field
+
 ## 1.7.0
   * Replaced `annotated_schema` with Singer `metadata`
     * Fixed unit tests to also use `metadata`
