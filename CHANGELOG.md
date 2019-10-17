@@ -1,8 +1,9 @@
 # Changelog
 
 ## 1.7.1
-  * Bump `facebook_business` library to 4.0.5
+  * Bump `facebook_business` library to 4.0.5 [#68](https://github.com/singer-io/tap-facebook/pull/68)
   * Remove deprecated `video_p95_watched_actions` field
+  * Change calls to `remote_read` to use `api_get` per deprecation [#69](https://github.com/singer-io/tap-facebook/pull/69)
 
 ## 1.7.0
   * Replaced `annotated_schema` with Singer `metadata`
