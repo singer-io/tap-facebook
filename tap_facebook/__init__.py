@@ -247,7 +247,7 @@ class Ads(IncrementalStream):
 
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def prepare_record(ad):
-            return ad.remote_read(fields=self.fields()).export_all_data()
+            return ad.api_get(fields=self.fields()).export_all_data()
 
         if CONFIG.get('include_deleted', 'false').lower() == 'true':
             ads = do_request_multiple()
@@ -286,7 +286,7 @@ class AdSets(IncrementalStream):
 
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def prepare_record(ad_set):
-            return ad_set.remote_read(fields=self.fields()).export_all_data()
+            return ad_set.api_get(fields=self.fields()).export_all_data()
 
         if CONFIG.get('include_deleted', 'false').lower() == 'true':
             ad_sets = do_request_multiple()
@@ -326,7 +326,7 @@ class Campaigns(IncrementalStream):
 
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def prepare_record(campaign):
-            campaign_out = campaign.remote_read(fields=fields).export_all_data()
+            campaign_out = campaign.api_get(fields=fields).export_all_data()
             if pull_ads:
                 campaign_out['ads'] = {'data': []}
                 ids = [ad['id'] for ad in campaign.get_ads()]
@@ -458,7 +458,7 @@ class AdsInsights(Stream):
         sleep_time = 10
         while status != "Job Completed":
             duration = time.time() - time_start
-            job = job.remote_read()
+            job = job.api_get()
             status = job['async_status']
             percent_complete = job['async_percent_completion']
 
