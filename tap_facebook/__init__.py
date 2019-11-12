@@ -658,6 +658,9 @@ def main_impl():
 
     CONFIG.update(args.config)
 
+    if CONFIG.get('result_return_limit'):
+        RESULT_RETURN_LIMIT = CONFIG.get('result_return_limit')
+
     FacebookAdsApi.init(access_token=access_token)
     user = fb_user.User(fbid='me')
     accounts = user.get_ad_accounts()
