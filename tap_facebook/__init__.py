@@ -672,9 +672,8 @@ def main_impl():
 
     CONFIG.update(args.config)
 
-    if CONFIG.get('result_return_limit'):
-        LOGGER.info('Overriding RESULT_RETURN_LIMIT from %s to %s', RESULT_RETURN_LIMIT, CONFIG.get('result_return_limit'))
-        RESULT_RETURN_LIMIT = CONFIG.get('result_return_limit')
+    global RESULT_RETURN_LIMIT
+    RESULT_RETURN_LIMIT = CONFIG.get('result_return_limit', RESULT_RETURN_LIMIT)
 
     FacebookAdsApi.init(access_token=access_token)
     user = fb_user.User(fbid='me')
