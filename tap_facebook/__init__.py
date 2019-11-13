@@ -149,6 +149,7 @@ class Stream(object):
     account = attr.ib()
     stream_alias = attr.ib()
     catalog_entry = attr.ib()
+    state = attr.ib()
 
     def automatic_fields(self):
         fields = set()
@@ -177,8 +178,6 @@ class Stream(object):
 
 @attr.s
 class IncrementalStream(Stream):
-
-    state = attr.ib()
 
     def __attrs_post_init__(self):
         self.current_bookmark = get_start(self, UPDATED_TIME_KEY)
@@ -210,12 +209,26 @@ class AdCreative(Stream):
 
     def __iter__(self):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
-        def do_request():
+        def do_request(params):
             return self.account.get_ad_creatives(fields=self.fields(), # pylint: disable=no-member
-                                                 params={'limit': RESULT_RETURN_LIMIT})
-        ad_creative = do_request()
-        for a in ad_creative: # pylint: disable=invalid-name
-            yield {'record': a.export_all_data()}
+                                                 params={'limit': RESULT_RETURN_LIMIT, 'time_range': params})
+
+        date_window_start = pendulum.parse(CONFIG['start_date']).date()
+        date_window_end = date_window_start.add(days=1)
+        end_date = TODAY.date()
+
+        while date_window_end < end_date:
+
+            params = {
+                'since' : str(date_window_start),
+                'until' : str(date_window_end)
+            }
+            LOGGER.info("Date window: %s - %s", date_window_start, date_window_end)
+            ad_creative = do_request(params)
+            for a in ad_creative: # pylint: disable=invalid-name
+                yield {'record': a.export_all_data()}
+            date_window_start = date_window_start.add(days=1)
+            date_window_end = date_window_start.add(days=1)
 
 
 class Ads(IncrementalStream):
@@ -398,7 +411,6 @@ class AdsInsights(Stream):
     field_class = adsinsights.AdsInsights.Field
     base_properties = ['campaign_id', 'adset_id', 'ad_id', 'date_start']
 
-    state = attr.ib()
     options = attr.ib()
     action_breakdowns = attr.ib(default=ALL_ACTION_BREAKDOWNS)
     level = attr.ib(default='ad')
@@ -544,7 +556,7 @@ def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many
     elif name == 'ads':
         return Ads(name, account, stream_alias, catalog_entry, state=state)
     elif name == 'adcreative':
-        return AdCreative(name, account, stream_alias, catalog_entry)
+        return AdCreative(name, account, stream_alias, catalog_entry, state=state)
     else:
         raise TapFacebookException('Unknown stream {}'.format(name))
 
@@ -659,6 +671,7 @@ def main_impl():
     CONFIG.update(args.config)
 
     if CONFIG.get('result_return_limit'):
+        LOGGER.info('Overriding RESULT_RETURN_LIMIT from %s to %s', RESULT_RETURN_LIMIT, CONFIG.get('result_return_limit'))
         RESULT_RETURN_LIMIT = CONFIG.get('result_return_limit')
 
     FacebookAdsApi.init(access_token=access_token)
