@@ -221,7 +221,7 @@ class AdCreative(Stream):
         date_window_end = date_window_start.add(days=1)
         end_date = TODAY.date()
 
-        while date_window_end < end_date:
+        while date_window_end <= end_date:
 
             params = {
                 'since' : str(date_window_start),
