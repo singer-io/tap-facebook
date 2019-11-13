@@ -214,6 +214,9 @@ class AdCreative(Stream):
             return self.account.get_ad_creatives(fields=self.fields(), # pylint: disable=no-member
                                                  params={'limit': RESULT_RETURN_LIMIT, 'time_range': params})
 
+        # `time_range` wants a value in the shape of {"since":
+        # "YYYY-MM-DD", "until": "YYYY-MM-DD"}, which is what
+        # pendulum.parse().date() returns
         date_window_start = pendulum.parse(CONFIG['start_date']).date()
         date_window_end = date_window_start.add(days=1)
         end_date = TODAY.date()
@@ -224,10 +227,11 @@ class AdCreative(Stream):
                 'since' : str(date_window_start),
                 'until' : str(date_window_end)
             }
-            LOGGER.info("Date window: %s - %s", date_window_start, date_window_end)
             ad_creative = do_request(params)
+
             for a in ad_creative: # pylint: disable=invalid-name
                 yield {'record': a.export_all_data()}
+
             date_window_start = date_window_start.add(days=1)
             date_window_end = date_window_start.add(days=1)
 
