@@ -149,7 +149,6 @@ class Stream(object):
     account = attr.ib()
     stream_alias = attr.ib()
     catalog_entry = attr.ib()
-    state = attr.ib()
 
     def automatic_fields(self):
         fields = set()
@@ -178,6 +177,8 @@ class Stream(object):
 
 @attr.s
 class IncrementalStream(Stream):
+
+    state = attr.ib()
 
     def __attrs_post_init__(self):
         self.current_bookmark = get_start(self, UPDATED_TIME_KEY)
@@ -411,6 +412,7 @@ class AdsInsights(Stream):
     field_class = adsinsights.AdsInsights.Field
     base_properties = ['campaign_id', 'adset_id', 'ad_id', 'date_start']
 
+    state = attr.ib()
     options = attr.ib()
     action_breakdowns = attr.ib(default=ALL_ACTION_BREAKDOWNS)
     level = attr.ib(default='ad')
@@ -556,7 +558,7 @@ def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many
     elif name == 'ads':
         return Ads(name, account, stream_alias, catalog_entry, state=state)
     elif name == 'adcreative':
-        return AdCreative(name, account, stream_alias, catalog_entry, state=state)
+        return AdCreative(name, account, stream_alias, catalog_entry)
     else:
         raise TapFacebookException('Unknown stream {}'.format(name))
 
