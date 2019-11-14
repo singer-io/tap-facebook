@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.0
+  * Add the ability to override `RESULT_RETURN_LIMIT` from the config [#71](https://github.com/singer-io/tap-facebook/pull/71)
+  * Add date-windowing for the `adcreative` stream [#71](https://github.com/singer-io/tap-facebook/pull/71)
+
 ## 1.7.1
   * Bump `facebook_business` library to 4.0.5 [#68](https://github.com/singer-io/tap-facebook/pull/68)
   * Remove deprecated `video_p95_watched_actions` field
