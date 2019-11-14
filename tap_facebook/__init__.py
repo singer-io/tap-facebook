@@ -210,12 +210,30 @@ class AdCreative(Stream):
 
     def __iter__(self):
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
-        def do_request():
+        def do_request(params):
             return self.account.get_ad_creatives(fields=self.fields(), # pylint: disable=no-member
-                                                 params={'limit': RESULT_RETURN_LIMIT})
-        ad_creative = do_request()
-        for a in ad_creative: # pylint: disable=invalid-name
-            yield {'record': a.export_all_data()}
+                                                 params={'limit': RESULT_RETURN_LIMIT, 'time_range': params})
+
+        # `time_range` wants a value in the shape of {"since":
+        # "YYYY-MM-DD", "until": "YYYY-MM-DD"}, which is what
+        # pendulum.parse().date() returns
+        date_window_start = pendulum.parse(CONFIG['start_date']).date()
+        date_window_end = date_window_start.add(days=1)
+        end_date = TODAY.date()
+
+        while date_window_end <= end_date:
+
+            params = {
+                'since' : str(date_window_start),
+                'until' : str(date_window_end)
+            }
+            ad_creative = do_request(params)
+
+            for a in ad_creative: # pylint: disable=invalid-name
+                yield {'record': a.export_all_data()}
+
+            date_window_start = date_window_start.add(days=1)
+            date_window_end = date_window_start.add(days=1)
 
 
 class Ads(IncrementalStream):
@@ -657,6 +675,9 @@ def main_impl():
     access_token = args.config['access_token']
 
     CONFIG.update(args.config)
+
+    global RESULT_RETURN_LIMIT
+    RESULT_RETURN_LIMIT = CONFIG.get('result_return_limit', RESULT_RETURN_LIMIT)
 
     FacebookAdsApi.init(access_token=access_token)
     user = fb_user.User(fbid='me')
