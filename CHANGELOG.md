@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.8.2
+  * Add `tap-tester` integration tests [#75](https://github.com/singer-io/tap-facebook/pull/75)
+
 ## 1.8.1
   * Modifies the sync method of AdCreatives to use the FB Batch endpoint [#73](https://github.com/singer-io/tap-facebook/pull/73)
 
