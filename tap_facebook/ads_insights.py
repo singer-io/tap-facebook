@@ -1,4 +1,5 @@
 import sys
+import json
 
 import attr
 
@@ -21,43 +22,39 @@ from tap_facebook.config import *
 
 LOGGER = singer.get_logger()
 
-def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
-    # HACK: Workaround added due to bug with Facebook prematurely deprecating 'relevance_score'
-    # Issue being tracked here: https://developers.facebook.com/support/bugs/2489592517771422
-    def is_relevance_score(exception):
-        if getattr(exception, "body", None):
-            return exception.body().get("error", {}).get("message") == '(#100) relevance_score is not valid for fields param. please check https://developers.facebook.com/docs/marketing-api/reference/ads-insights/ for all valid values'
-        else:
+
+def fatal_api_error(err):
+    if isinstance(err, FacebookRequestError):
+        headers = err.http_headers()
+
+        if err.api_transient_error():
             return False
+        
+        # BUC Rate Limit Type
+        # https://developers.facebook.com/docs/graph-api/overview/rate-limiting#error-codes-2
+        
+        RATE_LIMIT_SUBCODE = 2446079
+        
+        # Ads Inisights => 80000
+        # Custom Audience => 80003
+        # Ads management => 80004
+        if err.api_error_code() in (80000, 80003, 80004) and err.api_error_subcode() == RATE_LIMIT_SUBCODE:
+            headers = err.http_headers()
+            usage_object_raw = headers.get('x-business-use-case-usage')
 
-    def log_retry_attempt(details):
-        _, exception, _ = sys.exc_info()
-        if is_relevance_score(exception):
-            raise Exception("Due to a bug with Facebook prematurely deprecating 'relevance_score' that is "
-                            "not affecting all tap-facebook users in the same way, you need to "
-                            "deselect `relevance_score` from your Insights export. For further "
-                            "information, please see this Facebook bug report thread: "
-                            "https://developers.facebook.com/support/bugs/2489592517771422") from exception
-        LOGGER.info(exception)
-        LOGGER.info('Caught retryable error after %s tries. Waiting %s more seconds then retrying...',
-                    details["tries"],
-                    details["wait"])
+            if not usage_object_raw:
+                return False                
 
-    def should_retry_api_error(exception):
-        if isinstance(exception, FacebookRequestError):
-            return exception.api_transient_error() or exception.api_error_subcode() == 99 or is_relevance_score(exception)
-        elif isinstance(exception, InsightsJobTimeout):
-            return True
-        return False
-
-    return backoff.on_exception(
-        backoff_type,
-        exception,
-        jitter=None,
-        on_backoff=log_retry_attempt,
-        giveup=lambda exc: not should_retry_api_error(exc),
-        **wait_gen_kwargs
-    )
+            usage_obj = json.loads(usage_object_raw)
+            for accnt, metadata in usage_obj.items():
+                wait_time_minutes = metadata[0].get("estimated_time_to_regain_access")
+                if wait_time_minutes:
+                    LOGGER.info(f"waiting {wait_time_minutes} minutes based on 'estimated_time_to_regain_access' header for accnt {accnt}")
+                    time.sleep(60 * int(wait_time_minutes))
+            
+            return False
+    
+    return False
 
 @attr.s
 class AdsInsights(Stream):
@@ -72,10 +69,9 @@ class AdsInsights(Stream):
     time_increment = attr.ib(default=1)
     limit = attr.ib(default=RESULT_RETURN_LIMIT)
 
-    bookmark_key = START_DATE_KEY
+    bookmark_key = "date_start"
 
-    invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
-                               'age', 'gender', 'country', 'placement', 'region', 'dma']
+    invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position','age', 'gender', 'country', 'placement', 'region', 'dma']
 
 
 
@@ -89,15 +85,14 @@ class AdsInsights(Stream):
     def job_params(self):
         start_date = self.get_start(self.bookmark_key)
 
-        buffer_days = 28
-        # if CONFIG.get('insights_buffer_days'):
-        #     buffer_days = int(CONFIG.get('insights_buffer_days'))
+        buffer_days = self.config.get('insights_buffer_days', 5)
 
         buffered_start_date = start_date.subtract(days=buffer_days)
 
         end_date = pendulum.now()
-        # if CONFIG.get('end_date'):
-        #     end_date = pendulum.parse(CONFIG.get('end_date'))
+        config_end_date = self.config.get("end_date")
+        if config_end_date:
+            end_date = pendulum.parse(config_end_date)
 
         # Some automatic fields (primary-keys) cannot be used as 'fields' query params.
         while buffered_start_date <= end_date:
@@ -114,62 +109,24 @@ class AdsInsights(Stream):
             }
             buffered_start_date = buffered_start_date.add(days=1)
 
-    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout), max_tries=5, factor=5)
-    # @ratelimit.limits(calls=60 + 400 * )
+    @backoff.on_exception(backoff.expo, (FacebookRequestError), giveup=fatal_api_error)
     def run_job(self, params):
-        LOGGER.info('Starting adsinsights job with params %s', params)
-        job = self.account.get_insights( # pylint: disable=no-member
-            params=params,
-            is_async=True)
-        status = None
-        time_start = time.time()
-        sleep_time = 10
-        while status != "Job Completed":
-            duration = time.time() - time_start
-            job = job.api_get()
-            status = job['async_status']
-            percent_complete = job['async_percent_completion']
-
-            job_id = job['id']
-            LOGGER.info('%s, %d%% done', status, percent_complete)
-
-            if status == "Job Completed":
-                return job
-
-            if duration > INSIGHTS_MAX_WAIT_TO_START_SECONDS and percent_complete == 0:
-                pretty_error_message = ('Insights job {} did not start after {} seconds. ' +
-                                        'This is an intermittent error and may resolve itself on subsequent queries to the Facebook API. ' +
-                                        'You should deselect fields from the schema that are not necessary, ' +
-                                        'as that may help improve the reliability of the Facebook API.')
-                raise InsightsJobTimeout(pretty_error_message.format(job_id, INSIGHTS_MAX_WAIT_TO_START_SECONDS))
-            elif duration > INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS and status != "Job Completed":
-                pretty_error_message = ('Insights job {} did not complete after {} seconds. ' +
-                                        'This is an intermittent error and may resolve itself on subsequent queries to the Facebook API. ' +
-                                        'You should deselect fields from the schema that are not necessary, ' +
-                                        'as that may help improve the reliability of the Facebook API.')
-                raise InsightsJobTimeout(pretty_error_message.format(job_id,
-                                                                     INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS//60))
-
-            LOGGER.info("sleeping for %d seconds until job is done", sleep_time)
-            time.sleep(sleep_time)
-            if sleep_time < INSIGHTS_MAX_ASYNC_SLEEP_SECONDS:
-                sleep_time = 2 * sleep_time
-        return job
-
+        # LOGGER.info('Starting adsinsights job with params %s', params)
+        return self.account.get_insights(params=params)
+        
     def __iter__(self):
         for params in self.job_params():
             with metrics.job_timer('insights'):
                 job = self.run_job(params)
-
-            min_date_start_for_job = None
-            count = 0
-            for obj in job.get_result():
-                count += 1
-                rec = obj.export_all_data()
-                if not min_date_start_for_job or rec['date_stop'] < min_date_start_for_job:
-                    min_date_start_for_job = rec['date_stop']
-                yield {'record': rec}
-            LOGGER.info('Got %d results for insights job', count)
+                count = 0
+                min_date_start_for_job = None
+                for obj in job:
+                    count += 1
+                    LOGGER.info(obj)
+                    rec = obj.export_all_data()
+                    if not min_date_start_for_job or rec['date_stop'] < min_date_start_for_job:
+                        min_date_start_for_job = rec['date_stop']
+                    yield {'record': rec}
 
             # when min_date_start_for_job stays None, we should
             # still update the bookmark using 'until' in time_ranges
@@ -177,5 +134,5 @@ class AdsInsights(Stream):
                 for time_range in params['time_ranges']:
                     if time_range['until']:
                         min_date_start_for_job = time_range['until']
-            yield {'state': self.advance_bookmark(self, self.bookmark_key,
-                                             min_date_start_for_job)} # pylint: disable=no-member
+            yield {'state': self.advance_bookmark(self.bookmark_key,min_date_start_for_job)} # pylint: disable=no-member
+            LOGGER.info('Got %d results for insights job', count)
