@@ -42,19 +42,30 @@ class Stream(object):
         return fields
     
     def get_start(self, bookmark_key):
-        print(self.config)
-        config_start_date = self.config.get(START_DATE_KEY)
         tap_stream_id = self.name
-        state = self.state or {}
-        current_bookmark = singer.get_bookmark(state, tap_stream_id, bookmark_key)
-        if current_bookmark is None:
-            if isinstance(self, IncrementalStream):
-                return None
-            else:
-                LOGGER.info("no bookmark found for %s, using start_date instead...%s", tap_stream_id, config_start_date)
-                return pendulum.parse(config_start_date)
-        LOGGER.info("found current bookmark for %s:  %s", tap_stream_id, current_bookmark)
-        return pendulum.parse(current_bookmark)
+        config_start_date = self.config.get(START_DATE_KEY)
+        current_bookmark = singer.get_bookmark(self.state, tap_stream_id, bookmark_key)
+
+        if current_bookmark:
+            return pendulum.parse(current_bookmark)
+        
+        return pendulum.parse(config_start_date)
+    
+    def advance_bookmark(self, bookmark_key, date):
+        tap_stream_id = self.name
+
+        current_bookmark = self.get_start(bookmark_key)
+        date = pendulum.parse(date) if date else None
+
+        LOGGER.info(f"date: {date}")
+        LOGGER.info(f"current_bookmark: {current_bookmark}")
+
+        if date and date > current_bookmark:
+            self.state = singer.write_bookmark(self.state, tap_stream_id, bookmark_key, str(date))
+        else:
+            self.state = singer.write_bookmark(self.state, tap_stream_id, bookmark_key, str(current_bookmark))
+
+        return self.state
 
 @attr.s
 class IncrementalStream(Stream):
@@ -78,24 +89,3 @@ class IncrementalStream(Stream):
             if max_bookmark:
                 yield {'state': self.advance_bookmark(UPDATED_TIME_KEY, str(max_bookmark))}
 
-    def advance_bookmark(self, bookmark_key, date):
-        tap_stream_id = self.name
-        state = self.state or {}
-        LOGGER.info('advance(%s, %s)', tap_stream_id, date)
-        date = pendulum.parse(date) if date else None
-        current_bookmark = self.get_start(bookmark_key)
-
-        if date is None:
-            LOGGER.info('Did not get a date for stream %s '+
-                        ' not advancing bookmark',
-                        tap_stream_id)
-        elif not current_bookmark or date > current_bookmark:
-            LOGGER.info('Bookmark for stream %s is currently %s, ' +
-                        'advancing to %s',
-                        tap_stream_id, current_bookmark, date)
-            state = singer.write_bookmark(state, tap_stream_id, bookmark_key, str(date))
-        else:
-            LOGGER.info('Bookmark for stream %s is currently %s ' +
-                        'not changing to %s',
-                        tap_stream_id, current_bookmark, date)
-        return state
