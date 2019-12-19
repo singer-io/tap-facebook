@@ -12,7 +12,7 @@ setup(
     py_modules=["tap_facebook"],
     install_requires=[
         "attrs==16.3.0",
-        "backoff==1.10.0",
+        "backoff>=1.8.0, <2",
         "pendulum==1.2.0",
         "facebook_business==4.0.5",
         "requests==2.22.0",
