@@ -110,7 +110,6 @@ class AdsInsights(Stream):
 
     @backoff.on_exception(backoff.expo, (FacebookRequestError), giveup=fatal_api_error)
     def run_job(self, params):
-        # LOGGER.info('Starting adsinsights job with params %s', params)
         return self.account.get_insights(params=params)
         
     def __iter__(self):
@@ -121,7 +120,6 @@ class AdsInsights(Stream):
                 min_date_start_for_job = None
                 for obj in job:
                     count += 1
-                    LOGGER.info(obj)
                     rec = obj.export_all_data()
                     if not min_date_start_for_job or rec['date_stop'] < min_date_start_for_job:
                         min_date_start_for_job = rec['date_stop']
@@ -134,4 +132,3 @@ class AdsInsights(Stream):
                     if time_range['until']:
                         min_date_start_for_job = time_range['until']
             yield {'state': self.advance_bookmark(self.bookmark_key,min_date_start_for_job)} # pylint: disable=no-member
-            LOGGER.info('Got %d results for insights job', count)
