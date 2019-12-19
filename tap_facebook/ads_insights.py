@@ -110,15 +110,15 @@ class AdsInsights(Stream):
 
     @backoff.on_exception(backoff.expo, (FacebookRequestError), giveup=fatal_api_error)
     def run_job(self, params):
-        return self.account.get_insights(params=params)
+        for record in self.account.get_insights(params=params):
+            yield record
         
     def __iter__(self):
         for params in self.job_params():
             with metrics.job_timer('insights'):
-                job = self.run_job(params)
                 count = 0
                 min_date_start_for_job = None
-                for obj in job:
+                for obj in self.run_job(params):
                     count += 1
                     rec = obj.export_all_data()
                     if not min_date_start_for_job or rec['date_stop'] < min_date_start_for_job:
