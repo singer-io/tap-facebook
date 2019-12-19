@@ -6,19 +6,18 @@ import attr
 import pendulum
 import requests
 import backoff
-import ratelimit
 import singer
 import singer.metrics as metrics
 
 
 from tap_facebook.stream import Stream
 from tap_facebook.exceptions import *
+from tap_facebook.config import *
 
 import time
 
 import facebook_business.adobjects.adsinsights as adsinsights
 
-from tap_facebook.config import *
 
 LOGGER = singer.get_logger()
 
