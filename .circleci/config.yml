@@ -10,6 +10,7 @@ jobs:
           command: |
             python3 -mvenv /usr/local/share/virtualenvs/tap-facebook
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
+            pip install -U 'pip<19.2' setuptools
             pip install .[dev]
       - run:
           name: 'pylint'
