@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.8.3
+  * Bump `facebook_business` library to 5.0.2 [#83](https://github.com/singer-io/tap-facebook/pull/83)
+
 ## 1.8.2
   * Add `video_play_curve_actions` to ads_insights schemas [#80](https://github.com/singer-io/tap-facebook/pull/80)
 
