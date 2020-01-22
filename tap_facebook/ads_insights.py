@@ -11,9 +11,9 @@ import singer.metrics as metrics
 
 
 from tap_facebook.stream import Stream
-from tap_facebook.exceptions import *
 from tap_facebook.config import *
 
+from facebook_business.exceptions import FacebookRequestError
 import time
 
 import facebook_business.adobjects.adsinsights as adsinsights
@@ -21,40 +21,7 @@ import facebook_business.adobjects.adsinsights as adsinsights
 
 LOGGER = singer.get_logger()
 
-
-def fatal_api_error(err):
-    if isinstance(err, FacebookRequestError):
-        headers = err.http_headers()
-
-        if err.api_transient_error():
-            return False
-        
-        # BUC Rate Limit Type
-        # https://developers.facebook.com/docs/graph-api/overview/rate-limiting#error-codes-2
-        
-        RATE_LIMIT_SUBCODE = 2446079
-        
-        # Ads Inisights => 80000
-        # Custom Audience => 80003
-        # Ads management => 80004
-        if err.api_error_code() in (80000, 80003, 80004) and err.api_error_subcode() == RATE_LIMIT_SUBCODE:
-            headers = err.http_headers()
-            usage_object_raw = headers.get('x-business-use-case-usage')
-
-            if not usage_object_raw:
-                return False                
-
-            usage_obj = json.loads(usage_object_raw)
-            for accnt, metadata in usage_obj.items():
-                wait_time_minutes = metadata[0].get("estimated_time_to_regain_access")
-                if wait_time_minutes:
-                    LOGGER.info(f"waiting {wait_time_minutes} minutes based on 'estimated_time_to_regain_access' header for accnt {accnt}")
-                    time.sleep(60 * int(wait_time_minutes))
-            
-            return False
     
-    return False
-
 @attr.s
 class AdsInsights(Stream):
     field_class = adsinsights.AdsInsights.Field
@@ -108,11 +75,72 @@ class AdsInsights(Stream):
             }
             buffered_start_date = buffered_start_date.add(days=1)
 
-    @backoff.on_exception(backoff.expo, (FacebookRequestError), giveup=fatal_api_error)
     def run_job(self, params):
-        for record in self.account.get_insights(params=params):
-            yield record
+        # do not perform request immediately due to potential throttling exception
+        request = self.account.get_insights(params=params, pending=True)
+        yield from self.paginate(request)
+
+    # truly disgusting workaround for self-throttling:
+    # using the len(cursor) to ensure that new api calls are not made
+    # without us knowing and also enable us to control the re-tries.
+    # 
+    # both the request.execute and cursor.load_next_page 
+    # can be executed multiple times and will only mutate
+    # itself when it succeeds, enabling us to blindly retry it.
+    # 
+    # this does not mean you should not have a shower after looking at this.
+    def paginate(self, request):
+        while True:
+            try:
+                cursor = request.execute()
+                break
+            except FacebookRequestError as err:
+                self.wait_on_throttle(err)
+
+        while True:
+            for i in range(len(cursor)):
+                yield cursor.__getitem__(i)
+
+            try:
+                if not cursor.load_next_page():
+                    break
+            except FacebookRequestError as err:
+                self.wait_on_throttle(err)
+
+    def wait_on_throttle(self, err):
+        if not isinstance(err, FacebookRequestError):
+            raise err
+
+        headers = err.http_headers()
+
+        if err.api_transient_error():
+            LOGGER.warn(f"error is transient - sleeping for 5 seconds just to be sure")
+            return
         
+        # BUC Rate Limit Type
+        # https://developers.facebook.com/docs/graph-api/overview/rate-limiting#error-codes-2
+        
+        RATE_LIMIT_SUBCODE = 2446079
+        
+        # Ads Inisights => 80000
+        # Custom Audience => 80003
+        # Ads management => 80004
+        if err.api_error_code() in (80000, 80003, 80004) and err.api_error_subcode() == RATE_LIMIT_SUBCODE:
+            headers = err.http_headers()
+            usage_object_raw = headers.get('x-business-use-case-usage')
+
+            if not usage_object_raw:
+                raise err
+
+            usage_obj = json.loads(usage_object_raw)
+            for accnt, metadata in usage_obj.items():
+                wait_time_minutes = metadata[0].get("estimated_time_to_regain_access")
+                if wait_time_minutes:
+                    LOGGER.info(f"waiting {wait_time_minutes} minutes based on 'estimated_time_to_regain_access' header for accnt {accnt}")
+                    time.sleep(60 * int(wait_time_minutes))
+            
+            return
+
     def __iter__(self):
         for params in self.job_params():
             with metrics.job_timer('insights'):
