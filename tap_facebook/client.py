@@ -140,7 +140,7 @@ class Facebook(object):
 
             url = next
 
-    @ratelimit.limits(calls=20 * 60, period=60, raise_on_limit=False)
+    @ratelimit.limits(calls=20, period=60, raise_on_limit=False)
     @backoff.on_exception(
         backoff.expo,
         (requests.exceptions.RequestException, requests.exceptions.HTTPError),
