@@ -3,6 +3,12 @@ import requests
 import backoff
 import ratelimit
 import time
+from typing import Union, Sequence
+
+import singer
+
+from datetime import datetime, timedelta, date
+from dateutil import parser
 
 RATE_LIMIT_SUBCODE = 2446079
 ADS_INSIGHTS_CODE = 80000
@@ -128,6 +134,13 @@ class Facebook(object):
             "GET", f"{self.base_url}/{account_id}/insights", params=params
         )
 
+    def __parse_date(self, dateobj: Union[str, datetime]):
+        if isinstance(dateobj, datetime):
+            return dateobj.date()
+        elif isinstance(dateobj, str):
+            return parser.isoparse(dateobj).date()
+
+        raise ValueError(f"invalid date: {dateobj}")
 
     def __paginate(self, method, url, **kwargs):
         while True:
