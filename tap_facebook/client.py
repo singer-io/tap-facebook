@@ -66,89 +66,78 @@ class Facebook(object):
     def list_ad_accounts(self):
         yield from self.__do("GET", f"{self.base_url}/me/adaccounts")
 
-    def list_insights(self, account_id, *fields):
-        params = {
-            "level": "ad",
-            "limit": 100,
-            "action_breakdowns": [
-                "action_type",
-                "action_target_id",
-                "action_destination",
-            ],
-            "breakdowns": ["age", "gender"],
-            "fields": [
+    def list_insights(
+        self,
+        account_id,
+        start_date: Union[str, datetime],
+        end_date: Union[str, datetime] = None,
+        fields: list = None,
+        limit: int = 50,
+        action_breakdowns: list = [],
+        breakdowns: list = [],
+        time_increments: int = 1,
+        action_attribution_windows: list = [],
+    ):
+        if not start_date:
+            raise ValueError("client: start_date is required")
+
+        since = self.__parse_date(start_date)
+
+        if end_date:
+            until = self.__parse_date(end_date)
+        else:
+            until = date.today() + timedelta(days=-1)
+
+        timerange = {"since": str(since), "until": str(until)}
+
+        if not fields:
+            fields = [
                 "account_id",
                 "account_name",
-                "action_values",
-                "actions",
                 "ad_id",
                 "ad_name",
                 "adset_id",
                 "adset_name",
                 "campaign_id",
                 "campaign_name",
-                "canvas_avg_view_percent",
-                "canvas_avg_view_time",
                 "clicks",
-                "cost_per_action_type",
-                "cost_per_inline_link_click",
-                "cost_per_inline_post_engagement",
-                "cost_per_unique_action_type",
-                "cost_per_unique_click",
-                "cost_per_unique_inline_link_click",
-                "cpc",
-                "cpm",
-                "cpp",
                 "ctr",
                 "date_start",
                 "date_stop",
                 "frequency",
                 "impressions",
-                "inline_link_click_ctr",
-                "inline_link_clicks",
-                "inline_post_engagement",
-                "objective",
-                "outbound_clicks",
                 "reach",
-                "relevance_score",
                 "social_spend",
                 "spend",
-                "unique_actions",
                 "unique_clicks",
                 "unique_ctr",
-                "unique_inline_link_click_ctr",
-                "unique_inline_link_clicks",
-                "unique_link_clicks_ctr",
-                "video_10_sec_watched_actions",
-                "video_30_sec_watched_actions",
-                "video_p100_watched_actions",
-                "video_p25_watched_actions",
-                "video_p50_watched_actions",
-                "video_p75_watched_actions",
-                "website_ctr",
-            ],
+            ]
+
+        params = {
+            "level": "ad",
+            "limit": limit,
+            "action_breakdowns": action_breakdowns,
+            "breakdowns": breakdowns,
+            "fields": fields,
             "time_increment": 1,
-            "action_attribution_windows": [
-                "1d_click",
-                "7d_click",
-                "28d_click",
-                "1d_view",
-                "7d_view",
-                "28d_view",
-            ],
-            "time_range": {"since": "2020-01-01", "until": "2020-01-20"},
+            "action_attribution_windows": action_attribution_windows,
+            "time_range": timerange,
         }
 
-        yield from self.__paginage(
+        yield from self.__paginate(
             "GET", f"{self.base_url}/{account_id}/insights", params=params
         )
 
-    def __paginage(self, method, url, **kwargs):
+
+    def __paginate(self, method, url, **kwargs):
         while True:
             data, next = self.__do(method, url, paginate=True, **kwargs)
-            yield from data
+            if data:
+                yield from data
+
             if not next:
-                break
+                return
+
             url = next
 
     @ratelimit.limits(calls=20 * 60, period=60, raise_on_limit=False)
@@ -168,10 +157,13 @@ class Facebook(object):
 
         response = resp.json()
 
+        data = response.get("data", {})
         if not paginate:
-            return response.get("data", {})
+            return data
 
-        return response.get("data", {}), response.get("paging", {}).get("next")
+        paginate = response.get("paging", {}).get("next")
+
+        return data, paginate
 
     def __encode_params(self, params: dict):
         """encode all parameters in a way that is not native to the requests library.
