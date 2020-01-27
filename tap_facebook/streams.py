@@ -90,17 +90,26 @@ class AdsInsights:
             default_date = parser.isoparse(config_start_date)
 
         if not state:
+            logger.info(f"using 'start_date' from config: {default_date}")
             return default_date.isoformat()
 
         account_record = singer.get_bookmark(state, self.tap_stream_id, account_id)
         if not account_record:
+            logger.info(f"using 'start_date' from config: {default_date}")
             return default_date.isoformat()
 
         current_bookmark = account_record.get(self.bookmark_key, None)
         if not current_bookmark:
+            logger.info(f"using 'start_date' from config: {default_date}")
             return default_date.isoformat()
 
-        return parser.isoparse(current_bookmark).isoformat()
+        state_date = parser.isoparse(current_bookmark)
+
+        # increment by one to not reprocess the previous date
+        new_date = state_date + timedelta(days=1)
+
+        logger.info(f"using 'start_date' from previous state: {current_bookmark}")
+        return new_date.isoformat()
 
     def __advance_bookmark(self, account_id: str, state: dict, bookmark: str):
 
