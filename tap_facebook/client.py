@@ -128,8 +128,6 @@ class Facebook(object):
 
             remaining_days = until - from_date
             if remaining_days.days:
-                logger.info(f"from_date: {from_date}")
-                logger.info(f"until: {until}")
                 time_ranges.append((from_date, until))
         else:
             time_ranges = [(since, until)]
