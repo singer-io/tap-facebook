@@ -205,7 +205,7 @@ class Facebook(object):
         ),
         giveup=should_give_up,
     )
-    @ratelimit.limits(calls=20 * 60, period=60, raise_on_limit=True)
+    @ratelimit.limits(calls=20 * 60, period=60, raise_on_limit=False)
     def __do(self, method, url, paginate=False, **kwargs):
         params = kwargs.pop("params", {})
         params["access_token"] = self.access_token
