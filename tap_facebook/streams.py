@@ -4,7 +4,7 @@ from typing import Sequence
 from datetime import timedelta, datetime
 from dateutil import parser
 
-from .client import Facebook
+from tap_facebook.client import Facebook
 
 logger = singer.get_logger()
 
