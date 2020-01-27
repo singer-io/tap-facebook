@@ -59,7 +59,7 @@ def is_throttle(err):
             time.sleep(wait_time_in_minutes * 60)
             return False
 
-    return False
+    return True
 
 
 class Facebook(object):
