@@ -44,14 +44,14 @@ def should_give_up(err):
 
     logger.error(f"Facebook client error: {message}")
 
-    if not is_transient:
-        return True
-
     if not (
         code in [ADS_INSIGHTS_CODE, ADS_MANAGEMENT, CUSTOM_AUDIENCE_CODE]
         and error_subcode == RATE_LIMIT_SUBCODE
     ):
-        return False
+        if is_transient:
+            return False
+
+        return True
 
     use_case_usage_str = headers.get("x-business-use-case-usage", None)
     if not use_case_usage_str:
