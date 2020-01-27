@@ -15,6 +15,8 @@ ADS_INSIGHTS_CODE = 80000
 CUSTOM_AUDIENCE_CODE = 80003
 ADS_MANAGEMENT = 80004
 
+logger = singer.get_logger()
+
 
 def is_throttle(err):
     headers = err.response.headers
@@ -26,9 +28,12 @@ def is_throttle(err):
 
     error = data["error"]
     code = error.get("code", 0)
+    message = error.get("message")
     error_subcode = error.get("error_subcode", 0)
     is_transient = error.get("is_transient", False)
     type = error.get("type", None)
+
+    logger.error(f"Facebook client error: {message}")
 
     if not is_transient:
         return True
@@ -53,7 +58,7 @@ def is_throttle(err):
             if not wait_time_in_minutes:
                 return False
 
-            print(
+            logger.warn(
                 f"waiting for {wait_time_in_minutes} minutes based on 'estimated_time_to_regain_access' for account_id {account_id}"
             )
             time.sleep(wait_time_in_minutes * 60)
@@ -94,45 +99,74 @@ class Facebook(object):
         else:
             until = date.today() + timedelta(days=-1)
 
-        timerange = {"since": str(since), "until": str(until)}
+        if until - since > timedelta(weeks=4):
+            # for large intervals, the API returns 500
+            # handle this by chunking the dates instead
+            time_ranges = []
 
-        if not fields:
-            fields = [
-                "account_id",
-                "account_name",
-                "ad_id",
-                "ad_name",
-                "adset_id",
-                "adset_name",
-                "campaign_id",
-                "campaign_name",
-                "clicks",
-                "ctr",
-                "date_start",
-                "date_stop",
-                "frequency",
-                "impressions",
-                "reach",
-                "social_spend",
-                "spend",
-                "unique_clicks",
-                "unique_ctr",
-            ]
+            total_days = (until - since).days
+            from_date = since
+            while True:
+                to_date = from_date + timedelta(days=30)
 
-        params = {
-            "level": "ad",
-            "limit": limit,
-            "action_breakdowns": action_breakdowns,
-            "breakdowns": breakdowns,
-            "fields": fields,
-            "time_increment": 1,
-            "action_attribution_windows": action_attribution_windows,
-            "time_range": timerange,
-        }
+                if to_date > until:
+                    break
 
-        yield from self.__paginate(
-            "GET", f"{self.base_url}/{account_id}/insights", params=params
-        )
+                time_ranges.append((from_date, to_date))
+
+                # add one to to_date to make intervals non-overlapping
+                from_date = to_date + timedelta(days=1)
+
+            remaining_days = until - from_date
+            if remaining_days.days:
+                logger.info(f"from_date: {from_date}")
+                logger.info(f"until: {until}")
+                time_ranges.append((from_date, until))
+        else:
+            time_ranges = [(since, until)]
+
+        for (start, stop) in time_ranges:
+
+            timerange = {"since": str(start), "until": str(stop)}
+
+            if not fields:
+                fields = [
+                    "account_id",
+                    "account_name",
+                    "account_currency",
+                    "ad_id",
+                    "ad_name",
+                    "adset_id",
+                    "adset_name",
+                    "campaign_id",
+                    "campaign_name",
+                    "clicks",
+                    "ctr",
+                    "date_start",
+                    "date_stop",
+                    "frequency",
+                    "impressions",
+                    "reach",
+                    "social_spend",
+                    "spend",
+                    "unique_clicks",
+                    "unique_ctr",
+                ]
+
+            params = {
+                "level": "ad",
+                "limit": limit,
+                "action_breakdowns": action_breakdowns,
+                "breakdowns": breakdowns,
+                "fields": fields,
+                "time_increment": 1,
+                "action_attribution_windows": action_attribution_windows,
+                "time_range": timerange,
+            }
+
+            yield from self.__paginate(
+                "GET", f"{self.base_url}/{account_id}/insights", params=params
+            )
 
     def __parse_date(self, dateobj: Union[str, datetime]):
         if isinstance(dateobj, datetime):
@@ -153,12 +187,12 @@ class Facebook(object):
 
             url = next
 
-    @ratelimit.limits(calls=20, period=60, raise_on_limit=False)
-    @backoff.on_exception(
-        backoff.expo,
-        (requests.exceptions.RequestException, requests.exceptions.HTTPError),
-        giveup=is_throttle,
-    )
+    # @ratelimit.limits(calls=20, period=60, raise_on_limit=False)
+    # @backoff.on_exception(
+    #     backoff.expo,
+    #     (requests.exceptions.RequestException, requests.exceptions.HTTPError),
+    #     giveup=is_throttle,
+    # )
     def __do(self, method, url, paginate=False, **kwargs):
         params = kwargs.pop("params", {})
         params["access_token"] = self.access_token
@@ -166,9 +200,10 @@ class Facebook(object):
 
         resp = self.__session.request(method, url, params=encoded_params, **kwargs)
 
-        resp.raise_for_status()
-
         response = resp.json()
+        if "error" in response:
+            message = response["error"].get("message")
+            logger.error(message)
 
         data = response.get("data", {})
         if not paginate:
@@ -201,8 +236,8 @@ if __name__ == "__main__":
     if not access_token:
         raise ValueError(f"missing 'FACEBOOK_ACCESS_TOKEN' in environment")
 
-    fb_client = Facebook(access_token)
-    for ad_account in fb_client.list_ad_accounts():
-        insights = list(fb_client.list_insights(ad_account["id"]))
-        for insight in insights:
-            print(json.dumps(insights))
+    # fb_client = Facebook(access_token)
+    # for ad_account in fb_client.list_ad_accounts():
+    #     insights = list(fb_client.list_insights(ad_account["id"]),)
+    #     for insight in insights:
+    #         print(json.dumps(insights))
