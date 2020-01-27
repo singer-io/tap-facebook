@@ -18,7 +18,16 @@ ADS_MANAGEMENT = 80004
 logger = singer.get_logger()
 
 
-def is_throttle(err):
+def should_give_up(err):
+    if isinstance(err, ratelimit.exception.RateLimitException):
+        return False
+
+    if not isinstance(
+        err, (requests.exceptions.HTTPError, requests.exceptions.RequestException)
+    ):
+        return True
+
+    logger.error(str(err))
     headers = err.response.headers
     status_code = err.response.status_code
     data = err.response.json()
@@ -187,12 +196,16 @@ class Facebook(object):
 
             url = next
 
-    # @ratelimit.limits(calls=20, period=60, raise_on_limit=False)
-    # @backoff.on_exception(
-    #     backoff.expo,
-    #     (requests.exceptions.RequestException, requests.exceptions.HTTPError),
-    #     giveup=is_throttle,
-    # )
+    @backoff.on_exception(
+        backoff.expo,
+        (
+            requests.exceptions.RequestException,
+            requests.exceptions.HTTPError,
+            ratelimit.exception.RateLimitException,
+        ),
+        giveup=should_give_up,
+    )
+    @ratelimit.limits(calls=20 * 60, period=60, raise_on_limit=True)
     def __do(self, method, url, paginate=False, **kwargs):
         params = kwargs.pop("params", {})
         params["access_token"] = self.access_token
@@ -200,10 +213,12 @@ class Facebook(object):
 
         resp = self.__session.request(method, url, params=encoded_params, **kwargs)
 
+        resp.raise_for_status()
+
         response = resp.json()
         if "error" in response:
             message = response["error"].get("message")
-            logger.error(message)
+            raise RuntimeError(f"Facebook Api Error: {message}")
 
         data = response.get("data", {})
         if not paginate:
