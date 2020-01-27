@@ -1,6 +1,6 @@
 import singer
 from singer import utils, metadata, CatalogEntry, Transformer, metrics
-from typing import Sequence
+from typing import Sequence, Union
 from datetime import timedelta, datetime
 from dateutil import parser
 
@@ -33,15 +33,19 @@ class AdsInsights:
         for account_id in account_ids:
             fields = self.__fields_from_catalog(self.catalog)
 
-            logger.error(fields)
             state = self.process_account(account_id, fields, state)
         return state
 
     def process_account(self, account_id: str, fields: Sequence[str], state) -> dict:
-        start_date = self.__get_start(account_id, state)
-
         logger.info(f"account_id: {account_id}")
-        logger.info(f"start_date: {start_date}")
+        start_date = self.__get_start(account_id, state)
+        end_date = datetime.utcnow()
+
+        if start_date.date() >= end_date.date():
+            logger.info(
+                f"start_date {start_date} is yesterday - aborting run to not accidentally skip a day that has not yet received data yet."
+            )
+            return self.__advance_bookmark(account_id, state, None)
 
         bookmark = start_date
         with Transformer() as transformer:
@@ -91,17 +95,17 @@ class AdsInsights:
 
         if not state:
             logger.info(f"using 'start_date' from config: {default_date}")
-            return default_date.isoformat()
+            return default_date
 
         account_record = singer.get_bookmark(state, self.tap_stream_id, account_id)
         if not account_record:
             logger.info(f"using 'start_date' from config: {default_date}")
-            return default_date.isoformat()
+            return default_date
 
         current_bookmark = account_record.get(self.bookmark_key, None)
         if not current_bookmark:
             logger.info(f"using 'start_date' from config: {default_date}")
-            return default_date.isoformat()
+            return default_date
 
         state_date = parser.isoparse(current_bookmark)
 
@@ -109,12 +113,29 @@ class AdsInsights:
         new_date = state_date + timedelta(days=1)
 
         logger.info(f"using 'start_date' from previous state: {current_bookmark}")
-        return new_date.isoformat()
+        return new_date
 
-    def __advance_bookmark(self, account_id: str, state: dict, bookmark: str):
+    def __advance_bookmark(
+        self, account_id: str, state: dict, bookmark: Union[str, datetime, None]
+    ):
+        if not bookmark:
+            singer.write_state(state)
+            return state
+
+        if isinstance(bookmark, datetime):
+            bookmark_datetime = bookmark
+        elif isinstance(bookmark, str):
+            bookmark_datetime = parser.isoparse(bookmark)
+        else:
+            raise ValueError(
+                f"bookmark is of type {type(bookmark)} but must be either string or datetime"
+            )
 
         state = singer.write_bookmark(
-            state, self.tap_stream_id, account_id, {self.bookmark_key: str(bookmark)}
+            state,
+            self.tap_stream_id,
+            account_id,
+            {self.bookmark_key: bookmark_datetime.isoformat()},
         )
 
         singer.write_state(state)
