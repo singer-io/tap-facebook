@@ -108,7 +108,9 @@ class Facebook(object):
         else:
             until = date.today() + timedelta(days=-1)
 
-        if until - since > timedelta(weeks=4):
+        increment = 10
+
+        if until - since > timedelta(days=increment):
             # for large intervals, the API returns 500
             # handle this by chunking the dates instead
             time_ranges = []
@@ -116,7 +118,7 @@ class Facebook(object):
             total_days = (until - since).days
             from_date = since
             while True:
-                to_date = from_date + timedelta(days=30)
+                to_date = from_date + timedelta(days=increment)
 
                 if to_date > until:
                     break
