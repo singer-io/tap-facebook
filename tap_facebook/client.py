@@ -67,9 +67,14 @@ def should_give_up(err):
             if not wait_time_in_minutes:
                 return False
 
+            resume_datetime = datetime.utcnow() + timedelta(
+                seconds=wait_time_in_minutes * 60
+            )
+
             logger.warn(
                 f"waiting for {wait_time_in_minutes} minutes based on 'estimated_time_to_regain_access' for account_id {account_id}"
             )
+            logger.warn(f"will resume at {resume_datetime.isoformat()} UTC")
             time.sleep(wait_time_in_minutes * 60)
             return False
 
