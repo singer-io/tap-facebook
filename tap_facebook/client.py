@@ -82,7 +82,7 @@ def should_give_up(err):
 
 
 class Facebook(object):
-    def __init__(self, access_token, version="v4.0"):
+    def __init__(self, access_token, version="v5.0"):
         self.access_token = access_token
         self.version = version
         self.base_url = f"https://graph.facebook.com/{version}"
