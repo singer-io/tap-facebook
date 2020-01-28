@@ -30,9 +30,8 @@ class AdsInsights:
             bookmark_properties=self.bookmark_key,
         )
 
+        fields = self.__fields_from_catalog(self.catalog)
         for account_id in account_ids:
-            fields = self.__fields_from_catalog(self.catalog)
-
             state = self.process_account(account_id, fields, state)
         return state
 
