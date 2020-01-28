@@ -11,12 +11,11 @@ setup(
     classifiers=["Programming Language :: Python :: 3 :: Only"],
     py_modules=["tap_facebook"],
     install_requires=[
-        "attrs==16.3.0",
         "backoff>=1.8.0, <2",
-        "pendulum==1.2.0",
-        "facebook_business==4.0.5",
-        "requests==2.22.0",
-        "singer-python==5.8.1",
+        "python-dateutil==2.8.0",
+        "ratelimit==2.2.1",
+        "requests>=2.22.0, <3",
+        "singer-python>=5.8.1, <6",
     ],
     extras_require={"dev": ["pylint", "ipdb", "nose"]},
     entry_points="""
