@@ -48,20 +48,25 @@ class AdsInsights:
 
         prev_bookmark = None
         with Transformer() as transformer:
-            for insight in self.client.list_insights(
-                account_id, fields=fields, start_date=start_date
-            ):
-                record = transformer.transform(insight, self.schema, self.mdata)
-                bookmark = record[self.bookmark_key]
+            try:
+                for insight in self.client.list_insights(
+                    account_id, fields=fields, start_date=start_date
+                ):
+                    record = transformer.transform(insight, self.schema, self.mdata)
+                    bookmark = record[self.bookmark_key]
 
-                if not prev_bookmark:
-                    prev_bookmark = bookmark
-                if bookmark > prev_bookmark:
-                    state = self.__advance_bookmark(account_id, state, prev_bookmark)
-                    prev_bookmark = bookmark
+                    if not prev_bookmark:
+                        prev_bookmark = bookmark
+                    if bookmark > prev_bookmark:
+                        state = self.__advance_bookmark(
+                            account_id, state, prev_bookmark
+                        )
+                        prev_bookmark = bookmark
 
-                singer.write_record(self.tap_stream_id, record)
-
+                    singer.write_record(self.tap_stream_id, record)
+            except Exception:
+                self.__advance_bookmark(account_id, state, prev_bookmark)
+                raise
         return self.__advance_bookmark(account_id, state, prev_bookmark)
 
     def __fields_from_catalog(self, catalog):
