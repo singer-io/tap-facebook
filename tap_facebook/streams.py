@@ -53,15 +53,16 @@ class AdsInsights:
                     account_id, fields=fields, start_date=start_date
                 ):
                     record = transformer.transform(insight, self.schema, self.mdata)
-                    bookmark = record[self.bookmark_key]
+                    new_bookmark = record[self.bookmark_key]
 
                     if not prev_bookmark:
-                        prev_bookmark = bookmark
-                    if bookmark > prev_bookmark:
+                        prev_bookmark = new_bookmark
+
+                    if prev_bookmark < new_bookmark:
                         state = self.__advance_bookmark(
                             account_id, state, prev_bookmark
                         )
-                        prev_bookmark = bookmark
+                        prev_bookmark = new_bookmark
 
                     singer.write_record(self.tap_stream_id, record)
             except Exception:
