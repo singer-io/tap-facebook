@@ -38,9 +38,9 @@ class AdsInsights:
     def process_account(self, account_id: str, fields: Sequence[str], state) -> dict:
         logger.info(f"account_id: {account_id}")
         start_date = self.__get_start(account_id, state)
-        end_date = datetime.utcnow()
+        today = datetime.utcnow()
 
-        if start_date.date() >= end_date.date():
+        if start_date.date() >= today.date() + timedelta(days=-1):
             logger.info(
                 f"start_date {start_date} is yesterday - aborting run to not accidentally skip a day that has not yet received data yet."
             )
