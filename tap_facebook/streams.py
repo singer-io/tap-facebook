@@ -38,32 +38,37 @@ class AdsInsights:
     def process_account(self, account_id: str, fields: Sequence[str], state) -> dict:
         logger.info(f"account_id: {account_id}")
         start_date = self.__get_start(account_id, state)
-        end_date = datetime.utcnow()
+        today = datetime.utcnow()
 
-        if start_date.date() >= end_date.date():
+        if start_date.date() >= today.date() + timedelta(days=-1):
             logger.info(
                 f"start_date {start_date} is yesterday - aborting run to not accidentally skip a day that has not yet received data yet."
             )
             return self.__advance_bookmark(account_id, state, None)
 
-        bookmark = start_date
+        prev_bookmark = None
         with Transformer() as transformer:
-            prev_bookmark = None
-            for insight in self.client.list_insights(
-                account_id, fields=fields, start_date=start_date
-            ):
-                record = transformer.transform(insight, self.schema, self.mdata)
-                bookmark = record[self.bookmark_key]
+            try:
+                for insight in self.client.list_insights(
+                    account_id, fields=fields, start_date=start_date
+                ):
+                    record = transformer.transform(insight, self.schema, self.mdata)
+                    new_bookmark = record[self.bookmark_key]
 
-                if not prev_bookmark:
-                    prev_bookmark = bookmark
-                elif bookmark > prev_bookmark:
-                    state = self.__advance_bookmark(account_id, state, bookmark)
-                    prev_bookmark = bookmark
+                    if not prev_bookmark:
+                        prev_bookmark = new_bookmark
 
-                singer.write_record(self.tap_stream_id, record)
+                    if prev_bookmark < new_bookmark:
+                        state = self.__advance_bookmark(
+                            account_id, state, prev_bookmark
+                        )
+                        prev_bookmark = new_bookmark
 
-        return self.__advance_bookmark(account_id, state, bookmark)
+                    singer.write_record(self.tap_stream_id, record)
+            except Exception:
+                self.__advance_bookmark(account_id, state, prev_bookmark)
+                raise
+        return self.__advance_bookmark(account_id, state, prev_bookmark)
 
     def __fields_from_catalog(self, catalog):
         props = metadata.to_map(catalog.metadata)

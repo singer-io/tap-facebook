@@ -97,7 +97,7 @@ class Facebook(object):
         start_date: Union[str, datetime],
         end_date: Union[str, datetime] = None,
         fields: list = None,
-        limit: int = 50,
+        limit: int = 100,
         action_breakdowns: list = [],
         breakdowns: list = [],
         time_increments: int = 1,
@@ -113,7 +113,7 @@ class Facebook(object):
         else:
             until = date.today() + timedelta(days=-1)
 
-        increment = 10
+        increment = 1
 
         if until - since > timedelta(days=increment):
             # for large intervals, the API returns 500
@@ -133,8 +133,7 @@ class Facebook(object):
                 # add one to to_date to make intervals non-overlapping
                 from_date = to_date + timedelta(days=1)
 
-            remaining_days = until - from_date
-            if remaining_days.days:
+            if from_date <= until:
                 time_ranges.append((from_date, until))
         else:
             time_ranges = [(since, until)]
