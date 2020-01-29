@@ -46,9 +46,8 @@ class AdsInsights:
             )
             return self.__advance_bookmark(account_id, state, None)
 
-        bookmark = start_date
+        prev_bookmark = None
         with Transformer() as transformer:
-            prev_bookmark = None
             for insight in self.client.list_insights(
                 account_id, fields=fields, start_date=start_date
             ):
@@ -57,13 +56,13 @@ class AdsInsights:
 
                 if not prev_bookmark:
                     prev_bookmark = bookmark
-                elif bookmark > prev_bookmark:
-                    state = self.__advance_bookmark(account_id, state, bookmark)
+                if bookmark > prev_bookmark:
+                    state = self.__advance_bookmark(account_id, state, prev_bookmark)
                     prev_bookmark = bookmark
 
                 singer.write_record(self.tap_stream_id, record)
 
-        return self.__advance_bookmark(account_id, state, bookmark)
+        return self.__advance_bookmark(account_id, state, prev_bookmark)
 
     def __fields_from_catalog(self, catalog):
         props = metadata.to_map(catalog.metadata)
