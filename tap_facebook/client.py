@@ -133,8 +133,7 @@ class Facebook(object):
                 # add one to to_date to make intervals non-overlapping
                 from_date = to_date + timedelta(days=1)
 
-            remaining_days = until - from_date
-            if remaining_days.days:
+            if from_date <= until:
                 time_ranges.append((from_date, until))
         else:
             time_ranges = [(since, until)]
