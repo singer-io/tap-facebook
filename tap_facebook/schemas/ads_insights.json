@@ -61,6 +61,15 @@
     },
     "unique_ctr": {
       "type": ["null", "number"]
+    },
+    "unique_link_clicks_ctr": {
+      "type": ["null", "number"]
+    },
+    "inline_link_clicks": {
+      "type": ["null", "integer"]
+    },
+    "unique_inline_link_clicks": {
+      "type": ["null", "integer"]
     }
   },
   "type": ["null", "object"]
