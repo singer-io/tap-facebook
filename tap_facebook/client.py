@@ -164,6 +164,9 @@ class Facebook(object):
                     "spend",
                     "unique_clicks",
                     "unique_ctr",
+                    "unique_link_clicks_ctr",
+                    "inline_link_clicks",
+                    "unique_inline_link_clicks"
                 ]
 
             params = {
