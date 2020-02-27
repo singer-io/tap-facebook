@@ -139,26 +139,6 @@
         "integer"
       ]
     },
-    "relevance_score": {
-      "type": [
-        "null",
-        "object"
-      ],
-      "properties": {
-        "score": {
-          "type": [
-            "null",
-            "number"
-          ]
-        },
-        "status": {
-          "type": [
-            "null",
-            "string"
-          ]
-        }
-      }
-    },
     "campaign_name": {
       "type": [
         "null",
