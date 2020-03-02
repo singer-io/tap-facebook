@@ -8,7 +8,6 @@
     "actions": {"$ref": "ads_action_stats.json"},
     "action_values": {"$ref": "ads_action_stats.json"},
     "outbound_clicks": {"$ref": "ads_action_stats.json"},
-    "video_10_sec_watched_actions": {"$ref": "ads_action_stats.json"},
     "video_30_sec_watched_actions": {"$ref": "ads_action_stats.json"},
     "video_p25_watched_actions": {"$ref": "ads_action_stats.json"},
     "video_p50_watched_actions": {"$ref": "ads_action_stats.json"},
@@ -157,26 +156,6 @@
         "null",
         "integer"
       ]
-    },
-    "relevance_score": {
-      "type": [
-        "null",
-        "object"
-      ],
-      "properties": {
-        "score": {
-          "type": [
-            "null",
-            "number"
-          ]
-        },
-        "status": {
-          "type": [
-            "null",
-            "string"
-          ]
-        }
-      }
     },
     "campaign_name": {
       "type": [
@@ -362,6 +341,24 @@
       ]
     },
     "placement": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "quality_ranking": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "engagement_rate_ranking": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "conversion_rate_ranking": {
       "type": [
         "null",
         "string"
