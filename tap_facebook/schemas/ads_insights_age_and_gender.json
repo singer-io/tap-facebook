@@ -332,6 +332,24 @@
         "null",
         "string"
       ]
+    },
+    "quality_ranking": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "engagement_rate_ranking": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "conversion_rate_ranking": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   }
 }
