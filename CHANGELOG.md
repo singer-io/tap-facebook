@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.9.0
+  * Bump API version from `v4` to `v6` [#88](https://github.com/singer-io/tap-facebook/pull/88)
+
 ## 1.8.2
   * Add `video_play_curve_actions` to ads_insights schemas [#80](https://github.com/singer-io/tap-facebook/pull/80)
 
