@@ -67,7 +67,7 @@ class FacebookBookmarks(unittest.TestCase):
         }
 
     def get_properties(self):
-        return {'start_date' : '2015-03-15 00:00:00',
+        return {'start_date' : '2015-03-15T00:00:00Z',
                 'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
                 'end_date': '2015-03-16T00:00:00+00:00',
                 'insights_buffer_days': '1'
