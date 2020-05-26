@@ -615,6 +615,7 @@ def do_sync(account, catalog, state):
     for stream in streams_to_sync:
         LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields())
         schema = singer.resolve_schema_references(load_schema(stream), refs)
+        metadata_map = metadata.to_map(stream.catalog_entry.metadata)
         bookmark_key = BOOKMARK_KEYS.get(stream.name)
         singer.write_schema(stream.name, schema, stream.key_properties, bookmark_key, stream.stream_alias)
 
@@ -629,7 +630,7 @@ def do_sync(account, catalog, state):
                     if 'record' in message:
                         counter.increment()
                         time_extracted = utils.now()
-                        record = transformer.transform(message['record'], schema)
+                        record = transformer.transform(message['record'], schema, metadata=metadata_map)
                         singer.write_record(stream.name, record, stream.stream_alias, time_extracted)
                     elif 'state' in message:
                         singer.write_state(message['state'])
