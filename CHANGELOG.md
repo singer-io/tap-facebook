@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.9.1
+  * Pass metadata from the catalog to the Transformer to filter out unselected fields [#97](https://github.com/singer-io/tap-facebook/pull/97)
+
 ## 1.9.0
   * Bump API version from `v4` to `v6` [#88](https://github.com/singer-io/tap-facebook/pull/88)
 
