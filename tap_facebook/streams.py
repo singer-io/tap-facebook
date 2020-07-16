@@ -1,6 +1,6 @@
 import singer
-from singer import utils, metadata, CatalogEntry, Transformer, metrics
-from typing import Sequence, Union
+from singer import metrics
+from typing import Sequence, Union, Optional, Dict
 from datetime import timedelta, datetime
 from dateutil import parser
 
@@ -10,87 +10,62 @@ logger = singer.get_logger()
 
 
 class AdsInsights:
-    def __init__(self, client, catalog: CatalogEntry, config):
-        self.catalog = catalog
-        self.tap_stream_id = catalog.tap_stream_id
-        self.schema = catalog.schema.to_dict()
-        self.key_properties = catalog.key_properties
-        self.mdata = metadata.to_map(catalog.metadata)
+    def __init__(self, client, config):
+
         self.config = config
         self.client = client
         self.bookmark_key = "date_start"
 
-    def stream(self, account_ids: Sequence[str], state: dict):
+    def stream(self, account_ids: Sequence[str], state: dict, tap_stream_id: str):
 
-        # write schema
-        singer.write_schema(
-            self.tap_stream_id,
-            self.schema,
-            key_properties=self.key_properties,
-            bookmark_properties=self.bookmark_key,
-        )
-
-        fields = self.__fields_from_catalog(self.catalog)
         for account_id in account_ids:
-            state = self.process_account(account_id, fields, state)
+            state = self.process_account(
+                account_id, tap_stream_id=tap_stream_id, state=state
+            )
         return state
 
-    def process_account(self, account_id: str, fields: Sequence[str], state) -> dict:
+    def process_account(
+        self,
+        account_id: str,
+        tap_stream_id: str,
+        state: Dict,
+        fields: Optional[Sequence[str]] = None,
+    ) -> dict:
         logger.info(f"account_id: {account_id}")
-        start_date = self.__get_start(account_id, state)
+        start_date = self.__get_start(account_id, state, tap_stream_id)
         today = datetime.utcnow()
 
         if start_date.date() >= today.date() + timedelta(days=-1):
             logger.info(
                 f"start_date {start_date} is yesterday - aborting run to not accidentally skip a day that has not yet received data yet."
             )
-            return self.__advance_bookmark(account_id, state, None)
+            return self.__advance_bookmark(account_id, state, None, tap_stream_id)
 
         prev_bookmark = None
-        with Transformer() as transformer:
+        with singer.metrics.record_counter(tap_stream_id) as counter:
             try:
                 for insight in self.client.list_insights(
                     account_id, fields=fields, start_date=start_date
                 ):
-                    record = transformer.transform(insight, self.schema, self.mdata)
-                    new_bookmark = record[self.bookmark_key]
+                    new_bookmark = insight[self.bookmark_key]
 
                     if not prev_bookmark:
                         prev_bookmark = new_bookmark
 
                     if prev_bookmark < new_bookmark:
                         state = self.__advance_bookmark(
-                            account_id, state, prev_bookmark
+                            account_id, state, prev_bookmark, tap_stream_id
                         )
                         prev_bookmark = new_bookmark
 
-                    singer.write_record(self.tap_stream_id, record)
+                    singer.write_record(tap_stream_id, insight)
+                    counter.increment(1)
             except Exception:
-                self.__advance_bookmark(account_id, state, prev_bookmark)
+                self.__advance_bookmark(account_id, state, prev_bookmark, tap_stream_id)
                 raise
-        return self.__advance_bookmark(account_id, state, prev_bookmark)
+        return self.__advance_bookmark(account_id, state, prev_bookmark, tap_stream_id)
 
-    def __fields_from_catalog(self, catalog):
-        props = metadata.to_map(catalog.metadata)
-
-        fields = []
-        for breadcrumb, mdata in props.items():
-            if len(breadcrumb) != 2:
-                # only focus on immediate fields
-                # this ignores table-key-properties of the root
-                # as well as items that are nested below the level of the
-                # root object
-                continue
-
-            include = mdata.get("selected") or mdata.get("inclusion") == "automatic"
-            if not include:
-                continue
-
-            _, field = breadcrumb
-            fields.append(field)
-        return fields
-
-    def __get_start(self, account_id, state: dict):
+    def __get_start(self, account_id, state: dict, tap_stream_id: str):
         default_date = datetime.utcnow() + timedelta(weeks=4)
 
         config_start_date = self.config.get("start_date")
@@ -101,7 +76,7 @@ class AdsInsights:
             logger.info(f"using 'start_date' from config: {default_date}")
             return default_date
 
-        account_record = singer.get_bookmark(state, self.tap_stream_id, account_id)
+        account_record = singer.get_bookmark(state, tap_stream_id, account_id)
         if not account_record:
             logger.info(f"using 'start_date' from config: {default_date}")
             return default_date
@@ -120,7 +95,11 @@ class AdsInsights:
         return new_date
 
     def __advance_bookmark(
-        self, account_id: str, state: dict, bookmark: Union[str, datetime, None]
+        self,
+        account_id: str,
+        state: dict,
+        bookmark: Union[str, datetime, None],
+        tap_stream_id: str,
     ):
         if not bookmark:
             singer.write_state(state)
@@ -137,7 +116,7 @@ class AdsInsights:
 
         state = singer.write_bookmark(
             state,
-            self.tap_stream_id,
+            tap_stream_id,
             account_id,
             {self.bookmark_key: bookmark_datetime.isoformat()},
         )
