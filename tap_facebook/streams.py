@@ -10,27 +10,14 @@ logger = singer.get_logger()
 
 
 class AdsInsights:
-    def __init__(self, client, catalog: CatalogEntry, config):
-        self.catalog = catalog
-        self.tap_stream_id = catalog.tap_stream_id
-        self.schema = catalog.schema.to_dict()
-        self.key_properties = catalog.key_properties
-        self.mdata = metadata.to_map(catalog.metadata)
+    def __init__(self, client, config):
+
         self.config = config
         self.client = client
         self.bookmark_key = "date_start"
 
-    def stream(self, account_ids: Sequence[str], state: dict):
+    def stream(self, account_ids: Sequence[str], state: dict, tap_stream_id: str):
 
-        # write schema
-        singer.write_schema(
-            self.tap_stream_id,
-            self.schema,
-            key_properties=self.key_properties,
-            bookmark_properties=self.bookmark_key,
-        )
-
-        fields = self.__fields_from_catalog(self.catalog)
         for account_id in account_ids:
             state = self.process_account(account_id, fields, state)
         return state
