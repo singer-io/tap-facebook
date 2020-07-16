@@ -1,6 +1,6 @@
 import singer
-from singer import utils, metadata, CatalogEntry, Transformer, metrics
-from typing import Sequence, Union
+from singer import metrics
+from typing import Sequence, Union, Optional, Dict
 from datetime import timedelta, datetime
 from dateutil import parser
 
