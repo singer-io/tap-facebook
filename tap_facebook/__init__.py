@@ -110,22 +110,8 @@ def iter_delivery_info_filter(stream_type):
         yield filt
 
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
-    # HACK: Workaround added due to bug with Facebook prematurely deprecating 'relevance_score'
-    # Issue being tracked here: https://developers.facebook.com/support/bugs/2489592517771422
-    def is_relevance_score(exception):
-        if getattr(exception, "body", None):
-            return exception.body().get("error", {}).get("message") == '(#100) relevance_score is not valid for fields param. please check https://developers.facebook.com/docs/marketing-api/reference/ads-insights/ for all valid values'
-        else:
-            return False
-
     def log_retry_attempt(details):
         _, exception, _ = sys.exc_info()
-        if is_relevance_score(exception):
-            raise Exception("Due to a bug with Facebook prematurely deprecating 'relevance_score' that is "
-                            "not affecting all tap-facebook users in the same way, you need to "
-                            "deselect `relevance_score` from your Insights export. For further "
-                            "information, please see this Facebook bug report thread: "
-                            "https://developers.facebook.com/support/bugs/2489592517771422") from exception
         LOGGER.info(exception)
         LOGGER.info('Caught retryable error after %s tries. Waiting %s more seconds then retrying...',
                     details["tries"],
@@ -133,7 +119,7 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
 
     def should_retry_api_error(exception):
         if isinstance(exception, FacebookRequestError):
-            return exception.api_transient_error() or exception.api_error_subcode() == 99 or is_relevance_score(exception)
+            return exception.api_transient_error() or exception.api_error_subcode() == 99
         elif isinstance(exception, InsightsJobTimeout):
             return True
         return False
@@ -269,15 +255,21 @@ class Ads(IncrementalStream):
     field_class = fb_ad.Ad.Field
     key_properties = ['id', 'updated_time']
 
+    @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+    def _call_get_ads(self, params):
+        """
+        This is necessary because the functions that call this endpoint return
+        a generator, whose calls need decorated with a backoff.
+        """
+        return self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+
     def __iter__(self):
-        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
             if self.current_bookmark:
                 params.update({'filtering': [{'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
-            yield self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            yield self._call_get_ads(params)
 
-        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request_multiple():
             params = {'limit': RESULT_RETURN_LIMIT}
             bookmark_params = []
@@ -285,7 +277,7 @@ class Ads(IncrementalStream):
                 bookmark_params.append({'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
             for del_info_filt in iter_delivery_info_filter('ad'):
                 params.update({'filtering': [del_info_filt] + bookmark_params})
-                filt_ads = self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                filt_ads = self._call_get_ads(params)
                 yield filt_ads
 
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
@@ -308,15 +300,21 @@ class AdSets(IncrementalStream):
     field_class = adset.AdSet.Field
     key_properties = ['id', 'updated_time']
 
+    @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+    def _call_get_ad_sets(self, params):
+        """
+        This is necessary because the functions that call this endpoint return
+        a generator, whose calls need decorated with a backoff.
+        """
+        return self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+
     def __iter__(self):
-        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
             if self.current_bookmark:
                 params.update({'filtering': [{'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
-            yield self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            yield self._call_get_ad_sets(params)
 
-        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request_multiple():
             params = {'limit': RESULT_RETURN_LIMIT}
             bookmark_params = []
@@ -324,7 +322,7 @@ class AdSets(IncrementalStream):
                 bookmark_params.append({'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
             for del_info_filt in iter_delivery_info_filter('adset'):
                 params.update({'filtering': [del_info_filt] + bookmark_params})
-                filt_adsets = self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                filt_adsets = self._call_get_ad_sets(params)
                 yield filt_adsets
 
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
@@ -344,19 +342,25 @@ class Campaigns(IncrementalStream):
     field_class = fb_campaign.Campaign.Field
     key_properties = ['id']
 
+    @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+    def _call_get_campaigns(self, params):
+        """
+        This is necessary because the functions that call this endpoint return
+        a generator, whose calls need decorated with a backoff.
+        """
+        return self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+
     def __iter__(self):
         props = self.fields()
         fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
 
-        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
             if self.current_bookmark:
                 params.update({'filtering': [{'field': 'campaign.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
-            yield self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            yield self._call_get_campaigns(params)
 
-        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request_multiple():
             params = {'limit': RESULT_RETURN_LIMIT}
             bookmark_params = []
@@ -364,7 +368,7 @@ class Campaigns(IncrementalStream):
                 bookmark_params.append({'field': 'campaign.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
             for del_info_filt in iter_delivery_info_filter('campaign'):
                 params.update({'filtering': [del_info_filt] + bookmark_params})
-                filt_campaigns = self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                filt_campaigns = self._call_get_campaigns(params)
                 yield filt_campaigns
 
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
