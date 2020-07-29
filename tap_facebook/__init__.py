@@ -259,7 +259,7 @@ class Ads(IncrementalStream):
     def _call_get_ads(self, params):
         """
         This is necessary because the functions that call this endpoint return
-        an iterator, whose calls need decorated with a backoff.
+        a generator, whose calls need decorated with a backoff.
         """
         return self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
@@ -300,15 +300,21 @@ class AdSets(IncrementalStream):
     field_class = adset.AdSet.Field
     key_properties = ['id', 'updated_time']
 
+    @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+    def _call_get_ad_sets(self, params):
+        """
+        This is necessary because the functions that call this endpoint return
+        a generator, whose calls need decorated with a backoff.
+        """
+        return self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+
     def __iter__(self):
-        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
             if self.current_bookmark:
                 params.update({'filtering': [{'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
-            yield self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            yield self._call_get_ad_sets(params)
 
-        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request_multiple():
             params = {'limit': RESULT_RETURN_LIMIT}
             bookmark_params = []
@@ -316,7 +322,7 @@ class AdSets(IncrementalStream):
                 bookmark_params.append({'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
             for del_info_filt in iter_delivery_info_filter('adset'):
                 params.update({'filtering': [del_info_filt] + bookmark_params})
-                filt_adsets = self.account.get_ad_sets(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                filt_adsets = self._call_get_ad_sets(params)
                 yield filt_adsets
 
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
@@ -336,19 +342,25 @@ class Campaigns(IncrementalStream):
     field_class = fb_campaign.Campaign.Field
     key_properties = ['id']
 
+    @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+    def _call_get_campaigns(self, params):
+        """
+        This is necessary because the functions that call this endpoint return
+        a generator, whose calls need decorated with a backoff.
+        """
+        return self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+
     def __iter__(self):
         props = self.fields()
         fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
 
-        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
             if self.current_bookmark:
                 params.update({'filtering': [{'field': 'campaign.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
-            yield self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            yield self._call_get_campaigns(params)
 
-        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request_multiple():
             params = {'limit': RESULT_RETURN_LIMIT}
             bookmark_params = []
@@ -356,7 +368,7 @@ class Campaigns(IncrementalStream):
                 bookmark_params.append({'field': 'campaign.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
             for del_info_filt in iter_delivery_info_filter('campaign'):
                 params.update({'filtering': [del_info_filt] + bookmark_params})
-                filt_campaigns = self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                filt_campaigns = self._call_get_campaigns(params)
                 yield filt_campaigns
 
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
