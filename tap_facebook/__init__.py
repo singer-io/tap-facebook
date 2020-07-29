@@ -270,22 +270,28 @@ class Ads(IncrementalStream):
     key_properties = ['id', 'updated_time']
 
     def __iter__(self):
-        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
             if self.current_bookmark:
                 params.update({'filtering': [{'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
-            yield self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+            # NB: This is needed because the iterator yielded by this
+            # function won't have the backoff, so the call to get ads
+            # should be decorated
+            backoff_get_ads = retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)(self.account.get_ads)
+            yield backoff_get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
-        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def do_request_multiple():
             params = {'limit': RESULT_RETURN_LIMIT}
             bookmark_params = []
+            # NB: This is needed because the iterator yielded by this
+            # function won't have the backoff, so the call to get ads
+            # should be decorated
+            backoff_get_ads = retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)(self.account.get_ads)
             if self.current_bookmark:
                 bookmark_params.append({'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
             for del_info_filt in iter_delivery_info_filter('ad'):
                 params.update({'filtering': [del_info_filt] + bookmark_params})
-                filt_ads = self.account.get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+                filt_ads = backoff_get_ads(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
                 yield filt_ads
 
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
