@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.2
+  * Fix retry pattern for non-insights incremental streams [#100](https://github.com/singer-io/tap-facebook/pull/100)
+  * Remove workaround implemented in [#55](https://github.com/singer-io/tap-facebook/pull/55)
+
 ## 1.9.1
   * Pass metadata from the catalog to the Transformer to filter out unselected fields [#97](https://github.com/singer-io/tap-facebook/pull/97)
 
