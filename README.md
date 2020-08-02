@@ -12,6 +12,7 @@ This tap:
     - Breakdown by age and gender
     - Breakdown by country
     - Breakdown by placement and device
+  - Lead data Extraction By Adset Id
 - Outputs the schema for each resource
 - Incrementally pulls data based on the input state
 
