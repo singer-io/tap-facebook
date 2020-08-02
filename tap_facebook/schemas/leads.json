@@ -1,0 +1,44 @@
+{
+   "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "objective": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ad_id": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "campaign_id": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "adset_id": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "created_time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+}
