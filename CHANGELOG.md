@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.9.3
+  * Bump API version from `v6` to `v8` [#103](https://github.com/singer-io/tap-facebook/pull/103)
+
 ## 1.9.2
   * Fix retry pattern for non-insights incremental streams [#100](https://github.com/singer-io/tap-facebook/pull/100)
   * Remove workaround implemented in [#55](https://github.com/singer-io/tap-facebook/pull/55)
