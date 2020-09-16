@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.9.0
+## 1.9.3
   * Bump API version from `v6` to `v8` [#103](https://github.com/singer-io/tap-facebook/pull/103)
 
 ## 1.9.2
