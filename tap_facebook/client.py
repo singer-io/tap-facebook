@@ -19,7 +19,7 @@ logger = singer.get_logger()
 
 
 def should_give_up(err):
-    if isinstance(err, ratelimit.exception.RateLimitException):
+    if isinstance(err, ratelimit.RateLimitException):
         return False
 
     if not isinstance(
@@ -82,7 +82,7 @@ def should_give_up(err):
 
 
 class Facebook(object):
-    def __init__(self, access_token, version="v7.0"):
+    def __init__(self, access_token, version="v8.0"):
         self.access_token = access_token
         self.version = version
         self.base_url = f"https://graph.facebook.com/{version}"
@@ -208,7 +208,7 @@ class Facebook(object):
         (
             requests.exceptions.RequestException,
             requests.exceptions.HTTPError,
-            ratelimit.exception.RateLimitException,
+            ratelimit.RateLimitException,
         ),
         giveup=should_give_up,
     )
