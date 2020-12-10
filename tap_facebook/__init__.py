@@ -124,12 +124,18 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
             return True
         return False
 
+    # by default, program should re-raise exceptions on giveup,
+    # or else program ends with code 0 when it failed
+    def on_giveup_handler(details):
+        raise Exception(f"Gave up! Details: {details}")
+
     return backoff.on_exception(
         backoff_type,
         exception,
         jitter=None,
         on_backoff=log_retry_attempt,
         giveup=lambda exc: not should_retry_api_error(exc),
+        on_giveup=on_giveup_handler,
         **wait_gen_kwargs
     )
 
