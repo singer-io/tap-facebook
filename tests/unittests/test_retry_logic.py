@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import Mock
-from facebook_business.exceptions import FacebookRequestError
+# from facebook_business.exceptions import FacebookRequestError
+
+import tap_facebook
 from tap_facebook import AdCreative
 
     
@@ -20,7 +22,7 @@ class TestAdCreatives(unittest.TestCase):
         # Create the mock and force the function to throw an error
         mocked_account = Mock()
         mocked_account.get_ad_creatives = Mock()
-        mocked_account.get_ad_creatives.side_effect = FacebookRequestError(
+        mocked_account.get_ad_creatives.side_effect = tap_facebook.FacebookRequestError(
             message='',
             request_context={"":Mock()},
             http_status=500,
@@ -30,7 +32,7 @@ class TestAdCreatives(unittest.TestCase):
 
         # Initialize the object and call `sync()`
         ad_creative_object = AdCreative('', mocked_account, '', '')
-        with self.assertRaises(FacebookRequestError):
+        with self.assertRaises(tap_facebook.FacebookRequestError):
             ad_creative_object.sync()
         # 5 is the max tries specified in the tap    
         self.assertEquals(5, mocked_account.get_ad_creatives.call_count )    
