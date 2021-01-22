@@ -24,6 +24,7 @@ from singer.catalog import Catalog, CatalogEntry
 
 from functools import partial
 
+import facebook_business
 from facebook_business import FacebookAdsApi
 import facebook_business.adobjects.adcreative as adcreative
 import facebook_business.adobjects.ad as fb_ad
@@ -32,7 +33,7 @@ import facebook_business.adobjects.campaign as fb_campaign
 import facebook_business.adobjects.adsinsights as adsinsights
 import facebook_business.adobjects.user as fb_user
 
-from facebook_business.exceptions import FacebookRequestError
+from facebook_business.exceptions import FacebookRequestError, FacebookBadObjectError
 
 TODAY = pendulum.today()
 
@@ -118,7 +119,9 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
                     details["wait"])
 
     def should_retry_api_error(exception):
-        if isinstance(exception, FacebookRequestError):
+        if isinstance(exception, FacebookBadObjectError):
+            return True
+        elif isinstance(exception, FacebookRequestError):
             return exception.api_transient_error() or exception.api_error_subcode() == 99 or exception.http_status() == 500
         elif isinstance(exception, InsightsJobTimeout):
             return True
@@ -494,7 +497,7 @@ class AdsInsights(Stream):
             }
             buffered_start_date = buffered_start_date.add(days=1)
 
-    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout), max_tries=5, factor=5)
+    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout, FacebookBadObjectError), max_tries=5, factor=5)
     def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
         job = self.account.get_insights( # pylint: disable=no-member
