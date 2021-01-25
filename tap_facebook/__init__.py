@@ -119,7 +119,7 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
 
     def should_retry_api_error(exception):
         if isinstance(exception, FacebookRequestError):
-            return exception.api_transient_error() or exception.api_error_subcode() == 99
+            return exception.api_transient_error() or exception.api_error_subcode() == 99 or exception.http_status() == 500
         elif isinstance(exception, InsightsJobTimeout):
             return True
         return False
