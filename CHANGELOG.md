@@ -1,5 +1,9 @@
 # Changelog
 
+
+## 1.9.6
+  * Add check for `FacebookBadObjectError` and retry them on the `AdsInsights` stream [#124](https://github.com/singer-io/tap-facebook/pull/124)
+
 ## 1.9.5
   * Add check for `HTTP 500` and retry them on the `AdCreatives` stream [#121](https://github.com/singer-io/tap-facebook/pull/121)
 
