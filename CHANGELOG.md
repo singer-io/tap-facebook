@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.9.5
+  * Add check for `HTTP 500` and retry them on the `AdCreatives` stream [#121](https://github.com/singer-io/tap-facebook/pull/121)
+
 ## 1.9.4
   * Bump SDK version to get bug fixes [#105](https://github.com/singer-io/tap-facebook/pull/105)
 
