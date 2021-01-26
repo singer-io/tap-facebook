@@ -118,12 +118,16 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
                     details["tries"],
                     details["wait"])
 
+        if isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
+            LOGGER.info('TypeError due to bad JSON response')
     def should_retry_api_error(exception):
         if isinstance(exception, FacebookBadObjectError):
             return True
         elif isinstance(exception, FacebookRequestError):
             return exception.api_transient_error() or exception.api_error_subcode() == 99 or exception.http_status() == 500
         elif isinstance(exception, InsightsJobTimeout):
+            return True
+        elif isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
             return True
         return False
 
@@ -222,7 +226,7 @@ class AdCreative(Stream):
 
 
     def sync(self):
-        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+        @retry_pattern(backoff.expo, (FacebookRequestError, TypeError), max_tries=5, factor=5)
         def do_request():
             return self.account.get_ad_creatives(params={'limit': RESULT_RETURN_LIMIT})
 
@@ -497,7 +501,7 @@ class AdsInsights(Stream):
             }
             buffered_start_date = buffered_start_date.add(days=1)
 
-    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout, FacebookBadObjectError), max_tries=5, factor=5)
+    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout, FacebookBadObjectError, TypeError), max_tries=5, factor=5)
     def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
         job = self.account.get_insights( # pylint: disable=no-member
