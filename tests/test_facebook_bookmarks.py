@@ -1,27 +1,19 @@
-import tap_tester.connections as connections
-import tap_tester.menagerie   as menagerie
-import tap_tester.runner      as runner
 import os
-import unittest
 from functools import reduce
 
-class FacebookBookmarks(unittest.TestCase):  # TODO use base.py and update test
-    def setUp(self):
-        missing_envs = [x for x in [os.getenv('TAP_FACEBOOK_ACCESS_TOKEN'),
-                                    os.getenv('TAP_FACEBOOK_ACCOUNT_ID')] if x == None]
-        if len(missing_envs) != 0:
-            raise Exception("set TAP_FACEBOOK_ACCESS_TOKEN, TAP_FACEBOOK_ACCOUNT_ID")
+from tap_tester import connections, menagerie, runner
 
-    def name(self):
+from base import FacebookBaseTest
+
+
+class FacebookBookmarks(FacebookBaseTest):  # TODO use base.py and update test
+
+    @staticmethod
+    def name():
         return "tap_tester_facebook_bookmarks"
 
-    def get_type(self):
-        return "platform.facebook"
-
-    def get_credentials(self):
-        return {'access_token': os.getenv('TAP_FACEBOOK_ACCESS_TOKEN')}
-
-    def expected_check_streams(self):
+    @staticmethod
+    def expected_check_streams():
         return {
             'ads',
             'adcreative',
@@ -35,7 +27,8 @@ class FacebookBookmarks(unittest.TestCase):  # TODO use base.py and update test
             'ads_insights_dma',
         }
 
-    def expected_sync_streams(self):
+    @staticmethod
+    def expected_sync_streams():
         return {
             "ads",
             "adcreative",
@@ -49,10 +42,8 @@ class FacebookBookmarks(unittest.TestCase):  # TODO use base.py and update test
             "ads_insights_dma",
         }
 
-    def tap_name(self):
-        return "tap-facebook"
-
-    def expected_pks(self):
+    @staticmethod
+    def expected_pks():
         return {
             "ads" :                             {"id", "updated_time"},
             "adcreative" :                      {'id'},
@@ -66,7 +57,7 @@ class FacebookBookmarks(unittest.TestCase):  # TODO use base.py and update test
             "ads_insights_dma":                 {"campaign_id", "adset_id", "ad_id", "date_start"},
         }
 
-    def get_properties(self):
+    def get_properties(self):  # pylint: disable=arguments-differ
         return {'start_date' : '2015-03-15T00:00:00Z',
                 'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
                 'end_date': '2015-03-16T00:00:00+00:00',

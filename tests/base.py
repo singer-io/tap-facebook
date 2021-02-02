@@ -181,7 +181,7 @@ class FacebookBaseTest(unittest.TestCase):
 
     def setUp(self):
         missing_envs = [x for x in [os.getenv('TAP_FACEBOOK_ACCESS_TOKEN'),
-                                    os.getenv('TAP_FACEBOOK_ACCOUNT_ID')] if x == None]
+                                    os.getenv('TAP_FACEBOOK_ACCOUNT_ID')] if x is None]
         if len(missing_envs) != 0:
             raise Exception("set environment variables")
 

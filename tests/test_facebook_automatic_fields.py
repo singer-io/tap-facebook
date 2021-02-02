@@ -1,17 +1,16 @@
-import os
-import unittest
-from functools import reduce
-
 from tap_tester import connections, menagerie, runner
 
 from base import FacebookBaseTest
 
 
 class FacebookAutomaticFields(FacebookBaseTest): # TODO Fix assertions
-    def name(self):
+
+    @staticmethod
+    def name():
         return "tap_tester_facebook_automatic_fields"
 
-    def expected_check_streams(self):
+    @staticmethod
+    def expected_check_streams():
         return {
             'ads',
             'adcreative',
@@ -25,7 +24,8 @@ class FacebookAutomaticFields(FacebookBaseTest): # TODO Fix assertions
             'ads_insights_dma',
         }
 
-    def expected_sync_streams(self):
+    @staticmethod
+    def expected_sync_streams():
         return {
             "ads",
             "adcreative",
@@ -59,7 +59,7 @@ class FacebookAutomaticFields(FacebookBaseTest): # TODO Fix assertions
         menagerie.set_state(conn_id, {})
 
         # run a sync
-        record_count_by_stream = self.run_and_verify_sync(conn_id)
+        _ = self.run_and_verify_sync(conn_id)
 
         synced_records = runner.get_records_from_target_output()
         for stream_name, data in synced_records.items():
