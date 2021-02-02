@@ -5,7 +5,7 @@ import os
 import unittest
 from functools import reduce
 
-class FacebookBookmarks(unittest.TestCase):
+class FacebookBookmarks(unittest.TestCase):  # TODO use base.py and update test
     def setUp(self):
         missing_envs = [x for x in [os.getenv('TAP_FACEBOOK_ACCESS_TOKEN'),
                                     os.getenv('TAP_FACEBOOK_ACCOUNT_ID')] if x == None]

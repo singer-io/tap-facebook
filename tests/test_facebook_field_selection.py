@@ -5,7 +5,7 @@ import os
 import unittest
 from functools import reduce
 
-class FacebookFieldSelection(unittest.TestCase):
+class FacebookFieldSelection(unittest.TestCase):  # TODO use base.py, determine if test is needed
     def setUp(self):
         missing_envs = [x for x in [os.getenv('TAP_FACEBOOK_ACCESS_TOKEN'),
                                     os.getenv('TAP_FACEBOOK_ACCOUNT_ID')] if x == None]
