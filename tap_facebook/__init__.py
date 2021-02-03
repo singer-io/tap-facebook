@@ -17,6 +17,7 @@ import backoff
 import singer
 import singer.metrics as metrics
 from singer import utils, metadata
+from singer import SingerSyncError
 from singer import (transform,
                     UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING,
                     Transformer, _transform_datetime)
@@ -33,7 +34,7 @@ import facebook_business.adobjects.campaign as fb_campaign
 import facebook_business.adobjects.adsinsights as adsinsights
 import facebook_business.adobjects.user as fb_user
 
-from facebook_business.exceptions import FacebookRequestError, FacebookBadObjectError
+from facebook_business.exceptions import FacebookError, FacebookRequestError, FacebookBadObjectError
 
 TODAY = pendulum.today()
 
@@ -109,6 +110,25 @@ def iter_delivery_info_filter(stream_type):
     for i in range(0, len(filt_values), sub_list_length):
         filt['value'] = filt_values[i:i+sub_list_length]
         yield filt
+
+def raise_singer(fb_error):
+    """Makes a pretty error message out of FacebookError object
+
+    FacebookRequestError is the only class with more info than the exception string so we pull more
+    info out of it
+    """
+    if isinstance(fb_error, FacebookRequestError):
+        http_method = fb_error.request_context.get('method', 'Unknown HTTP Method')
+        error_message = '{}: {} Message: {}'.format(
+            http_method,
+            fb_error.status(),
+            fb_error.body().get('error', {}).get('message')
+        )
+    else:
+        # All other facebook errors are `FacebookError`s and we handle
+        # them the same as a python error
+        error_message = str(fb_error)
+    raise SingerSyncError(error_message) from fb_error
 
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
     def log_retry_attempt(details):
@@ -737,7 +757,10 @@ def main_impl():
         do_discover()
     elif args.properties:
         catalog = Catalog.from_dict(args.properties)
-        do_sync(account, catalog, args.state)
+        try:
+            do_sync(account, catalog, args.state)
+        except FacebookError as fb_error:
+            raise_singer(fb_error)
     else:
         LOGGER.info("No properties were selected")
 
