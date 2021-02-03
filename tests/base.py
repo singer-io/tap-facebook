@@ -100,7 +100,7 @@ class FacebookBaseTest(unittest.TestCase):
                 self.REPLICATION_METHOD: self.INCREMENTAL,
                 self.REPLICATION_KEYS: {"date_start"}
             },
-            "ads_insights_country": {  # TODO - BUG ? country is listed in stitch docs, but not considerd a pk by the tap
+            "ads_insights_country": {  # TODO | add country | https://stitchdata.atlassian.net/browse/SRCE-2555
                 self.PRIMARY_KEYS: {"campaign_id", "adset_id", "ad_id", "date_start"}, # , "country"},
                 self.REPLICATION_METHOD: self.INCREMENTAL,
                 self.REPLICATION_KEYS: {"date_start"}
@@ -314,23 +314,6 @@ class FacebookBaseTest(unittest.TestCase):
 
             connections.select_catalog_and_fields_via_metadata(
                 conn_id, catalog, schema, [], non_selected_properties)
-
-    # def set_replication_methods(self, conn_id, catalogs, replication_methods):
-
-    #     replication_keys = self.expected_replication_keys()
-
-    #     for catalog in catalogs:
-
-    #         replication_method = replication_methods.get(catalog['stream_name'])
-
-    #         if replication_method == self.INCREMENTAL:
-    #             replication_key = list(replication_keys.get(catalog['stream_name']))[0]
-    #             replication_md = [{ "breadcrumb": [], "metadata": {'replication-key': replication_key, "replication-method" : replication_method, "selected" : True}}]
-    #         else:
-    #             replication_md = [{ "breadcrumb": [], "metadata": {'replication-key': None, "replication-method" : "FULL_TABLE", "selected" : True}}]
-
-    #         connections.set_non_discoverable_metadata(
-    #             conn_id, catalog, menagerie.get_annotated_schema(conn_id, catalog['stream_id']), replication_md)
 
     @staticmethod
     def parse_date(date_value):
