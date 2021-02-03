@@ -17,7 +17,7 @@ import backoff
 import singer
 import singer.metrics as metrics
 from singer import utils, metadata
-from singer import SingerSyncError
+from singer import SingerDiscoveryError, SingerSyncError
 from singer import (transform,
                     UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING,
                     Transformer, _transform_datetime)
@@ -111,7 +111,7 @@ def iter_delivery_info_filter(stream_type):
         filt['value'] = filt_values[i:i+sub_list_length]
         yield filt
 
-def raise_singer(fb_error):
+def raise_from(singer_error, fb_error):
     """Makes a pretty error message out of FacebookError object
 
     FacebookRequestError is the only class with more info than the exception string so we pull more
@@ -128,7 +128,7 @@ def raise_singer(fb_error):
         # All other facebook errors are `FacebookError`s and we handle
         # them the same as a python error
         error_message = str(fb_error)
-    raise SingerSyncError(error_message) from fb_error
+    raise singer_error(error_message) from fb_error
 
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
     def log_retry_attempt(details):
@@ -754,13 +754,16 @@ def main_impl():
         raise TapFacebookException("Couldn't find account with id {}".format(account_id))
 
     if args.discover:
-        do_discover()
+        try:
+            do_discover()
+        except FacebookError as fb_error:
+            raise_from(SingerDiscoveryError, fb_error)
     elif args.properties:
         catalog = Catalog.from_dict(args.properties)
         try:
             do_sync(account, catalog, args.state)
         except FacebookError as fb_error:
-            raise_singer(fb_error)
+            raise_from(SingerSyncError, fb_error)
     else:
         LOGGER.info("No properties were selected")
 
