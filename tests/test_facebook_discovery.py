@@ -36,9 +36,6 @@ class DiscoveryTest(FacebookBaseTest):
 
         found_catalogs = self.run_and_verify_check_mode(conn_id)
 
-        # NOTE: The following assertion is not backwards compatible with older taps, but it
-        #       SHOULD BE IMPLEMENTED in future taps, leaving here as a comment for reference
-
         # Verify stream names follow naming convention
         # streams should only have lowercase alphas and underscores
         found_catalog_names = {c['tap_stream_id'] for c in found_catalogs}
@@ -61,7 +58,7 @@ class DiscoveryTest(FacebookBaseTest):
                                 msg="There is NOT only one top level breadcrumb for {}".format(stream) + \
                                 "\nstream_properties | {}".format(stream_properties))
 
-                # TODO BUG_1 ?
+                # BUG_1 | https://stitchdata.atlassian.net/browse/SRCE-4855
                 failing_with_no_replication_keys = {
                     'ads_insights_country', 'adsets', 'adcreative', 'ads', 'ads_insights_region',
                     'campaigns', 'ads_insights_age_and_gender', 'ads_insights_platform_and_device',
@@ -93,7 +90,13 @@ class DiscoveryTest(FacebookBaseTest):
                     "metadata", {self.REPLICATION_METHOD: None}).get(self.REPLICATION_METHOD)
 
 
-                if stream not in failing_with_no_replication_keys:  # BUG_1
+                # BUG_2 | https://stitchdata.atlassian.net/browse/SRCE-4856
+                failing_with_no_replication_keys = {
+                    'ads_insights_country', 'adsets', 'adcreative', 'ads', 'ads_insights_region',
+                    'campaigns', 'ads_insights_age_and_gender', 'ads_insights_platform_and_device',
+                    'ads_insights_dma', 'ads_insights'
+                }
+                if stream not in failing_with_no_replication_keys:  # BUG_2
                     # verify the actual replication matches our expected replication method
                     self.assertEqual(
                         self.expected_replication_method().get(stream, None),
@@ -102,17 +105,15 @@ class DiscoveryTest(FacebookBaseTest):
                             actual_replication_method,
                             self.expected_replication_method().get(stream, None)))
 
-                # verify that if there is a replication key we are doing INCREMENTAL otherwise FULL
-                if stream_properties[0].get(
-                        "metadata", {self.REPLICATION_KEYS: []}).get(self.REPLICATION_KEYS, []):
-                    self.assertTrue(actual_replication_method == self.INCREMENTAL,
-                                    msg="Expected INCREMENTAL replication "
-                                        "since there is a replication key")
-                else:
-                    # TODO Failing for all streams because they are missing replication method
-                    pass
-                    # self.assertTrue(actual_replication_method == self.FULL_TABLE,
-                    #                 msg="Expected FULL replication since there is no replication key")
+                    # verify that if there is a replication key we are doing INCREMENTAL otherwise FULL
+                    if stream_properties[0].get(
+                            "metadata", {self.REPLICATION_KEYS: []}).get(self.REPLICATION_KEYS, []):
+                        self.assertTrue(actual_replication_method == self.INCREMENTAL,
+                                        msg="Expected INCREMENTAL replication "
+                                            "since there is a replication key")
+                    else:
+                        self.assertTrue(actual_replication_method == self.FULL_TABLE,
+                                        msg="Expected FULL replication since there is no replication key")
 
 
                 expected_primary_keys = self.expected_primary_keys()[stream]
