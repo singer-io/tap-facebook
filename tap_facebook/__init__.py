@@ -733,25 +733,29 @@ def do_discover():
 
 
 def main_impl():
-    args = utils.parse_args(REQUIRED_CONFIG_KEYS)
-    account_id = args.config['account_id']
-    access_token = args.config['access_token']
+    try:
+        args = utils.parse_args(REQUIRED_CONFIG_KEYS)
+        account_id = args.config['account_id']
+        access_token = args.config['access_token']
 
-    CONFIG.update(args.config)
+        CONFIG.update(args.config)
 
-    global RESULT_RETURN_LIMIT
-    RESULT_RETURN_LIMIT = CONFIG.get('result_return_limit', RESULT_RETURN_LIMIT)
+        global RESULT_RETURN_LIMIT
+        RESULT_RETURN_LIMIT = CONFIG.get('result_return_limit', RESULT_RETURN_LIMIT)
 
-    global API
-    API = FacebookAdsApi.init(access_token=access_token)
-    user = fb_user.User(fbid='me')
-    accounts = user.get_ad_accounts()
-    account = None
-    for acc in accounts:
-        if acc['account_id'] == account_id:
-            account = acc
-    if not account:
-        raise TapFacebookException("Couldn't find account with id {}".format(account_id))
+        global API
+        API = FacebookAdsApi.init(access_token=access_token)
+        user = fb_user.User(fbid='me')
+
+        accounts = user.get_ad_accounts()
+        account = None
+        for acc in accounts:
+            if acc['account_id'] == account_id:
+                account = acc
+        if not account:
+            raise SingerConfigurationError("Couldn't find account with id {}".format(account_id))
+    except FacebookError as fb_error:
+        raise_from(SingerConfigurationError, fb_error)
 
     if args.discover:
         try:
