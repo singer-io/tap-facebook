@@ -17,7 +17,7 @@ import backoff
 import singer
 import singer.metrics as metrics
 from singer import utils, metadata
-from singer import SingerDiscoveryError, SingerSyncError
+from singer import SingerConfigurationError, SingerDiscoveryError, SingerSyncError
 from singer import (transform,
                     UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING,
                     Transformer, _transform_datetime)
