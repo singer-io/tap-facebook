@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.10.0
+  * Add consistent logging for `facebook_business.exceptions.FacebookError` errors [#129](https://github.com/singer-io/tap-facebook/pull/129)
+
 ## 1.9.7
   * Add check for `TypeError` and retry them on the `AdsInsights` and `AdCreative` streams [#126](https://github.com/singer-io/tap-facebook/pull/126)
 
