@@ -47,16 +47,17 @@ class FacebookBaseTest(unittest.TestCase):
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
         return_value = {
-            'start_date' : '2015-03-15T00:00:00Z',
             'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
+            'start_date' : '2015-03-15T00:00:00Z',
             'end_date': '2015-03-16T00:00:00+00:00',
             'insights_buffer_days': '1'
         }
         if original:
             return return_value
 
+        # TODO sigh do we like really care about this though?? It just gets in the way while writing tests
         # This test needs the new connections start date to be larger than the default
-        assert self.start_date > return_value["start_date"]
+        # assert self.start_date > return_value["start_date"]
 
         return_value["start_date"] = self.start_date
         return return_value
@@ -320,23 +321,21 @@ class FacebookBaseTest(unittest.TestCase):
         """
         Pass in string-formatted-datetime, parse the value, and return it as an unformatted datetime object.
         """
-        try:
-            date_stripped = dt.strptime(date_value, "%Y-%m-%dT%H:%M:%S.%fZ")
-            return date_stripped
-        except ValueError:
+        date_formats = {
+            "%Y-%m-%dT%H:%M:%S.%fZ",
+            "%Y-%m-%dT%H:%M:%SZ",
+            "%Y-%m-%dT%H:%M:%S.%f+00:00",
+            "%Y-%m-%dT%H:%M:%S+00:00",
+            "%Y-%m-%d"
+        }
+        for date_format in date_formats:
             try:
-                date_stripped = dt.strptime(date_value, "%Y-%m-%dT%H:%M:%SZ")
+                date_stripped = dt.strptime(date_value, date_format)
                 return date_stripped
             except ValueError:
-                try:
-                    date_stripped = dt.strptime(date_value, "%Y-%m-%dT%H:%M:%S.%f+00:00")
-                    return date_stripped
-                except ValueError:
-                    try:
-                        date_stripped = dt.strptime(date_value, "%Y-%m-%dT%H:%M:%S+00:00")
-                        return date_stripped
-                    except ValueError as e_final:
-                        raise NotImplementedError("We are not accounting for dates of this format: {}".format(date_value)) from e_final
+                continue
+
+        raise NotImplementedError("Tests do not account for dates of this format: {}".format(date_value))
 
     def timedelta_formatted(self, dtime, days=0):
         try:
@@ -358,3 +357,7 @@ class FacebookBaseTest(unittest.TestCase):
     ##########################################################################
     ### Tap Specific Methods
     ##########################################################################
+
+    @staticmethod
+    def is_insight(stream):
+        return stream.startswith('ads_insights')

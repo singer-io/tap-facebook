@@ -45,8 +45,7 @@ class DiscoveryTest(FacebookBaseTest):
         for stream in streams_to_test:
             with self.subTest(stream=stream):
 
-                # TODO is this necessary? don't we do this in a run_and_verify????
-                # ensure the caatalog is found for all streams
+                # Verify ensure the caatalog is found for a given stream
                 catalog = next(iter([catalog for catalog in found_catalogs
                                      if catalog["stream_name"] == stream]))
                 self.assertIsNotNone(catalog)
