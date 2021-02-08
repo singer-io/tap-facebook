@@ -54,10 +54,6 @@ class FacebookBaseTest(unittest.TestCase):
         if original:
             return return_value
 
-        # TODO sigh do we like really care about this though?? It just gets in the way while writing tests
-        # This test needs the new connections start date to be larger than the default
-        # assert self.start_date > return_value["start_date"]
-
         return_value["start_date"] = self.start_date
         return return_value
 
