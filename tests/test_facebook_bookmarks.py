@@ -1,7 +1,6 @@
 import os
-from functools import reduce
 
-from tap_tester import connections, menagerie, runner
+from tap_tester import connections, menagerie
 
 from base import FacebookBaseTest
 
@@ -33,15 +32,9 @@ class FacebookBookmarks(FacebookBaseTest):  # TODO use base.py and update test
                                     if catalog.get('tap_stream_id') in expected_streams]
         self.perform_and_verify_table_and_field_selection(conn_id, test_catalogs_all_fields, select_all_fields=True)
 
-        #select all catalogs
-        # for c in found_catalogs:
-        #     connections.select_catalog_and_fields_via_metadata(conn_id, c,
-        #                                                        menagerie.get_annotated_schema(conn_id, c['stream_id']))
         # clear state and run sync
         menagerie.set_state(conn_id, {})
-        record_count_by_stream = self.run_and_verify_sync(conn_id)
-        synced_records = runner.get_records_from_target_output()
-
+        _ = self.run_and_verify_sync(conn_id)
 
         # bookmarks for the 4 streams should be 2015-03-16
         states = menagerie.get_state(conn_id)["bookmarks"]
