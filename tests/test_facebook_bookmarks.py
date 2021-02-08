@@ -12,51 +12,6 @@ class FacebookBookmarks(FacebookBaseTest):  # TODO use base.py and update test
     def name():
         return "tap_tester_facebook_bookmarks"
 
-    @staticmethod
-    def expected_check_streams():
-        return {
-            'ads',
-            'adcreative',
-            'adsets',
-            'campaigns',
-            'ads_insights',
-            'ads_insights_age_and_gender',
-            'ads_insights_country',
-            'ads_insights_platform_and_device',
-            'ads_insights_region',
-            'ads_insights_dma',
-        }
-
-    @staticmethod
-    def expected_sync_streams():
-        return {
-            "ads",
-            "adcreative",
-            "adsets",
-            "campaigns",
-            "ads_insights",
-            "ads_insights_age_and_gender",
-            "ads_insights_country",
-            "ads_insights_platform_and_device",
-            "ads_insights_region",
-            "ads_insights_dma",
-        }
-
-    @staticmethod
-    def expected_pks():
-        return {
-            "ads" :                             {"id", "updated_time"},
-            "adcreative" :                      {'id'},
-            "adsets" :                          {"id", "updated_time"},
-            "campaigns" :                       {"id"},
-            "ads_insights" :                    {"campaign_id", "adset_id", "ad_id", "date_start"},
-            "ads_insights_age_and_gender" :     {"campaign_id", "adset_id", "ad_id", "date_start", "age", "gender"},
-            "ads_insights_country" :            {"campaign_id", "adset_id", "ad_id", "date_start"},
-            "ads_insights_platform_and_device": {"campaign_id", "adset_id", "ad_id", "date_start", "publisher_platform", "platform_position", "impression_device"},
-            "ads_insights_region":              {"campaign_id", "adset_id", "ad_id", "date_start"},
-            "ads_insights_dma":                 {"campaign_id", "adset_id", "ad_id", "date_start"},
-        }
-
     def get_properties(self):  # pylint: disable=arguments-differ
         return {'start_date' : '2015-03-15T00:00:00Z',
                 'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
@@ -65,45 +20,28 @@ class FacebookBookmarks(FacebookBaseTest):  # TODO use base.py and update test
         }
 
     def test_run(self):
+        """Test bookmarks"""
+        expected_streams = self.expected_streams()
+
         conn_id = connections.ensure_connection(self)
 
-        #run in check mode
-        check_job_name = runner.run_check_mode(self, conn_id)
+        # run in check mode
+        found_catalogs = self.run_and_verify_check_mode(conn_id)
 
-        #verify check  exit codes
-        exit_status = menagerie.get_exit_status(conn_id, check_job_name)
-        menagerie.verify_check_exit_status(self, exit_status, check_job_name)
-
-        found_catalogs = menagerie.get_catalogs(conn_id)
-        self.assertGreater(len(found_catalogs), 0, msg="unable to locate schemas for connection {}".format(conn_id))
-
-        found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
-
-        diff = self.expected_check_streams().symmetric_difference( found_catalog_names )
-        self.assertEqual(len(diff), 0, msg="discovered schemas do not match: {}".format(diff))
-        print("discovered schemas are kosher")
+        # table and field selection
+        test_catalogs_all_fields = [catalog for catalog in found_catalogs
+                                    if catalog.get('tap_stream_id') in expected_streams]
+        self.perform_and_verify_table_and_field_selection(conn_id, test_catalogs_all_fields, select_all_fields=True)
 
         #select all catalogs
-        #selected_catalogs = list(map(lambda catalog: self.perform_field_selection(conn_id, catalog), found_catalogs))
-        #menagerie.post_annotated_catalogs(conn_id, selected_catalogs)
-
-        for c in found_catalogs:
-            connections.select_catalog_and_fields_via_metadata(conn_id, c,
-                                                               menagerie.get_annotated_schema(conn_id, c['stream_id']))
-
-        #clear state
+        # for c in found_catalogs:
+        #     connections.select_catalog_and_fields_via_metadata(conn_id, c,
+        #                                                        menagerie.get_annotated_schema(conn_id, c['stream_id']))
+        # clear state and run sync
         menagerie.set_state(conn_id, {})
+        record_count_by_stream = self.run_and_verify_sync(conn_id)
+        synced_records = runner.get_records_from_target_output()
 
-        sync_job_name = runner.run_sync_mode(self, conn_id)
-
-        #verify tap and target exit codes
-        exit_status = menagerie.get_exit_status(conn_id, sync_job_name)
-        menagerie.verify_sync_exit_status(self, exit_status, sync_job_name)
-
-        record_count_by_stream = runner.examine_target_output_file(self, conn_id, self.expected_sync_streams(), self.expected_pks())
-        replicated_row_count =  reduce(lambda accum,c : accum + c, record_count_by_stream.values())
-        self.assertGreater(replicated_row_count, 0, msg="failed to replicate any data: {}".format(record_count_by_stream))
-        print("total replicated row count: {}".format(replicated_row_count))
 
         # bookmarks for the 4 streams should be 2015-03-16
         states = menagerie.get_state(conn_id)["bookmarks"]
