@@ -29,11 +29,15 @@ class FacebookBookmarks(FacebookBaseTest):
 
     @staticmethod
     def expected_sync_streams():
+        """
+        TODO ads, adsets, and campaigns only have 1 record,
+             to get more testable data we need at least 2 records per stream.
+        """
         return {
-            # "ads", # TODO only 1 record
+            # "ads",
             "adcreative",
-            # "adsets", # TODO only 1 record
-            # "campaigns", # TODO only 1 record
+            # "adsets",
+            # "campaigns",
             "ads_insights",
             "ads_insights_age_and_gender",
             "ads_insights_country",
