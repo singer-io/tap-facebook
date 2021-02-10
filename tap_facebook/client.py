@@ -23,7 +23,8 @@ def should_give_up(err):
         return False
 
     if not isinstance(
-        err, (requests.exceptions.HTTPError, requests.exceptions.RequestException)
+        err, (requests.exceptions.HTTPError,
+              requests.exceptions.RequestException)
     ):
         return True
 
@@ -220,7 +221,8 @@ class Facebook(object):
         params["access_token"] = self.access_token
         encoded_params = self.__encode_params(params)
 
-        resp = self.__session.request(method, url, params=encoded_params, **kwargs)
+        resp = self.__session.request(
+            method, url, params=encoded_params, **kwargs)
 
         resp.raise_for_status()
 
