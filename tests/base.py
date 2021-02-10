@@ -28,8 +28,7 @@ class FacebookBaseTest(unittest.TestCase):
     INCREMENTAL = "INCREMENTAL"
     FULL_TABLE = "FULL_TABLE"
     START_DATE_FORMAT = "%Y-%m-%dT00:00:00Z"
-    BOOKMARK_COMPARISON_FORMAT = "%Y-%m-%dT00:00:00.000000Z"
-
+    BOOKMARK_COMPARISON_FORMAT = "%Y-%m-%dT00:00:00+00:00"
     LOGGER = singer.get_logger()
 
     start_date = ""
@@ -54,10 +53,6 @@ class FacebookBaseTest(unittest.TestCase):
         }
         if original:
             return return_value
-
-        # TODO sigh do we like really care about this though?? It just gets in the way while writing tests
-        # This test needs the new connections start date to be larger than the default
-        # assert self.start_date > return_value["start_date"]
 
         return_value["start_date"] = self.start_date
         return return_value
@@ -289,9 +284,6 @@ class FacebookBaseTest(unittest.TestCase):
         selected_fields = set()
         for field in metadata:
             is_field_metadata = len(field['breadcrumb']) > 1
-            # if field['metadata'].get('inclusion') is None and is_field_metadata:  # BUG_SRCE-4313 remove when addressed
-            #     print("Error {} has no inclusion key in metadata".format(field))  # BUG_SRCE-4313 remove when addressed
-            #     continue  # BUG_SRCE-4313 remove when addressed
             inclusion_automatic_or_selected = (
                 field['metadata']['selected'] is True or \
                 field['metadata']['inclusion'] == 'automatic'
