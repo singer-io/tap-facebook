@@ -23,13 +23,16 @@ def should_give_up(err):
         return False
 
     if not isinstance(
-        err, (requests.exceptions.HTTPError, requests.exceptions.RequestException)
+        err, (requests.exceptions.HTTPError,
+              requests.exceptions.RequestException)
     ):
         return True
 
     logger.error(str(err))
     headers = err.response.headers
     status_code = err.response.status_code
+    if status_code >= 500:
+        return False
     data = err.response.json()
 
     if "error" not in data:
@@ -218,7 +221,8 @@ class Facebook(object):
         params["access_token"] = self.access_token
         encoded_params = self.__encode_params(params)
 
-        resp = self.__session.request(method, url, params=encoded_params, **kwargs)
+        resp = self.__session.request(
+            method, url, params=encoded_params, **kwargs)
 
         resp.raise_for_status()
 
