@@ -165,8 +165,7 @@ class FacebookBookmarks(FacebookBaseTest):
 
 
                     # collect information specific to incremental streams from syncs 1 & 2
-                    replication_key = list(expected_replication_keys[stream])[0]
-                    self.assertEqual(1, len(list(expected_replication_keys[stream]))) # catches unexpected compound replication key
+                    replication_key = next(iter(expected_replication_keys[stream]))
                     first_bookmark_value = first_bookmark_key_value.get(replication_key)
                     second_bookmark_value = second_bookmark_key_value.get(replication_key)
                     first_bookmark_value_utc = self.convert_state_to_utc(first_bookmark_value)
