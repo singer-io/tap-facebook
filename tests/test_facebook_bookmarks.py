@@ -25,19 +25,17 @@ class FacebookBookmarks(FacebookBaseTest):
             return return_value
 
         return_value["start_date"] = self.start_date
+        return_value["end_date"] = self.end_date
+
         return return_value
 
     @staticmethod
     def expected_sync_streams():
-        """
-        TODO ads, adsets, and campaigns only have 1 record,
-             to get more testable data we need at least 2 records per stream.
-        """
         return {
-            # "ads",
+            "ads",
             "adcreative",
-            # "adsets",
-            # "campaigns",
+            "adsets",
+            "campaigns",
             "ads_insights",
             "ads_insights_age_and_gender",
             "ads_insights_country",
@@ -60,28 +58,63 @@ class FacebookBookmarks(FacebookBaseTest):
     def calculated_states_by_stream(self, current_state):
         """
         Look at the bookmarks from a previous sync and set a new bookmark
-        value that is 1 day prior. This ensures the subsequent sync will replicate
+        value based off timedelta expectations. This ensures the subsequent sync will replicate
         at least 1 record but, fewer records than the previous sync.
+
+        Sufficient test data is required for this test to cover a given stream.
+        An incrmeental replication stream must have at least two records with 
+        replication keys that differ by more than the lookback window. 
+
+        If the test data is changed in the future this will break expectations for this test. 
+
+        The following streams barely make the cut:
+
+        campaigns "2021-02-09T18:17:30.000000Z"
+                  "2021-02-09T16:24:58.000000Z"
+
+        adsets    "2021-02-09T18:17:41.000000Z"
+                  "2021-02-09T17:10:09.000000Z"
+
         """
+        timedelta_by_stream = {stream: [2,0,0]  # {stream_name: [days, hours, minutes], ...}
+                               for stream in self.expected_sync_streams()}
+        timedelta_by_stream['campaigns'] = [0, 1, 0]
+        timedelta_by_stream['adsets'] = [0, 1, 0]
 
         stream_to_current_state = {stream : bookmark.get(self.expected_replication_keys()[stream].pop())
                                    for stream, bookmark in current_state['bookmarks'].items()}
         stream_to_calculated_state = {stream: "" for stream in current_state['bookmarks'].keys()}
-
         for stream, state in stream_to_current_state.items():
-            # convert state from string to datetime object
             state_as_datetime = dateutil.parser.parse(state)
-            # subtract n days from the state
-            n = 2
-            calculated_state_as_datetime = state_as_datetime - datetime.timedelta(days=n)
-            # convert back to string and format
-            calculated_state = datetime.datetime.strftime(calculated_state_as_datetime, '%Y-%m-%dT00:00:00+00:00')
-            stream_to_calculated_state[stream] = calculated_state
+
+            days, hours, minutes = timedelta_by_stream[stream]
+            calculated_state_as_datetime = state_as_datetime - datetime.timedelta(days=days, hours=hours, minutes=minutes)
+
+            state_format = '%Y-%m-%dT00:00:00+00:00' if self.is_insight(stream) else '%Y-%m-%dT%H:%M:%S-00:00'
+            calculated_state_formatted = datetime.datetime.strftime(calculated_state_as_datetime, state_format)
+
+            stream_to_calculated_state[stream] = calculated_state_formatted
 
         return stream_to_calculated_state
 
 
     def test_run(self):
+        all_streams =  self.expected_sync_streams()
+        non_insight_streams = {stream for stream in all_streams if not self.is_insight(stream)}
+        insight_streams = {stream for stream in all_streams if self.is_insight(stream)}
+
+        # Testing against ads insights objects
+        self.start_date = self.get_properties()['start_date']
+        self.end_date = self.get_properties()['end_date']
+        self.bookmarks_test(insight_streams)
+
+        # Testing agianst core objects
+        self.end_date = '2021-02-09T00:00:00Z'
+        self.bookmarks_test(non_insight_streams)
+
+
+    def bookmarks_test(self, expected_streams):
+        """A Parametrized Bookmakrs Test"""
         expected_replication_keys = self.expected_replication_keys()
         expected_replication_methods = self.expected_replication_method()
         expected_insights_buffer = -1 * int(self.get_properties()['insights_buffer_days'])  # lookback window
@@ -90,13 +123,12 @@ class FacebookBookmarks(FacebookBaseTest):
         ### First Sync
         ##########################################################################
 
-        conn_id = connections.ensure_connection(self)
+        conn_id = connections.ensure_connection(self, original_properties=False)
 
         # Run in check mode
         found_catalogs = self.run_and_verify_check_mode(conn_id)
 
         # Select only the expected streams tables
-        expected_streams = self.expected_sync_streams()
         catalog_entries = [ce for ce in found_catalogs if ce['tap_stream_id'] in expected_streams]
         self.perform_and_verify_table_and_field_selection(conn_id, catalog_entries, select_all_fields=True)
 
@@ -161,7 +193,7 @@ class FacebookBookmarks(FacebookBaseTest):
                     simulated_bookmark_value = new_states['bookmarks'][stream][replication_key]
                     simulated_bookmark_minus_lookback = self.timedelta_formatted(
                         simulated_bookmark_value, days=expected_insights_buffer
-                    )
+                    ) if self.is_insight(stream) else simulated_bookmark_value
 
                     # Verify the first sync sets a bookmark of the expected form
                     self.assertIsNotNone(first_bookmark_key_value)
