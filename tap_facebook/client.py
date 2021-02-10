@@ -30,6 +30,8 @@ def should_give_up(err):
     logger.error(str(err))
     headers = err.response.headers
     status_code = err.response.status_code
+    if status_code >= 500:
+        return False
     data = err.response.json()
 
     if "error" not in data:
