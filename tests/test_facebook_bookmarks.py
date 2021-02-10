@@ -30,21 +30,6 @@ class FacebookBookmarks(FacebookBaseTest):
         return return_value
 
     @staticmethod
-    def expected_sync_streams():
-        return {
-            "ads",
-            "adcreative",
-            "adsets",
-            "campaigns",
-            "ads_insights",
-            "ads_insights_age_and_gender",
-            "ads_insights_country",
-            "ads_insights_platform_and_device",
-            "ads_insights_region",
-            "ads_insights_dma",
-        }
-
-    @staticmethod
     def convert_state_to_utc(date_str):
         """
         Convert a saved bookmark value of the form '2020-08-25T13:17:36-07:00' to
@@ -74,18 +59,16 @@ class FacebookBookmarks(FacebookBaseTest):
 
         adsets    "2021-02-09T18:17:41.000000Z"
                   "2021-02-09T17:10:09.000000Z"
-
         """
         timedelta_by_stream = {stream: [2,0,0]  # {stream_name: [days, hours, minutes], ...}
-                               for stream in self.expected_sync_streams()}
+                               for stream in self.expected_streams()}
         timedelta_by_stream['campaigns'] = [0, 1, 0]
         timedelta_by_stream['adsets'] = [0, 1, 0]
 
-        stream_to_current_state = {stream : bookmark.get(self.expected_replication_keys()[stream].pop())
-                                   for stream, bookmark in current_state['bookmarks'].items()}
         stream_to_calculated_state = {stream: "" for stream in current_state['bookmarks'].keys()}
-        for stream, state in stream_to_current_state.items():
-            state_as_datetime = dateutil.parser.parse(state)
+        for stream, state in current_state['bookmarks'].items():
+            state_key, state_value = next(iter(state.keys())), next(iter(state.values()))
+            state_as_datetime = dateutil.parser.parse(state_value)
 
             days, hours, minutes = timedelta_by_stream[stream]
             calculated_state_as_datetime = state_as_datetime - datetime.timedelta(days=days, hours=hours, minutes=minutes)
@@ -93,28 +76,28 @@ class FacebookBookmarks(FacebookBaseTest):
             state_format = '%Y-%m-%dT00:00:00+00:00' if self.is_insight(stream) else '%Y-%m-%dT%H:%M:%S-00:00'
             calculated_state_formatted = datetime.datetime.strftime(calculated_state_as_datetime, state_format)
 
-            stream_to_calculated_state[stream] = calculated_state_formatted
+            stream_to_calculated_state[stream] = {state_key: calculated_state_formatted}
 
         return stream_to_calculated_state
 
 
     def test_run(self):
-        all_streams =  self.expected_sync_streams()
-        non_insight_streams = {stream for stream in all_streams if not self.is_insight(stream)}
-        insight_streams = {stream for stream in all_streams if self.is_insight(stream)}
+        expected_streams =  self.expected_streams()
+        non_insight_streams = {stream for stream in expected_streams if not self.is_insight(stream)}
+        insight_streams = {stream for stream in expected_streams if self.is_insight(stream)}
 
         # Testing against ads insights objects
         self.start_date = self.get_properties()['start_date']
         self.end_date = self.get_properties()['end_date']
         self.bookmarks_test(insight_streams)
 
-        # Testing agianst core objects
+        # Testing against core objects
         self.end_date = '2021-02-09T00:00:00Z'
         self.bookmarks_test(non_insight_streams)
 
 
     def bookmarks_test(self, expected_streams):
-        """A Parametrized Bookmakrs Test"""
+        """A Parametrized Bookmarks Test"""
         expected_replication_keys = self.expected_replication_keys()
         expected_replication_methods = self.expected_replication_method()
         expected_insights_buffer = -1 * int(self.get_properties()['insights_buffer_days'])  # lookback window
@@ -144,8 +127,7 @@ class FacebookBookmarks(FacebookBaseTest):
         new_states = {'bookmarks': dict()}
         simulated_states = self.calculated_states_by_stream(first_sync_bookmarks)
         for stream, new_state in simulated_states.items():
-            replication_key = list(expected_replication_keys[stream])[0]
-            new_states['bookmarks'][stream] = {replication_key: new_state}
+            new_states['bookmarks'][stream] = new_state
         menagerie.set_state(conn_id, new_states)
 
         ##########################################################################
@@ -155,7 +137,6 @@ class FacebookBookmarks(FacebookBaseTest):
         second_sync_record_count = self.run_and_verify_sync(conn_id)
         second_sync_records = runner.get_records_from_target_output()
         second_sync_bookmarks = menagerie.get_state(conn_id)
-
 
         ##########################################################################
         ### Test By Stream
@@ -195,6 +176,7 @@ class FacebookBookmarks(FacebookBaseTest):
                         simulated_bookmark_value, days=expected_insights_buffer
                     ) if self.is_insight(stream) else simulated_bookmark_value
 
+
                     # Verify the first sync sets a bookmark of the expected form
                     self.assertIsNotNone(first_bookmark_key_value)
                     self.assertIsNotNone(first_bookmark_key_value.get(replication_key))
@@ -206,14 +188,10 @@ class FacebookBookmarks(FacebookBaseTest):
                     # Verify the second sync bookmark is Equal to the first sync bookmark
                     self.assertEqual(second_bookmark_value, first_bookmark_value) # assumes no changes to data during test
 
-                    # TODO refactor assertions synctax below THIS POINT
-                    #      - could do a list comprehension and compare all() to the expected/test value then just assertTrue
-                    #      - see if possible to drop these msg's and have a failure that is still clear
-                    #      - cleanup variable names
-                    # NOTE: TIMEBOX ^ to like 20 minutes, the test is pretty clear as-is
 
-                    # Verify the second sync records respect the previous (simulated) bookmark value
                     for record in second_sync_messages:
+
+                        # Verify the second sync records respect the previous (simulated) bookmark value
                         replication_key_value = record.get(replication_key)
                         if stream == 'ads_insights_age_and_gender': # BUG | https://stitchdata.atlassian.net/browse/SRCE-4873
                             replication_key_value = datetime.datetime.strftime(
@@ -223,23 +201,21 @@ class FacebookBookmarks(FacebookBaseTest):
                         self.assertGreaterEqual(replication_key_value, simulated_bookmark_minus_lookback,
                                                 msg="Second sync records do not repect the previous bookmark.")
 
-                    # Verify the first sync bookmark value is the max replication key value for a given stream
+                        # Verify the second sync bookmark value is the max replication key value for a given stream
+                        self.assertLessEqual(
+                            replication_key_value, second_bookmark_value_utc,
+                            msg="Second sync bookmark was set incorrectly, a record with a greater replication-key value was synced."
+                        )
+
                     for record in first_sync_messages:
+
+                        # Verify the first sync bookmark value is the max replication key value for a given stream
                         replication_key_value = record.get(replication_key)
                         self.assertLessEqual(
                             replication_key_value, first_bookmark_value_utc,
                             msg="First sync bookmark was set incorrectly, a record with a greater replication-key value was synced."
                         )
 
-                    # Verify the second sync bookmark value is the max replication key value for a given stream
-                    for record in second_sync_messages:
-                        replication_key_value = record.get(replication_key)
-                        self.assertLessEqual(
-                            replication_key_value, second_bookmark_value_utc,
-                            msg="Second sync bookmark was set incorrectly, a record with a greater replication-key value was synced."
-                        )
-
-                    # TODO refactor assertions synctax above THIS POINT
 
                     # Verify the number of records in the 2nd sync is less then the first
                     self.assertLess(second_sync_count, first_sync_count)
