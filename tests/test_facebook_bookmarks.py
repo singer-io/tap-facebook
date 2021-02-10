@@ -62,10 +62,10 @@ class FacebookBookmarks(FacebookBaseTest):
         at least 1 record but, fewer records than the previous sync.
 
         Sufficient test data is required for this test to cover a given stream.
-        An incrmeental replication stream must have at least two records with 
-        replication keys that differ by more than the lookback window. 
+        An incrmeental replication stream must have at least two records with
+        replication keys that differ by more than the lookback window.
 
-        If the test data is changed in the future this will break expectations for this test. 
+        If the test data is changed in the future this will break expectations for this test.
 
         The following streams barely make the cut:
 
