@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.0
+  * Upgrades facebook_business library to version 9.0.0 [#133](https://github.com/singer-io/tap-facebook/pull/133)
+
 ## 1.10.0
   * Add consistent logging for `facebook_business.exceptions.FacebookError` errors [#129](https://github.com/singer-io/tap-facebook/pull/129)
 
