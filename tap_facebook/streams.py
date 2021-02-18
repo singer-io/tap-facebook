@@ -1,19 +1,20 @@
 import singer
 from singer import metrics
 from typing import Sequence, Union, Optional, Dict
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 from dateutil import parser
 
-from tap_facebook.client import Facebook
+from tap_facebook import utils
+from facebook_business.adobjects.adset import AdSet
+from facebook_business.adobjects.adsinsights import AdsInsights
 
 logger = singer.get_logger()
 
 
 class AdsInsights:
-    def __init__(self, client, config):
+    def __init__(self, config):
 
         self.config = config
-        self.client = client
         self.bookmark_key = "date_start"
 
     def stream(self, account_ids: Sequence[str], state: dict, tap_stream_id: str):
@@ -35,31 +36,96 @@ class AdsInsights:
         start_date = self.__get_start(account_id, state, tap_stream_id)
         today = datetime.utcnow()
 
-        if start_date.date() >= today.date() + timedelta(days=-1):
+        if start_date.date() >= today.date() - timedelta(days=1):
             logger.info(
                 f"start_date {start_date} is yesterday - aborting run to not accidentally skip a day that has not yet received data yet."
             )
             return self.__advance_bookmark(account_id, state, None, tap_stream_id)
 
         prev_bookmark = None
+        fields = fields or [
+            "account_id",
+            "account_name",
+            "account_currency",
+            "ad_id",
+            "ad_name",
+            "adset_id",
+            "adset_name",
+            "campaign_id",
+            "campaign_name",
+            "clicks",
+            "ctr",
+            "date_start",
+            "date_stop",
+            "frequency",
+            "impressions",
+            "reach",
+            "social_spend",
+            "spend",
+            "unique_clicks",
+            "unique_ctr",
+            "unique_link_clicks_ctr",
+            "inline_link_clicks",
+            "unique_inline_link_clicks",
+        ]
         with singer.metrics.record_counter(tap_stream_id) as counter:
+
+            if not start_date:
+                raise ValueError("client: start_date is required")
+
+            since = utils.parse_date(start_date)
+
+            until = date.today() + timedelta(days=-1)
+
+
+            if until - since > timedelta(days=1):
+                # for large intervals, the API returns 500
+                # handle this by chunking the dates instead
+                time_ranges = []
+
+                from_date = since
+                while True:
+                    to_date = from_date + timedelta(days=1)
+
+                    if to_date > until:
+                        break
+
+                    time_ranges.append((from_date, to_date))
+
+                    # add one to to_date to make intervals non-overlapping
+                    from_date = to_date + timedelta(days=1)
+
+                if from_date <= until:
+                    time_ranges.append((from_date, until))
+            else:
+                time_ranges = [(since, until)]
             try:
-                for insight in self.client.list_insights(
-                    account_id, fields=fields, start_date=start_date
-                ):
-                    new_bookmark = insight[self.bookmark_key]
+                for (start, stop) in time_ranges:
+                    timerange = {"since": str(start), "until": str(stop)}
+                    params = {
+                        "level": "ad",
+                        "limit": 100,
+                        "fields": fields,
+                        "time_increment": 1,
+                        "time_range": timerange,
+                    }
+                    for insight in AdSet(account_id).get_insights(
+                        fields=fields, params=params
+                    ):
+                        insight = dict(insight)
+                        new_bookmark = insight[self.bookmark_key]
 
-                    if not prev_bookmark:
-                        prev_bookmark = new_bookmark
+                        if not prev_bookmark:
+                            prev_bookmark = new_bookmark
 
-                    if prev_bookmark < new_bookmark:
-                        state = self.__advance_bookmark(
-                            account_id, state, prev_bookmark, tap_stream_id
-                        )
-                        prev_bookmark = new_bookmark
+                        if prev_bookmark < new_bookmark:
+                            state = self.__advance_bookmark(
+                                account_id, state, prev_bookmark, tap_stream_id
+                            )
+                            prev_bookmark = new_bookmark
 
-                    singer.write_record(tap_stream_id, insight)
-                    counter.increment(1)
+                        singer.write_record(tap_stream_id, insight)
+                        counter.increment(1)
             except Exception:
                 self.__advance_bookmark(account_id, state, prev_bookmark, tap_stream_id)
                 raise
