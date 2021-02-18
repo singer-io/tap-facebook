@@ -7,18 +7,20 @@ import singer
 
 from tap_facebook.utils import load_schema
 from tap_facebook.streams import AdsInsights
-from tap_facebook.client import Facebook
+
+from facebook_business.api import FacebookAdsApi
+from facebook_business.adobjects.user import User
 
 logger = singer.get_logger()
 
-STREAMS = ["ads_insights"]
+STREAMS = {"ads_insights": AdsInsights}
 
 
-def do_sync(account_ids, client, config, state):
-    insights = AdsInsights(client, config)
+def do_sync(account_ids, config, state):
 
-    for tap_stream_id in STREAMS:
-        state = insights.stream(account_ids, state, tap_stream_id)
+    for tap_stream_id, streamer_class in STREAMS.items():
+        streamer_inst = streamer_class(config)
+        state = streamer_inst.stream(account_ids, state, tap_stream_id)
 
 
 @singer.utils.handle_top_exception(logger)
@@ -35,10 +37,11 @@ def main():
             f"missing required config 'access_token' or environment 'FACEBOOK_ACCESS_TOKEN'"
         )
 
-    client = Facebook(access_token)
+    FacebookAdsApi.init(access_token=access_token)
 
     all_account_ids = {
-        accnt["account_id"]: accnt["id"] for accnt in client.list_ad_accounts()
+        accnt["account_id"]: accnt["id"] for accnt in User('me').get_ad_accounts()
+
     }
     accnt_ids = []
     if not account_ids:
@@ -51,7 +54,7 @@ def main():
                 )
             accnt_ids.append(all_account_ids[account_id])
 
-    do_sync(accnt_ids, client, args.config, args.state)
+    do_sync(accnt_ids, args.config, args.state)
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ setup(
         "backoff>=1.8.0, <2",
         "python-dateutil==2.8.0",
         "ratelimit==2.2.1",
-        "requests>=2.22.0, <3",
+        "facebook_business>=9.0.3",
         "singer-python>=5.8.1, <6",
     ],
     extras_require={"dev": ["pylint", "ipdb", "nose"]},
