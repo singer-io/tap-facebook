@@ -66,7 +66,7 @@ class AdsInsights:
             "unique_ctr",
             "unique_link_clicks_ctr",
             "inline_link_clicks",
-            "unique_inline_link_clicks"
+            "unique_inline_link_clicks",
         ]
         with singer.metrics.record_counter(tap_stream_id) as counter:
 
@@ -110,7 +110,9 @@ class AdsInsights:
                         "time_increment": 1,
                         "time_range": timerange,
                     }
-                    for insight in AdSet(account_id).get_insights(fields=fields, params=params):
+                    for insight in AdSet(account_id).get_insights(
+                        fields=fields, params=params
+                    ):
                         insight = dict(insight)
                         new_bookmark = insight[self.bookmark_key]
 
@@ -126,8 +128,7 @@ class AdsInsights:
                         singer.write_record(tap_stream_id, insight)
                         counter.increment(1)
             except Exception:
-                self.__advance_bookmark(
-                    account_id, state, prev_bookmark, tap_stream_id)
+                self.__advance_bookmark(account_id, state, prev_bookmark, tap_stream_id)
                 raise
         return self.__advance_bookmark(account_id, state, prev_bookmark, tap_stream_id)
 
@@ -157,8 +158,7 @@ class AdsInsights:
         # increment by one to not reprocess the previous date
         new_date = state_date + timedelta(days=1)
 
-        logger.info(
-            f"using 'start_date' from previous state: {current_bookmark}")
+        logger.info(f"using 'start_date' from previous state: {current_bookmark}")
         return new_date
 
     def __advance_bookmark(

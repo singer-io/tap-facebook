@@ -40,8 +40,7 @@ def main():
     FacebookAdsApi.init(access_token=access_token)
 
     all_account_ids = {
-        accnt["account_id"]: accnt["id"] for accnt in User('me').get_ad_accounts()
-
+        accnt["account_id"]: accnt["id"] for accnt in User("me").get_ad_accounts()
     }
     accnt_ids = []
     if not account_ids:
