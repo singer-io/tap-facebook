@@ -77,16 +77,15 @@ class AdsInsights:
 
             until = date.today() + timedelta(days=-1)
 
-            increment = 1
 
-            if until - since > timedelta(days=increment):
+            if until - since > timedelta(days=1):
                 # for large intervals, the API returns 500
                 # handle this by chunking the dates instead
                 time_ranges = []
 
                 from_date = since
                 while True:
-                    to_date = from_date + timedelta(days=increment)
+                    to_date = from_date + timedelta(days=1)
 
                     if to_date > until:
                         break
