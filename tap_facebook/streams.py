@@ -36,7 +36,7 @@ class AdsInsights:
         start_date = self.__get_start(account_id, state, tap_stream_id)
         today = datetime.utcnow()
 
-        if start_date.date() >= today.date() + timedelta(days=-1):
+        if start_date.date() >= today.date() - timedelta(days=1):
             logger.info(
                 f"start_date {start_date} is yesterday - aborting run to not accidentally skip a day that has not yet received data yet."
             )
