@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.1
+  * Modifies the way FacebookRequestError is parsed [#135](https://github.com/singer-io/tap-facebook/pull/135)
+
 ## 1.11.0
   * Upgrades facebook_business library to version 9.0.0 [#133](https://github.com/singer-io/tap-facebook/pull/133)
 
