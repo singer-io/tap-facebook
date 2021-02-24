@@ -1,18 +1,33 @@
 """
 Test that with no fields selected for a stream automatic fields are still replicated
 """
+import os
 
 from tap_tester import runner, connections
 
 from base import FacebookBaseTest
 
 
-class FacebookAutomaticFields(FacebookBaseTest): # TODO Fix assertions
+class FacebookAutomaticFields(FacebookBaseTest):
     """Test that with no fields selected for a stream automatic fields are still replicated"""
 
     @staticmethod
     def name():
         return "tap_tester_facebook_automatic_fields"
+
+    def get_properties(self, original: bool = True):
+        """Configuration properties required for the tap."""
+        return_value = {
+            'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
+            'start_date' : '2019-07-22T00:00:00Z',
+            'end_date' : '2019-07-23T00:00:00Z',
+            'insights_buffer_days': '1'
+        }
+        if original:
+            return return_value
+
+        return_value["start_date"] = self.start_date
+        return return_value
 
 
     def test_run(self):
@@ -37,6 +52,7 @@ class FacebookAutomaticFields(FacebookBaseTest): # TODO Fix assertions
         # table and field selection
         test_catalogs_automatic_fields = [catalog for catalog in found_catalogs
                                           if catalog.get('stream_name') in expected_streams]
+
         self.perform_and_verify_table_and_field_selection(
             conn_id, test_catalogs_automatic_fields, select_all_fields=False,
         )

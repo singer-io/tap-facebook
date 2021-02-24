@@ -203,7 +203,7 @@ class FacebookBaseTest(unittest.TestCase):
         found_catalogs = menagerie.get_catalogs(conn_id)
         self.assertGreater(len(found_catalogs), 0, msg="unable to locate schemas for connection {}".format(conn_id))
 
-        found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
+        found_catalog_names = set(map(lambda c: c['stream_name'], found_catalogs))
 
         self.assertSetEqual(self.expected_streams(), found_catalog_names, msg="discovered schemas do not match")
         print("discovered schemas are OK")
@@ -254,7 +254,7 @@ class FacebookBaseTest(unittest.TestCase):
         catalogs = menagerie.get_catalogs(conn_id)
 
         # Ensure our selection affects the catalog
-        expected_selected = [tc.get('tap_stream_id') for tc in test_catalogs]
+        expected_selected = [tc.get('stream_name') for tc in test_catalogs]
         for cat in catalogs:
             catalog_entry = menagerie.get_annotated_schema(conn_id, cat['stream_id'])
 
@@ -275,7 +275,7 @@ class FacebookBaseTest(unittest.TestCase):
                     self.assertTrue(field_selected, msg="Field not selected.")
             else:
                 # Verify only automatic fields are selected
-                expected_automatic_fields = self.expected_automatic_fields().get(cat['tap_stream_id'])
+                expected_automatic_fields = self.expected_automatic_fields().get(cat['stream_name'])
                 selected_fields = self.get_selected_fields_from_metadata(catalog_entry['metadata'])
                 self.assertEqual(expected_automatic_fields, selected_fields)
 
