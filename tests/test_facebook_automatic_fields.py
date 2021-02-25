@@ -1,69 +1,82 @@
-from tap_tester import connections, menagerie, runner
+"""
+Test that with no fields selected for a stream automatic fields are still replicated
+"""
+import os
+
+from tap_tester import runner, connections
 
 from base import FacebookBaseTest
 
 
-class FacebookAutomaticFields(FacebookBaseTest): # TODO Fix assertions
+class FacebookAutomaticFields(FacebookBaseTest):
+    """Test that with no fields selected for a stream automatic fields are still replicated"""
 
     @staticmethod
     def name():
         return "tap_tester_facebook_automatic_fields"
 
-    @staticmethod
-    def expected_check_streams():
-        return {
-            'ads',
-            'adcreative',
-            'adsets',
-            'campaigns',
-            'ads_insights',
-            'ads_insights_age_and_gender',
-            'ads_insights_country',
-            'ads_insights_platform_and_device',
-            'ads_insights_region',
-            'ads_insights_dma',
+    def get_properties(self, original: bool = True):
+        """Configuration properties required for the tap."""
+        return_value = {
+            'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
+            'start_date' : '2019-07-22T00:00:00Z',
+            'end_date' : '2019-07-23T00:00:00Z',
+            'insights_buffer_days': '1'
         }
+        if original:
+            return return_value
 
-    @staticmethod
-    def expected_sync_streams():
-        return {
-            "ads",
-            "adcreative",
-            "adsets",
-            "campaigns",
-            "ads_insights",
-            "ads_insights_age_and_gender",
-            "ads_insights_country",
-            "ads_insights_platform_and_device",
-            "ads_insights_region",
-            "ads_insights_dma",
-        }
+        return_value["start_date"] = self.start_date
+        return return_value
+
 
     def test_run(self):
+        """
+        Verify that for each stream you can get multiple pages of data
+        when no fields are selected and only the automatic fields are replicated.
+
+        PREREQUISITE
+        For EACH stream add enough data that you surpass the limit of a single
+        fetch of data.  For instance if you have a limit of 250 records ensure
+        that 251 (or more) records have been posted for that stream.
+        """
+
+        expected_streams = self.expected_streams()
+
+        # instantiate connection
         conn_id = connections.ensure_connection(self)
 
-        # run in check mode
+        # run check mode
         found_catalogs = self.run_and_verify_check_mode(conn_id)
 
-        # select all catalogs
-        for c in found_catalogs:
-            catalog_entry = menagerie.get_annotated_schema(conn_id, c['stream_id'])
-            for k in self.expected_primary_keys()[c['stream_name']]:
-                mdata = next((m for m in catalog_entry['metadata']
-                              if len(m['breadcrumb']) == 2 and m['breadcrumb'][1] == k), None)
-                print("Validating inclusion on {}: {}".format(c['stream_name'], mdata))
-                self.assertTrue(mdata and mdata['metadata']['inclusion'] == 'automatic')
-            connections.select_catalog_via_metadata(conn_id, c, catalog_entry)
+        # table and field selection
+        test_catalogs_automatic_fields = [catalog for catalog in found_catalogs
+                                          if catalog.get('stream_name') in expected_streams]
 
-        # clear state
-        menagerie.set_state(conn_id, {})
+        self.perform_and_verify_table_and_field_selection(
+            conn_id, test_catalogs_automatic_fields, select_all_fields=False,
+        )
 
-        # run a sync
-        _ = self.run_and_verify_sync(conn_id)
-
+        # run initial sync
+        record_count_by_stream = self.run_and_verify_sync(conn_id)
         synced_records = runner.get_records_from_target_output()
-        for stream_name, data in synced_records.items():
-            record_messages = [set(row['data'].keys()) for row in data['messages']]
-            for record_keys in record_messages:
-                # The symmetric difference should be empty
-                self.assertEqual(record_keys, self.expected_automatic_fields().get(stream_name, set()))
+
+        for stream in expected_streams:
+            with self.subTest(stream=stream):
+
+                # expected values
+                expected_keys = self.expected_automatic_fields().get(stream)
+
+                # collect actual values
+                data = synced_records.get(stream)
+                record_messages_keys = [set(row['data'].keys()) for row in data['messages']]
+
+
+                # Verify that you get some records for each stream
+                self.assertGreater(
+                    record_count_by_stream.get(stream, -1), 0,
+                    msg="The number of records is not over the stream max limit")
+
+                # Verify that only the automatic fields are sent to the target
+                for actual_keys in record_messages_keys:
+                    self.assertSetEqual(expected_keys, actual_keys)
