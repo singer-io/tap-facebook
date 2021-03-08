@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.2
+  * Pull in latest orchestrator with python version 3.8.0 on container, but not used in production for tap-facebook yet
+
 ## 1.11.1
   * Modifies the way FacebookRequestError is parsed [#135](https://github.com/singer-io/tap-facebook/pull/135)
 
