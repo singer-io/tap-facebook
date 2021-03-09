@@ -1,12 +1,10 @@
 import singer
-from singer import metrics
 from typing import Sequence, Union, Optional, Dict
 from datetime import timedelta, datetime, date
 from dateutil import parser
 
 from tap_facebook import utils
 from facebook_business.adobjects.adset import AdSet
-from facebook_business.adobjects.adsinsights import AdsInsights
 
 logger = singer.get_logger()
 
@@ -68,7 +66,7 @@ class AdsInsights:
             "inline_link_clicks",
             "unique_inline_link_clicks",
         ]
-        with singer.metrics.record_counter(tap_stream_id) as counter:
+        with singer.record_counter(tap_stream_id) as counter:
 
             if not start_date:
                 raise ValueError("client: start_date is required")
