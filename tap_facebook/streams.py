@@ -136,7 +136,7 @@ class AdsInsights:
 
         config_start_date = self.config.get("start_date")
         if config_start_date:
-            default_date = parser.isoparse(config_start_date)
+            default_date = parser.isoparse(config_start_date).replace(tzinfo=None)
 
         # the facebook api does not allow us to go more than 37 weeks backwards.
         # we'll lock it for 36 weeks just to be sure
