@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.11.2
+  * Added unique_outbound_clicks to several streams [#138](https://github.com/singer-io/tap-facebook/pull/138)
+
 ## 1.11.1
   * Modifies the way FacebookRequestError is parsed [#135](https://github.com/singer-io/tap-facebook/pull/135)
 
