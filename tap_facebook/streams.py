@@ -114,8 +114,10 @@ class AdsInsights:
                     facebook_insights = cast(List[FacebookAdsInsights], insights_resp)
                     for facebook_insight in facebook_insights:
                         insight = dict(facebook_insight)
-                        new_bookmark = insight[self.bookmark_key]
+                        singer.write_record(tap_stream_id, insight)
+                        counter.increment(1)
 
+                        new_bookmark = insight[self.bookmark_key]
                         if not prev_bookmark:
                             prev_bookmark = new_bookmark
 
@@ -125,8 +127,6 @@ class AdsInsights:
                             )
                             prev_bookmark = new_bookmark
 
-                        singer.write_record(tap_stream_id, insight)
-                        counter.increment(1)
             except Exception:
                 self.__advance_bookmark(account_id, state, prev_bookmark, tap_stream_id)
                 raise
