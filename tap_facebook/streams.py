@@ -76,7 +76,6 @@ class AdsInsights:
 
             until = date.today() + timedelta(days=-1)
 
-
             if until - since > timedelta(days=1):
                 # for large intervals, the API returns 500
                 # handle this by chunking the dates instead
