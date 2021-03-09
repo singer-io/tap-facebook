@@ -132,12 +132,17 @@ class AdsInsights:
                 raise
         return self.__advance_bookmark(account_id, state, prev_bookmark, tap_stream_id)
 
-    def __get_start(self, account_id, state: dict, tap_stream_id: str):
+    def __get_start(self, account_id, state: dict, tap_stream_id: str) -> datetime:
         default_date = datetime.utcnow() + timedelta(weeks=4)
 
         config_start_date = self.config.get("start_date")
         if config_start_date:
             default_date = parser.isoparse(config_start_date)
+
+        # the facebook api does not allow us to go more than 37 weeks backwards.
+        # we'll lock it for 36 weeks just to be sure
+        if datetime.utcnow() - default_date > timedelta(days=37 * 30):
+            default_date = datetime.utcnow() - timedelta(days=36 * 30)
 
         if not state:
             logger.info(f"using 'start_date' from config: {default_date}")
