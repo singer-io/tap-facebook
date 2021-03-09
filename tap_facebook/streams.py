@@ -1,12 +1,11 @@
 import singer
-from singer import metrics
-from typing import Sequence, Union, Optional, Dict
+from typing import Sequence, Union, Optional, Dict, cast, List
 from datetime import timedelta, datetime, date
 from dateutil import parser
 
 from tap_facebook import utils
 from facebook_business.adobjects.adset import AdSet
-from facebook_business.adobjects.adsinsights import AdsInsights
+from facebook_business.adobjects.adsinsights import AdsInsights as FacebookAdsInsights
 
 logger = singer.get_logger()
 
@@ -68,7 +67,7 @@ class AdsInsights:
             "inline_link_clicks",
             "unique_inline_link_clicks",
         ]
-        with singer.metrics.record_counter(tap_stream_id) as counter:
+        with singer.record_counter(tap_stream_id) as counter:
 
             if not start_date:
                 raise ValueError("client: start_date is required")
@@ -76,7 +75,6 @@ class AdsInsights:
             since = utils.parse_date(start_date)
 
             until = date.today() + timedelta(days=-1)
-
 
             if until - since > timedelta(days=1):
                 # for large intervals, the API returns 500
@@ -109,12 +107,16 @@ class AdsInsights:
                         "time_increment": 1,
                         "time_range": timerange,
                     }
-                    for insight in AdSet(account_id).get_insights(
+                    insights_resp = AdSet(account_id).get_insights(
                         fields=fields, params=params
-                    ):
-                        insight = dict(insight)
-                        new_bookmark = insight[self.bookmark_key]
+                    )
+                    facebook_insights = cast(List[FacebookAdsInsights], insights_resp)
+                    for facebook_insight in facebook_insights:
+                        insight = dict(facebook_insight)
+                        singer.write_record(tap_stream_id, insight)
+                        counter.increment(1)
 
+                        new_bookmark = insight[self.bookmark_key]
                         if not prev_bookmark:
                             prev_bookmark = new_bookmark
 
@@ -124,19 +126,22 @@ class AdsInsights:
                             )
                             prev_bookmark = new_bookmark
 
-                        singer.write_record(tap_stream_id, insight)
-                        counter.increment(1)
             except Exception:
                 self.__advance_bookmark(account_id, state, prev_bookmark, tap_stream_id)
                 raise
         return self.__advance_bookmark(account_id, state, prev_bookmark, tap_stream_id)
 
-    def __get_start(self, account_id, state: dict, tap_stream_id: str):
+    def __get_start(self, account_id, state: dict, tap_stream_id: str) -> datetime:
         default_date = datetime.utcnow() + timedelta(weeks=4)
 
         config_start_date = self.config.get("start_date")
         if config_start_date:
             default_date = parser.isoparse(config_start_date)
+
+        # the facebook api does not allow us to go more than 37 weeks backwards.
+        # we'll lock it for 36 weeks just to be sure
+        if datetime.utcnow() - default_date > timedelta(days=37 * 30):
+            default_date = datetime.utcnow() - timedelta(days=36 * 30)
 
         if not state:
             logger.info(f"using 'start_date' from config: {default_date}")
