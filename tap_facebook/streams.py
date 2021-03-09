@@ -1,10 +1,11 @@
 import singer
-from typing import Sequence, Union, Optional, Dict
+from typing import Sequence, Union, Optional, Dict, cast, List
 from datetime import timedelta, datetime, date
 from dateutil import parser
 
 from tap_facebook import utils
 from facebook_business.adobjects.adset import AdSet
+from facebook_business.adobjects.adsinsights import AdsInsights as FacebookAdsInsights
 
 logger = singer.get_logger()
 
@@ -107,10 +108,12 @@ class AdsInsights:
                         "time_increment": 1,
                         "time_range": timerange,
                     }
-                    for insight in AdSet(account_id).get_insights(
+                    insights_resp = AdSet(account_id).get_insights(
                         fields=fields, params=params
-                    ):
-                        insight = dict(insight)
+                    )
+                    facebook_insights = cast(List[FacebookAdsInsights], insights_resp)
+                    for facebook_insight in facebook_insights:
+                        insight = dict(facebook_insight)
                         new_bookmark = insight[self.bookmark_key]
 
                         if not prev_bookmark:
