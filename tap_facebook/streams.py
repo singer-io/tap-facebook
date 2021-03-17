@@ -33,6 +33,12 @@ class AdsInsights:
     ) -> dict:
         logger.info(f"account_id: {account_id}")
         start_date = self.__get_start(account_id, state, tap_stream_id)
+
+        # override if start_date goes further back then 37 months
+        # which the facebook API does not support
+        if datetime.utcnow() - start_date > timedelta(days=37 * 30):
+            start_date = datetime.utcnow() - timedelta(days=36 * 30)
+
         today = datetime.utcnow()
 
         if start_date.date() >= today.date() - timedelta(days=1):
@@ -137,11 +143,6 @@ class AdsInsights:
         config_start_date = self.config.get("start_date")
         if config_start_date:
             default_date = parser.isoparse(config_start_date).replace(tzinfo=None)
-
-        # the facebook api does not allow us to go more than 37 weeks backwards.
-        # we'll lock it for 36 weeks just to be sure
-        if datetime.utcnow() - default_date > timedelta(days=37 * 30):
-            default_date = datetime.utcnow() - timedelta(days=36 * 30)
 
         if not state:
             logger.info(f"using 'start_date' from config: {default_date}")
