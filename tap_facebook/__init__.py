@@ -34,8 +34,6 @@ import facebook_business.adobjects.user as fb_user
 
 from facebook_business.exceptions import FacebookRequestError
 
-TODAY = pendulum.today()
-
 API = None
 
 INSIGHTS_MAX_WAIT_TO_START_SECONDS = 2 * 60
