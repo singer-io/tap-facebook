@@ -17,6 +17,7 @@ import backoff
 import singer
 import singer.metrics as metrics
 from singer import utils, metadata
+from singer import SingerConfigurationError, SingerDiscoveryError, SingerSyncError
 from singer import (transform,
                     UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING,
                     Transformer, _transform_datetime)
@@ -24,6 +25,7 @@ from singer.catalog import Catalog, CatalogEntry
 
 from functools import partial
 
+import facebook_business
 from facebook_business import FacebookAdsApi
 import facebook_business.adobjects.adcreative as adcreative
 import facebook_business.adobjects.ad as fb_ad
@@ -33,7 +35,7 @@ import facebook_business.adobjects.adsinsights as adsinsights
 import facebook_business.adobjects.user as fb_user
 import facebook_business.adobjects.lead as fb_lead
 
-from facebook_business.exceptions import FacebookRequestError
+from facebook_business.exceptions import FacebookError, FacebookRequestError, FacebookBadObjectError
 
 API = None
 
@@ -111,6 +113,25 @@ def iter_delivery_info_filter(stream_type):
         filt['value'] = filt_values[i:i+sub_list_length]
         yield filt
 
+def raise_from(singer_error, fb_error):
+    """Makes a pretty error message out of FacebookError object
+
+    FacebookRequestError is the only class with more info than the exception string so we pull more
+    info out of it
+    """
+    if isinstance(fb_error, FacebookRequestError):
+        http_method = fb_error.request_context().get('method', 'Unknown HTTP Method')
+        error_message = '{}: {} Message: {}'.format(
+            http_method,
+            fb_error.http_status(),
+            fb_error.body().get('error', {}).get('message')
+        )
+    else:
+        # All other facebook errors are `FacebookError`s and we handle
+        # them the same as a python error
+        error_message = str(fb_error)
+    raise singer_error(error_message) from fb_error
+
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
     def log_retry_attempt(details):
         _, exception, _ = sys.exc_info()
@@ -119,10 +140,16 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
                     details["tries"],
                     details["wait"])
 
+        if isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
+            LOGGER.info('TypeError due to bad JSON response')
     def should_retry_api_error(exception):
-        if isinstance(exception, FacebookRequestError):
-            return exception.api_transient_error() or exception.api_error_subcode() == 99
+        if isinstance(exception, FacebookBadObjectError):
+            return True
+        elif isinstance(exception, FacebookRequestError):
+            return exception.api_transient_error() or exception.api_error_subcode() == 99 or exception.http_status() == 500
         elif isinstance(exception, InsightsJobTimeout):
+            return True
+        elif isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
             return True
         return False
 
@@ -543,7 +570,7 @@ class AdsInsights(Stream):
             }
             buffered_start_date = buffered_start_date.add(days=1)
 
-    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout), max_tries=5, factor=5)
+    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout, FacebookBadObjectError, TypeError), max_tries=5, factor=5)
     def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
         job = self.account.get_insights( # pylint: disable=no-member
@@ -758,31 +785,41 @@ def do_discover():
 
 
 def main_impl():
-    args = utils.parse_args(REQUIRED_CONFIG_KEYS)
-    account_id = args.config['account_id']
-    access_token = args.config['access_token']
+    try:
+        args = utils.parse_args(REQUIRED_CONFIG_KEYS)
+        account_id = args.config['account_id']
+        access_token = args.config['access_token']
 
-    CONFIG.update(args.config)
+        CONFIG.update(args.config)
 
-    global RESULT_RETURN_LIMIT
-    RESULT_RETURN_LIMIT = CONFIG.get('result_return_limit', RESULT_RETURN_LIMIT)
+        global RESULT_RETURN_LIMIT
+        RESULT_RETURN_LIMIT = CONFIG.get('result_return_limit', RESULT_RETURN_LIMIT)
 
-    global API
-    API = FacebookAdsApi.init(access_token=access_token)
-    user = fb_user.User(fbid='me')
-    accounts = user.get_ad_accounts()
-    account = None
-    for acc in accounts:
-        if acc['account_id'] == account_id:
-            account = acc
-    if not account:
-        raise TapFacebookException("Couldn't find account with id {}".format(account_id))
+        global API
+        API = FacebookAdsApi.init(access_token=access_token)
+        user = fb_user.User(fbid='me')
+
+        accounts = user.get_ad_accounts()
+        account = None
+        for acc in accounts:
+            if acc['account_id'] == account_id:
+                account = acc
+        if not account:
+            raise SingerConfigurationError("Couldn't find account with id {}".format(account_id))
+    except FacebookError as fb_error:
+        raise_from(SingerConfigurationError, fb_error)
 
     if args.discover:
-        do_discover()
+        try:
+            do_discover()
+        except FacebookError as fb_error:
+            raise_from(SingerDiscoveryError, fb_error)
     elif args.properties:
         catalog = Catalog.from_dict(args.properties)
-        do_sync(account, catalog, args.state)
+        try:
+            do_sync(account, catalog, args.state)
+        except FacebookError as fb_error:
+            raise_from(SingerSyncError, fb_error)
     else:
         LOGGER.info("No properties were selected")
 
