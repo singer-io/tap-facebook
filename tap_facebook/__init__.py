@@ -238,7 +238,7 @@ class BatchStream(Stream):
     def sync_batches(self, stream_objects):
         refs = load_shared_schema_refs()
         schema = singer.resolve_schema_references(self.catalog_entry.schema.to_dict(), refs)
-        transfomer = Transformer(pre_hook=transform_date_hook)
+        transformer = Transformer(pre_hook=transform_date_hook)
 
         # Create the initial batch
         api_batch = API.new_batch()
