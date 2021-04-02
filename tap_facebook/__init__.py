@@ -276,7 +276,7 @@ class AdCreative(BatchStream):
         return self.account.get_ad_creatives(params={'limit': RESULT_RETURN_LIMIT})
 
     def sync(self):
-        adcreatives = self.get_adcreatives
+        adcreatives = self.get_adcreatives()
         self.sync_batches(adcreatives)
 
 
