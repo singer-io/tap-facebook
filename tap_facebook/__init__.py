@@ -427,7 +427,7 @@ class Leads(BatchStream):
     state = attr.ib()
 
     field_class = fb_lead.Lead.Field
-    key_properties = ['id', 'created_time']
+    key_properties = ['id']
 
     @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
     def get_ads(self):
