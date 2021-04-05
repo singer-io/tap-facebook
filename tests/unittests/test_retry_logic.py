@@ -38,7 +38,7 @@ class TestAdCreative(unittest.TestCase):
         # Initialize the object and call `sync()`
         ad_creative_object = AdCreative('', mocked_account, '', '')
         with self.assertRaises(FacebookRequestError):
-            ad_creative_object.sync()
+            ad_creative_object.get_adcreatives()
         # 5 is the max tries specified in the tap
         self.assertEquals(5, mocked_account.get_ad_creatives.call_count )
 
