@@ -703,7 +703,7 @@ def do_sync(account, catalog, state):
 
 
         # NB: The AdCreative stream is not an iterator
-        if stream.name in ['adcreative', 'leads']:
+        if stream.name in {'adcreative', 'leads'}:
             stream.sync()
             continue
 
