@@ -271,7 +271,7 @@ class AdCreative(BatchStream):
     field_class = adcreative.AdCreative.Field
     key_properties = ['id']
 
-    @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+    @retry_pattern(backoff.expo, (FacebookRequestError, TypeError), max_tries=5, factor=5)
     def get_adcreatives(self):
         return self.account.get_ad_creatives(params={'limit': RESULT_RETURN_LIMIT})
 
