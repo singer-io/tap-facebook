@@ -793,7 +793,7 @@ def discover_schemas():
                                                key_properties=stream.key_properties))
 
         bookmark_key = BOOKMARK_KEYS.get(stream.name)
-        if bookmark_key == UPDATED_TIME_KEY:
+        if bookmark_key == UPDATED_TIME_KEY or bookmark_key == CREATED_TIME_KEY :
             mdata = metadata.write(mdata, ('properties', bookmark_key), 'inclusion', 'automatic')
 
         result['streams'].append({'stream': stream.name,
