@@ -233,8 +233,12 @@ def batch_record_failure(response):
     so it fails the sync process.'''
     raise response.error()
 
+# AdCreative is not an iterable stream as it uses the batch endpoint
+class AdCreative(Stream):
+    '''
+    doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
+    '''
 
-class BatchStream(Stream):
     def sync_batches(self, stream_objects):
         refs = load_shared_schema_refs()
         schema = singer.resolve_schema_references(self.catalog_entry.schema.to_dict(), refs)
@@ -246,7 +250,7 @@ class BatchStream(Stream):
 
         # This loop syncs minimal fb objects
         for obj in stream_objects:
-            # Excecute and create a new batch for every 50 added
+            # Execute and create a new batch for every 50 added
             if batch_count % 50 == 0:
                 api_batch.execute()
                 api_batch = API.new_batch()
@@ -260,13 +264,6 @@ class BatchStream(Stream):
 
         # Ensure the final batch is executed
         api_batch.execute()
-
-
-# AdCreative is not an iterable stream as it uses the batch endpoint
-class AdCreative(BatchStream):
-    '''
-    doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
-    '''
 
     field_class = adcreative.AdCreative.Field
     key_properties = ['id']
@@ -423,11 +420,55 @@ class Campaigns(IncrementalStream):
             yield message
 
 @attr.s
-class Leads(BatchStream):
+class Leads(Stream):
     state = attr.ib()
+    replication_key = "created_time"
 
     field_class = fb_lead.Lead.Field
     key_properties = ['id']
+
+    def compare_lead_created_times(self, leadA, leadB):
+        if leadA is None:
+            return leadB
+        timestampA = pendulum.parse(leadA[self.replication_key])
+        timestampB = pendulum.parse(leadB[self.replication_key])
+        if timestampB > timestampA:
+            return leadB
+        else:
+            return leadA
+
+    def sync_batches(self, stream_objects):
+        refs = load_shared_schema_refs()
+        schema = singer.resolve_schema_references(self.catalog_entry.schema.to_dict(), refs)
+        transformer = Transformer(pre_hook=transform_date_hook)
+
+        # Create the initial batch
+        api_batch = API.new_batch()
+        batch_count = 0
+
+        # Keep track of most recent, lead for bookmarking
+        latest_lead = None
+
+        # This loop syncs minimal fb objects
+        for obj in stream_objects:
+
+            latest_lead = self.compare_lead_created_times(latest_lead, obj)
+
+            # Execute and create a new batch for every 50 added
+            if batch_count % 50 == 0:
+                api_batch.execute()
+                api_batch = API.new_batch()
+
+            # Add a call to the batch with the full object
+            obj.api_get(fields=self.fields(),
+                        batch=api_batch,
+                        success=partial(batch_record_success, stream=self, transformer=transformer, schema=schema),
+                        failure=batch_record_failure)
+            batch_count += 1
+
+        # Ensure the final batch is executed
+        api_batch.execute()
+        return str(pendulum.parse(latest_lead[self.replication_key]))
 
     @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
     def get_ads(self):
@@ -447,23 +488,18 @@ class Leads(BatchStream):
         for ad in ads:
             yield from ad.get_leads(params=params)
 
-
     def sync(self):
         start_time = pendulum.utcnow()
-        previous_start_time = self.state.get("bookmarks", {}).get("leads", {}).get("start_time")
-        if previous_start_time is None:
-            previous_start_time = int(pendulum.parse(CONFIG.get('start_date')).timestamp())
+        previous_start_time = self.state.get("bookmarks", {}).get("leads", {}).get(self.replication_key, CONFIG.get('start_date'))
 
+        previous_start_time = pendulum.parse(previous_start_time)
         ads = self.get_ads()
-        leads = self.get_leads(ads, start_time, previous_start_time)
+        leads = self.get_leads(ads, start_time, int(previous_start_time.timestamp()))
+        latest_lead_time = self.sync_batches(leads)
 
-        self.sync_batches(leads)
-
-        singer.write_bookmark(self.state, 'leads', 'start_time', int(start_time.timestamp()))
-        #self.state["bookmarks"]["leads"]["start_time"] = start_time
-        singer.write_state(self.state)
-
-
+        if not latest_lead_time is None:
+            singer.write_bookmark(self.state, 'leads', self.replication_key, latest_lead_time)
+            singer.write_state(self.state)
 
 
 ALL_ACTION_ATTRIBUTION_WINDOWS = [

@@ -26,7 +26,8 @@
       "type": [
         "null",
         "string"
-      ]
+      ],
+      "format": "date-time"
     },
     "field_data": {
       "type": [

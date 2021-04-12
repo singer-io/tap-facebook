@@ -122,7 +122,7 @@ class FacebookBaseTest(unittest.TestCase):
             "leads": {
                 self.PRIMARY_KEYS: {"id"},
                 self.REPLICATION_METHOD: self.INCREMENTAL,
-                self.REPLICATION_KEYS: set()
+                self.REPLICATION_KEYS: {"created_time"}
             },
         }
 

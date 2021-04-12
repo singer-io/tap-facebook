@@ -64,6 +64,7 @@ class FacebookBookmarks(FacebookBaseTest):
                                for stream in self.expected_streams()}
         timedelta_by_stream['campaigns'] = [0, 1, 0]
         timedelta_by_stream['adsets'] = [0, 1, 0]
+        timedelta_by_stream['leads'] = [0, 0 , 1]
 
         stream_to_calculated_state = {stream: "" for stream in current_state['bookmarks'].keys()}
         for stream, state in current_state['bookmarks'].items():
