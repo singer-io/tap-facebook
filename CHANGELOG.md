@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.12.0
+  * Added leads stream [#143](https://github.com/singer-io/tap-facebook/pull/143)
+
 # 1.11.2
   * Added unique_outbound_clicks to several streams [#138](https://github.com/singer-io/tap-facebook/pull/138)
 
