@@ -59,11 +59,15 @@ class FacebookBookmarks(FacebookBaseTest):
 
         adsets    "2021-02-09T18:17:41.000000Z"
                   "2021-02-09T17:10:09.000000Z"
+
+        leads     '2021-04-07T20:09:39+0000',
+                  '2021-04-07T20:08:27+0000',
         """
         timedelta_by_stream = {stream: [2,0,0]  # {stream_name: [days, hours, minutes], ...}
                                for stream in self.expected_streams()}
         timedelta_by_stream['campaigns'] = [0, 1, 0]
         timedelta_by_stream['adsets'] = [0, 1, 0]
+        timedelta_by_stream['leads'] = [0, 0 , 1]
 
         stream_to_calculated_state = {stream: "" for stream in current_state['bookmarks'].keys()}
         for stream, state in current_state['bookmarks'].items():

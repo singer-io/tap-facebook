@@ -32,7 +32,7 @@ class TestAdsInsights(unittest.TestCase):
                            'until': '2017-01-07'}])
 
     def test_insights_job_params_stops(self):
-        start_date = tap_facebook.TODAY.subtract(days=2)
+        start_date = pendulum.today().subtract(days=2)
         insights = AdsInsights(
             name='insights',
             account=None,

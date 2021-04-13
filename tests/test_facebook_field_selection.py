@@ -25,6 +25,7 @@ class FacebookFieldSelection(FacebookBaseTest):  # TODO use base.py, determine i
             'ads_insights_platform_and_device',
             'ads_insights_region',
             'ads_insights_dma',
+            #'leads',
         }
 
     @staticmethod
@@ -40,21 +41,23 @@ class FacebookFieldSelection(FacebookBaseTest):  # TODO use base.py, determine i
             "ads_insights_platform_and_device",
             "ads_insights_region",
             "ads_insights_dma",
+            #"leads",
         }
 
     @staticmethod
     def expected_pks():
         return {
             "ads" :                             {"id", "updated_time"},
-            "adcreative" :                      {'id'},
+            "adcreative" :                      {"id"},
             "adsets" :                          {"id", "updated_time"},
             "campaigns" :                       {"id"},
             "ads_insights" :                    {"campaign_id", "adset_id", "ad_id", "date_start"},
             "ads_insights_age_and_gender" :     {"campaign_id", "adset_id", "ad_id", "date_start", "age", "gender"},
             "ads_insights_country" :            {"campaign_id", "adset_id", "ad_id", "date_start"},
             "ads_insights_platform_and_device": {"campaign_id", "adset_id", "ad_id", "date_start", "publisher_platform", "platform_position", "impression_device"},
-            "ads_insights_region":              {"campaign_id", "adset_id", "ad_id", "date_start"},
-            "ads_insights_dma":                 {"campaign_id", "adset_id", "ad_id", "date_start"},
+            "ads_insights_region" :             {"campaign_id", "adset_id", "ad_id", "date_start"},
+            "ads_insights_dma" :                {"campaign_id", "adset_id", "ad_id", "date_start"},
+            #"leads" :                           {"id"},
         }
 
     def expected_automatic_fields(self):

@@ -43,7 +43,7 @@ class TestAdCreative(unittest.TestCase):
         self.assertEquals(5, mocked_account.get_ad_creatives.call_count )
 
     def test_catch_a_type_error(self):
-        """`AdCreative.sync.do_request()` calls a `facebook_buisiness` method `get_ad_creatives()`.
+        """`AdCreative.sync.do_request()` calls a `facebook_business` method `get_ad_creatives()`.
         We want to mock this to throw a `TypeError("string indices must be integers")` and assert
         that we retry this specific error.
         """
