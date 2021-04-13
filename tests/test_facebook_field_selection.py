@@ -25,7 +25,7 @@ class FacebookFieldSelection(FacebookBaseTest):  # TODO use base.py, determine i
             'ads_insights_platform_and_device',
             'ads_insights_region',
             'ads_insights_dma',
-            'leads',
+            #'leads',
         }
 
     @staticmethod
@@ -41,7 +41,7 @@ class FacebookFieldSelection(FacebookBaseTest):  # TODO use base.py, determine i
             "ads_insights_platform_and_device",
             "ads_insights_region",
             "ads_insights_dma",
-            "leads",
+            #"leads",
         }
 
     @staticmethod
@@ -57,7 +57,7 @@ class FacebookFieldSelection(FacebookBaseTest):  # TODO use base.py, determine i
             "ads_insights_platform_and_device": {"campaign_id", "adset_id", "ad_id", "date_start", "publisher_platform", "platform_position", "impression_device"},
             "ads_insights_region" :             {"campaign_id", "adset_id", "ad_id", "date_start"},
             "ads_insights_dma" :                {"campaign_id", "adset_id", "ad_id", "date_start"},
-            "leads" :                           {"id"},
+            #"leads" :                           {"id"},
         }
 
     def expected_automatic_fields(self):

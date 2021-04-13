@@ -56,7 +56,7 @@ STREAMS = [
     'ads_insights_platform_and_device',
     'ads_insights_region',
     'ads_insights_dma',
-    'leads',
+    #'leads',
 ]
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
