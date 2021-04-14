@@ -570,6 +570,7 @@ class AdsInsights(Stream):
 
     invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
                                'age', 'gender', 'country', 'placement', 'region', 'dma']
+    MAX_WINDOW_SIZE = 37 # months
 
     # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
     def __attrs_post_init__(self):
@@ -586,6 +587,13 @@ class AdsInsights(Stream):
             buffer_days = int(CONFIG.get('insights_buffer_days'))
 
         buffered_start_date = start_date.subtract(days=buffer_days)
+        min_start_date = pendulum.today().subtract(months=self.MAX_WINDOW_SIZE)
+        if buffered_start_date < min_start_date:
+            LOGGER.info("%s: Start date is earlier than %s months ago, using %s instead",
+                        self.catalog_entry.tap_stream_id,
+                        self.MAX_WINDOW_SIZE,
+                        min_start_date.to_date_string())
+            buffered_start_date = min_start_date
 
         end_date = pendulum.now()
         if CONFIG.get('end_date'):
