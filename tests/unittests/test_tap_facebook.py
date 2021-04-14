@@ -23,7 +23,7 @@ class TestAdsInsights(unittest.TestCase):
             catalog_entry=self.fake_catalog_entry,
             state={'bookmarks':{'insights': {'date_start': '2017-01-31'}}})
         params = list(itertools.islice(insights.job_params(), 5))
-        expected_date = pendulum.today().subtract(months=AdsInsights.MAX_WINDOW_SIZE)
+        expected_date = pendulum.today().subtract(months=AdsInsights.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
         self.assertEqual(params[0]['time_ranges'],
                          [{'since': expected_date.to_date_string(),
                            'until': expected_date.to_date_string()}])

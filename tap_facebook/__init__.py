@@ -570,7 +570,7 @@ class AdsInsights(Stream):
 
     invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
                                'age', 'gender', 'country', 'placement', 'region', 'dma']
-    MAX_WINDOW_SIZE = 37 # months
+    FACEBOOK_INSIGHTS_RETENTION_PERIOD = 37 # months
 
     # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
     def __attrs_post_init__(self):
@@ -587,11 +587,12 @@ class AdsInsights(Stream):
             buffer_days = int(CONFIG.get('insights_buffer_days'))
 
         buffered_start_date = start_date.subtract(days=buffer_days)
-        min_start_date = pendulum.today().subtract(months=self.MAX_WINDOW_SIZE)
+        min_start_date = pendulum.today().subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
         if buffered_start_date < min_start_date:
-            LOGGER.info("%s: Start date is earlier than %s months ago, using %s instead",
+            LOGGER.warning("%s: Start date is earlier than %s months ago, using %s instead. "
+                           "For more information, see https://www.facebook.com/business/help/1695754927158071?id=354406972049255",
                         self.catalog_entry.tap_stream_id,
-                        self.MAX_WINDOW_SIZE,
+                        self.FACEBOOK_INSIGHTS_RETENTION_PERIOD,
                         min_start_date.to_date_string())
             buffered_start_date = min_start_date
 
