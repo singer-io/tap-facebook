@@ -11,7 +11,7 @@ import dateutil
 
 import attr
 import pendulum
-import requests
+#import requests
 import backoff
 
 import singer
