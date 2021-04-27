@@ -1,12 +1,14 @@
 import itertools
 import unittest
+from unittest.mock import patch
 import pendulum
 import tap_facebook
 
 from tap_facebook import AdsInsights
 from singer.catalog import Catalog, CatalogEntry
 from singer.schema import Schema
-from singer.utils import strftime
+from singer.utils import strftime, parse_args
+from singer import SingerDiscoveryError, SingerSyncError
 
 class TestAdsInsights(unittest.TestCase):
 
@@ -30,7 +32,7 @@ class TestAdsInsights(unittest.TestCase):
                            'until': '2017-01-07'}])
 
     def test_insights_job_params_stops(self):
-        start_date = tap_facebook.TODAY.subtract(days=2)
+        start_date = pendulum.today().subtract(days=2)
         insights = AdsInsights(
             name='insights',
             account=None,
@@ -93,6 +95,43 @@ class TestDateTimeParsing(unittest.TestCase):
         self.assertEqual(
             tap_facebook.transform_datetime_string(dt),
             expected)
+
+
+def fake_args(is_discovery):
+    from collections import namedtuple
+    fake_args = namedtuple('args', 'config discover properties state')
+
+    def wrapped_function(*args, **kwargs):
+        return fake_args({'account_id': 123,
+                          'access_token': 123},
+                         is_discovery,
+                         {'streams': []},
+                         {})
+
+    return wrapped_function
+
+def get_fake_accounts(*args, **kwargs):
+    return [{'account_id': 123}]
+
+def fake_tap_run(*args, **kwargs):
+    raise tap_facebook.FacebookError('this is a test')
+
+class TestErrorHandling(unittest.TestCase):
+
+    @patch('singer.utils.parse_args', fake_args(is_discovery=True))
+    @patch('facebook_business.adobjects.user.User.get_ad_accounts', get_fake_accounts)
+    @patch('tap_facebook.do_discover', fake_tap_run)
+    def test_discovery(self):
+        with self.assertRaises(SingerDiscoveryError):
+            tap_facebook.main()
+
+    @patch('singer.utils.parse_args', fake_args(is_discovery=False))
+    @patch('facebook_business.adobjects.user.User.get_ad_accounts', get_fake_accounts)
+    @patch('tap_facebook.do_sync', fake_tap_run)
+    def test_sync(self):
+        with self.assertRaises(SingerSyncError):
+            tap_facebook.main()
+
 
 
 if __name__ == '__main__':

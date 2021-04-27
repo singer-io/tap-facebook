@@ -1,5 +1,29 @@
 # Changelog
 
+# 1.12.0
+  * Added leads stream [#143](https://github.com/singer-io/tap-facebook/pull/143)
+
+# 1.11.2
+  * Added unique_outbound_clicks to several streams [#138](https://github.com/singer-io/tap-facebook/pull/138)
+
+## 1.11.1
+  * Modifies the way FacebookRequestError is parsed [#135](https://github.com/singer-io/tap-facebook/pull/135)
+
+## 1.11.0
+  * Upgrades facebook_business library to version 9.0.0 [#133](https://github.com/singer-io/tap-facebook/pull/133)
+
+## 1.10.0
+  * Add consistent logging for `facebook_business.exceptions.FacebookError` errors [#129](https://github.com/singer-io/tap-facebook/pull/129)
+
+## 1.9.7
+  * Add check for `TypeError` and retry them on the `AdsInsights` and `AdCreative` streams [#126](https://github.com/singer-io/tap-facebook/pull/126)
+
+## 1.9.6
+  * Add check for `FacebookBadObjectError` and retry them on the `AdsInsights` stream [#124](https://github.com/singer-io/tap-facebook/pull/124)
+
+## 1.9.5
+  * Add check for `HTTP 500` and retry them on the `AdCreatives` stream [#121](https://github.com/singer-io/tap-facebook/pull/121)
+
 ## 1.9.4
   * Bump SDK version to get bug fixes [#105](https://github.com/singer-io/tap-facebook/pull/105)
 

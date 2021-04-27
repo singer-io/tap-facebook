@@ -1,124 +1,247 @@
-import tap_tester.connections as connections
-import tap_tester.menagerie   as menagerie
-import tap_tester.runner      as runner
 import os
-import unittest
-from functools import reduce
+import datetime
+import dateutil.parser
+import pytz
 
-class FacebookBookmarks(unittest.TestCase):
-    def setUp(self):
-        missing_envs = [x for x in [os.getenv('TAP_FACEBOOK_ACCESS_TOKEN'),
-                                    os.getenv('TAP_FACEBOOK_ACCOUNT_ID')] if x == None]
-        if len(missing_envs) != 0:
-            raise Exception("set TAP_FACEBOOK_ACCESS_TOKEN, TAP_FACEBOOK_ACCOUNT_ID")
+from tap_tester import runner, menagerie, connections
 
-    def name(self):
+from base import FacebookBaseTest
+
+
+class FacebookBookmarks(FacebookBaseTest):
+    @staticmethod
+    def name():
         return "tap_tester_facebook_bookmarks"
 
-    def get_type(self):
-        return "platform.facebook"
-
-    def get_credentials(self):
-        return {'access_token': os.getenv('TAP_FACEBOOK_ACCESS_TOKEN')}
-
-    def expected_check_streams(self):
-        return {
-            'ads',
-            'adcreative',
-            'adsets',
-            'campaigns',
-            'ads_insights',
-            'ads_insights_age_and_gender',
-            'ads_insights_country',
-            'ads_insights_platform_and_device',
-            'ads_insights_region',
-            'ads_insights_dma',
+    def get_properties(self, original: bool = True):
+        """Configuration properties required for the tap."""
+        return_value = {
+            'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
+            'start_date' : '2019-07-22T00:00:00Z',
+            'end_date' : '2019-07-26T00:00:00Z',
+            'insights_buffer_days': '1'
         }
+        if original:
+            return return_value
 
-    def expected_sync_streams(self):
-        return {
-            "ads",
-            "adcreative",
-            "adsets",
-            "campaigns",
-            "ads_insights",
-            "ads_insights_age_and_gender",
-            "ads_insights_country",
-            "ads_insights_platform_and_device",
-            "ads_insights_region",
-            "ads_insights_dma",
-        }
+        return_value["start_date"] = self.start_date
+        return_value["end_date"] = self.end_date
 
-    def tap_name(self):
-        return "tap-facebook"
+        return return_value
 
-    def expected_pks(self):
-        return {
-            "ads" :                             {"id", "updated_time"},
-            "adcreative" :                      {'id'},
-            "adsets" :                          {"id", "updated_time"},
-            "campaigns" :                       {"id"},
-            "ads_insights" :                    {"campaign_id", "adset_id", "ad_id", "date_start"},
-            "ads_insights_age_and_gender" :     {"campaign_id", "adset_id", "ad_id", "date_start", "age", "gender"},
-            "ads_insights_country" :            {"campaign_id", "adset_id", "ad_id", "date_start"},
-            "ads_insights_platform_and_device": {"campaign_id", "adset_id", "ad_id", "date_start", "publisher_platform", "platform_position", "impression_device"},
-            "ads_insights_region":              {"campaign_id", "adset_id", "ad_id", "date_start"},
-            "ads_insights_dma":                 {"campaign_id", "adset_id", "ad_id", "date_start"},
-        }
+    @staticmethod
+    def convert_state_to_utc(date_str):
+        """
+        Convert a saved bookmark value of the form '2020-08-25T13:17:36-07:00' to
+        a string formatted utc datetime,
+        in order to compare aginast json formatted datetime values
+        """
+        date_object = dateutil.parser.parse(date_str)
+        date_object_utc = date_object.astimezone(tz=pytz.UTC)
+        return datetime.datetime.strftime(date_object_utc, "%Y-%m-%dT%H:%M:%SZ")
 
-    def get_properties(self):
-        return {'start_date' : '2015-03-15T00:00:00Z',
-                'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
-                'end_date': '2015-03-16T00:00:00+00:00',
-                'insights_buffer_days': '1'
-        }
+    def calculated_states_by_stream(self, current_state):
+        """
+        Look at the bookmarks from a previous sync and set a new bookmark
+        value based off timedelta expectations. This ensures the subsequent sync will replicate
+        at least 1 record but, fewer records than the previous sync.
+
+        Sufficient test data is required for this test to cover a given stream.
+        An incrmeental replication stream must have at least two records with
+        replication keys that differ by more than the lookback window.
+
+        If the test data is changed in the future this will break expectations for this test.
+
+        The following streams barely make the cut:
+
+        campaigns "2021-02-09T18:17:30.000000Z"
+                  "2021-02-09T16:24:58.000000Z"
+
+        adsets    "2021-02-09T18:17:41.000000Z"
+                  "2021-02-09T17:10:09.000000Z"
+
+        leads     '2021-04-07T20:09:39+0000',
+                  '2021-04-07T20:08:27+0000',
+        """
+        timedelta_by_stream = {stream: [2,0,0]  # {stream_name: [days, hours, minutes], ...}
+                               for stream in self.expected_streams()}
+        timedelta_by_stream['campaigns'] = [0, 1, 0]
+        timedelta_by_stream['adsets'] = [0, 1, 0]
+        timedelta_by_stream['leads'] = [0, 0 , 1]
+
+        stream_to_calculated_state = {stream: "" for stream in current_state['bookmarks'].keys()}
+        for stream, state in current_state['bookmarks'].items():
+            state_key, state_value = next(iter(state.keys())), next(iter(state.values()))
+            state_as_datetime = dateutil.parser.parse(state_value)
+
+            days, hours, minutes = timedelta_by_stream[stream]
+            calculated_state_as_datetime = state_as_datetime - datetime.timedelta(days=days, hours=hours, minutes=minutes)
+
+            state_format = '%Y-%m-%dT00:00:00+00:00' if self.is_insight(stream) else '%Y-%m-%dT%H:%M:%S-00:00'
+            calculated_state_formatted = datetime.datetime.strftime(calculated_state_as_datetime, state_format)
+
+            stream_to_calculated_state[stream] = {state_key: calculated_state_formatted}
+
+        return stream_to_calculated_state
+
 
     def test_run(self):
-        conn_id = connections.ensure_connection(self)
+        expected_streams =  self.expected_streams()
+        non_insight_streams = {stream for stream in expected_streams if not self.is_insight(stream)}
+        insight_streams = {stream for stream in expected_streams if self.is_insight(stream)}
 
-        #run in check mode
-        check_job_name = runner.run_check_mode(self, conn_id)
+        # Testing against ads insights objects
+        self.start_date = self.get_properties()['start_date']
+        self.end_date = self.get_properties()['end_date']
+        self.bookmarks_test(insight_streams)
 
-        #verify check  exit codes
-        exit_status = menagerie.get_exit_status(conn_id, check_job_name)
-        menagerie.verify_check_exit_status(self, exit_status, check_job_name)
+        # Testing against core objects
+        self.end_date = '2021-02-09T00:00:00Z'
+        self.bookmarks_test(non_insight_streams)
 
-        found_catalogs = menagerie.get_catalogs(conn_id)
-        self.assertGreater(len(found_catalogs), 0, msg="unable to locate schemas for connection {}".format(conn_id))
 
-        found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
+    def bookmarks_test(self, expected_streams):
+        """A Parametrized Bookmarks Test"""
+        expected_replication_keys = self.expected_replication_keys()
+        expected_replication_methods = self.expected_replication_method()
+        expected_insights_buffer = -1 * int(self.get_properties()['insights_buffer_days'])  # lookback window
 
-        diff = self.expected_check_streams().symmetric_difference( found_catalog_names )
-        self.assertEqual(len(diff), 0, msg="discovered schemas do not match: {}".format(diff))
-        print("discovered schemas are kosher")
+        ##########################################################################
+        ### First Sync
+        ##########################################################################
 
-        #select all catalogs
-        #selected_catalogs = list(map(lambda catalog: self.perform_field_selection(conn_id, catalog), found_catalogs))
-        #menagerie.post_annotated_catalogs(conn_id, selected_catalogs)
+        conn_id = connections.ensure_connection(self, original_properties=False)
 
-        for c in found_catalogs:
-            connections.select_catalog_and_fields_via_metadata(conn_id, c,
-                                                               menagerie.get_annotated_schema(conn_id, c['stream_id']))
+        # Run in check mode
+        found_catalogs = self.run_and_verify_check_mode(conn_id)
 
-        #clear state
-        menagerie.set_state(conn_id, {})
+        # Select only the expected streams tables
+        catalog_entries = [ce for ce in found_catalogs if ce['tap_stream_id'] in expected_streams]
+        self.perform_and_verify_table_and_field_selection(conn_id, catalog_entries, select_all_fields=True)
 
-        sync_job_name = runner.run_sync_mode(self, conn_id)
+        # Run a sync job using orchestrator
+        first_sync_record_count = self.run_and_verify_sync(conn_id)
+        first_sync_records = runner.get_records_from_target_output()
+        first_sync_bookmarks = menagerie.get_state(conn_id)
 
-        #verify tap and target exit codes
-        exit_status = menagerie.get_exit_status(conn_id, sync_job_name)
-        menagerie.verify_sync_exit_status(self, exit_status, sync_job_name)
+        ##########################################################################
+        ### Update State Between Syncs
+        ##########################################################################
 
-        record_count_by_stream = runner.examine_target_output_file(self, conn_id, self.expected_sync_streams(), self.expected_pks())
-        replicated_row_count =  reduce(lambda accum,c : accum + c, record_count_by_stream.values())
-        self.assertGreater(replicated_row_count, 0, msg="failed to replicate any data: {}".format(record_count_by_stream))
-        print("total replicated row count: {}".format(replicated_row_count))
+        new_states = {'bookmarks': dict()}
+        simulated_states = self.calculated_states_by_stream(first_sync_bookmarks)
+        for stream, new_state in simulated_states.items():
+            new_states['bookmarks'][stream] = new_state
+        menagerie.set_state(conn_id, new_states)
 
-        # bookmarks for the 4 streams should be 2015-03-16
-        states = menagerie.get_state(conn_id)["bookmarks"]
-        end_date = self.get_properties()["end_date"].split()[0]
-        for k, v in states.items():
-            if "insights" in k:
-                bm_date = v.get("date_start")
-                self.assertEqual(end_date, bm_date)
-        print("bookmarks match end_date of {}".format(end_date))
+        ##########################################################################
+        ### Second Sync
+        ##########################################################################
+
+        second_sync_record_count = self.run_and_verify_sync(conn_id)
+        second_sync_records = runner.get_records_from_target_output()
+        second_sync_bookmarks = menagerie.get_state(conn_id)
+
+        ##########################################################################
+        ### Test By Stream
+        ##########################################################################
+
+        for stream in expected_streams:
+            with self.subTest(stream=stream):
+
+                # expected values
+                expected_replication_method = expected_replication_methods[stream]
+
+                # collect information for assertions from syncs 1 & 2 base on expected values
+                first_sync_count = first_sync_record_count.get(stream, 0)
+                second_sync_count = second_sync_record_count.get(stream, 0)
+                first_sync_messages = [record.get('data') for record in
+                                       first_sync_records.get(stream).get('messages')
+                                       if record.get('action') == 'upsert']
+                second_sync_messages = [record.get('data') for record in
+                                        second_sync_records.get(stream).get('messages')
+                                        if record.get('action') == 'upsert']
+                first_bookmark_key_value = first_sync_bookmarks.get('bookmarks', {stream: None}).get(stream)
+                second_bookmark_key_value = second_sync_bookmarks.get('bookmarks', {stream: None}).get(stream)
+
+
+                if expected_replication_method == self.INCREMENTAL:
+
+
+                    # collect information specific to incremental streams from syncs 1 & 2
+                    replication_key = next(iter(expected_replication_keys[stream]))
+                    first_bookmark_value = first_bookmark_key_value.get(replication_key)
+                    second_bookmark_value = second_bookmark_key_value.get(replication_key)
+                    first_bookmark_value_utc = self.convert_state_to_utc(first_bookmark_value)
+                    second_bookmark_value_utc = self.convert_state_to_utc(second_bookmark_value)
+                    simulated_bookmark_value = new_states['bookmarks'][stream][replication_key]
+                    simulated_bookmark_minus_lookback = self.timedelta_formatted(
+                        simulated_bookmark_value, days=expected_insights_buffer
+                    ) if self.is_insight(stream) else simulated_bookmark_value
+
+
+                    # Verify the first sync sets a bookmark of the expected form
+                    self.assertIsNotNone(first_bookmark_key_value)
+                    self.assertIsNotNone(first_bookmark_key_value.get(replication_key))
+
+                    # Verify the second sync sets a bookmark of the expected form
+                    self.assertIsNotNone(second_bookmark_key_value)
+                    self.assertIsNotNone(second_bookmark_key_value.get(replication_key))
+
+                    # Verify the second sync bookmark is Equal to the first sync bookmark
+                    self.assertEqual(second_bookmark_value, first_bookmark_value) # assumes no changes to data during test
+
+
+                    for record in second_sync_messages:
+
+                        # Verify the second sync records respect the previous (simulated) bookmark value
+                        replication_key_value = record.get(replication_key)
+                        if stream == 'ads_insights_age_and_gender': # BUG | https://stitchdata.atlassian.net/browse/SRCE-4873
+                            replication_key_value = datetime.datetime.strftime(
+                                dateutil.parser.parse(replication_key_value),
+                                self.BOOKMARK_COMPARISON_FORMAT
+                            )
+                        self.assertGreaterEqual(replication_key_value, simulated_bookmark_minus_lookback,
+                                                msg="Second sync records do not repect the previous bookmark.")
+
+                        # Verify the second sync bookmark value is the max replication key value for a given stream
+                        self.assertLessEqual(
+                            replication_key_value, second_bookmark_value_utc,
+                            msg="Second sync bookmark was set incorrectly, a record with a greater replication-key value was synced."
+                        )
+
+                    for record in first_sync_messages:
+
+                        # Verify the first sync bookmark value is the max replication key value for a given stream
+                        replication_key_value = record.get(replication_key)
+                        self.assertLessEqual(
+                            replication_key_value, first_bookmark_value_utc,
+                            msg="First sync bookmark was set incorrectly, a record with a greater replication-key value was synced."
+                        )
+
+
+                    # Verify the number of records in the 2nd sync is less then the first
+                    self.assertLess(second_sync_count, first_sync_count)
+
+
+                elif expected_replication_method == self.FULL_TABLE:
+
+
+                    # Verify the syncs do not set a bookmark for full table streams
+                    self.assertIsNone(first_bookmark_key_value)
+                    self.assertIsNone(second_bookmark_key_value)
+
+                    # Verify the number of records in the second sync is the same as the first
+                    self.assertEqual(second_sync_count, first_sync_count)
+
+
+                else:
+
+
+                    raise NotImplementedError(
+                        "INVALID EXPECTATIONS\t\tSTREAM: {} REPLICATION_METHOD: {}".format(stream, expected_replication_method)
+                    )
+
+
+                # Verify at least 1 record was replicated in the second sync
+                self.assertGreater(second_sync_count, 0, msg="We are not fully testing bookmarking for {}".format(stream))

@@ -17,6 +17,7 @@ import backoff
 import singer
 import singer.metrics as metrics
 from singer import utils, metadata
+from singer import SingerConfigurationError, SingerDiscoveryError, SingerSyncError
 from singer import (transform,
                     UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING,
                     Transformer, _transform_datetime)
@@ -24,6 +25,7 @@ from singer.catalog import Catalog, CatalogEntry
 
 from functools import partial
 
+import facebook_business
 from facebook_business import FacebookAdsApi
 import facebook_business.adobjects.adcreative as adcreative
 import facebook_business.adobjects.ad as fb_ad
@@ -31,10 +33,9 @@ import facebook_business.adobjects.adset as adset
 import facebook_business.adobjects.campaign as fb_campaign
 import facebook_business.adobjects.adsinsights as adsinsights
 import facebook_business.adobjects.user as fb_user
+import facebook_business.adobjects.lead as fb_lead
 
-from facebook_business.exceptions import FacebookRequestError
-
-TODAY = pendulum.today()
+from facebook_business.exceptions import FacebookError, FacebookRequestError, FacebookBadObjectError
 
 API = None
 
@@ -55,10 +56,12 @@ STREAMS = [
     'ads_insights_platform_and_device',
     'ads_insights_region',
     'ads_insights_dma',
+    #'leads',
 ]
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 UPDATED_TIME_KEY = 'updated_time'
+CREATED_TIME_KEY = 'created_time'
 START_DATE_KEY = 'date_start'
 
 BOOKMARK_KEYS = {
@@ -71,6 +74,7 @@ BOOKMARK_KEYS = {
     'ads_insights_platform_and_device': START_DATE_KEY,
     'ads_insights_region': START_DATE_KEY,
     'ads_insights_dma': START_DATE_KEY,
+    'leads': CREATED_TIME_KEY,
 }
 
 LOGGER = singer.get_logger()
@@ -109,6 +113,25 @@ def iter_delivery_info_filter(stream_type):
         filt['value'] = filt_values[i:i+sub_list_length]
         yield filt
 
+def raise_from(singer_error, fb_error):
+    """Makes a pretty error message out of FacebookError object
+
+    FacebookRequestError is the only class with more info than the exception string so we pull more
+    info out of it
+    """
+    if isinstance(fb_error, FacebookRequestError):
+        http_method = fb_error.request_context().get('method', 'Unknown HTTP Method')
+        error_message = '{}: {} Message: {}'.format(
+            http_method,
+            fb_error.http_status(),
+            fb_error.body().get('error', {}).get('message')
+        )
+    else:
+        # All other facebook errors are `FacebookError`s and we handle
+        # them the same as a python error
+        error_message = str(fb_error)
+    raise singer_error(error_message) from fb_error
+
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
     def log_retry_attempt(details):
         _, exception, _ = sys.exc_info()
@@ -117,10 +140,16 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
                     details["tries"],
                     details["wait"])
 
+        if isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
+            LOGGER.info('TypeError due to bad JSON response')
     def should_retry_api_error(exception):
-        if isinstance(exception, FacebookRequestError):
-            return exception.api_transient_error() or exception.api_error_subcode() == 99
+        if isinstance(exception, FacebookBadObjectError):
+            return True
+        elif isinstance(exception, FacebookRequestError):
+            return exception.api_transient_error() or exception.api_error_subcode() == 99 or exception.http_status() == 500
         elif isinstance(exception, InsightsJobTimeout):
+            return True
+        elif isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
             return True
         return False
 
@@ -191,60 +220,61 @@ class IncrementalStream(Stream):
                 yield {'state': advance_bookmark(self, UPDATED_TIME_KEY, str(max_bookmark))}
 
 
-def ad_creative_success(response, stream=None):
+def batch_record_success(response, stream=None, transformer=None, schema=None):
     '''A success callback for the FB Batch endpoint used when syncing AdCreatives. Needs the stream
     to resolve schema refs and transform the successful response object.'''
-    refs = load_shared_schema_refs()
-    schema = singer.resolve_schema_references(stream.catalog_entry.schema.to_dict(), refs)
-
     rec = response.json()
-    record = Transformer(pre_hook=transform_date_hook).transform(rec, schema)
+    record = transformer.transform(rec, schema)
     singer.write_record(stream.name, record, stream.stream_alias, utils.now())
 
 
-def ad_creative_failure(response):
+def batch_record_failure(response):
     '''A failure callback for the FB Batch endpoint used when syncing AdCreatives. Raises the error
     so it fails the sync process.'''
     raise response.error()
 
-
-# AdCreative is not an interable stream as it uses the batch endpoint
+# AdCreative is not an iterable stream as it uses the batch endpoint
 class AdCreative(Stream):
     '''
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
     '''
 
-    field_class = adcreative.AdCreative.Field
-    key_properties = ['id']
-
-
-    def sync(self):
-        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
-        def do_request():
-            return self.account.get_ad_creatives(params={'limit': RESULT_RETURN_LIMIT})
-
-        ad_creative = do_request()
+    def sync_batches(self, stream_objects):
+        refs = load_shared_schema_refs()
+        schema = singer.resolve_schema_references(self.catalog_entry.schema.to_dict(), refs)
+        transformer = Transformer(pre_hook=transform_date_hook)
 
         # Create the initial batch
         api_batch = API.new_batch()
         batch_count = 0
 
-        # This loop syncs minimal AdCreative objects
-        for a in ad_creative:
-            # Excecute and create a new batch for every 50 added
+        # This loop syncs minimal fb objects
+        for obj in stream_objects:
+            # Execute and create a new batch for every 50 added
             if batch_count % 50 == 0:
                 api_batch.execute()
                 api_batch = API.new_batch()
 
             # Add a call to the batch with the full object
-            a.api_get(fields=self.fields(),
-                      batch=api_batch,
-                      success=partial(ad_creative_success, stream=self),
-                      failure=ad_creative_failure)
+            obj.api_get(fields=self.fields(),
+                        batch=api_batch,
+                        success=partial(batch_record_success, stream=self, transformer=transformer, schema=schema),
+                        failure=batch_record_failure)
             batch_count += 1
 
         # Ensure the final batch is executed
         api_batch.execute()
+
+    field_class = adcreative.AdCreative.Field
+    key_properties = ['id']
+
+    @retry_pattern(backoff.expo, (FacebookRequestError, TypeError), max_tries=5, factor=5)
+    def get_adcreatives(self):
+        return self.account.get_ad_creatives(params={'limit': RESULT_RETURN_LIMIT})
+
+    def sync(self):
+        adcreatives = self.get_adcreatives()
+        self.sync_batches(adcreatives)
 
 
 class Ads(IncrementalStream):
@@ -389,6 +419,88 @@ class Campaigns(IncrementalStream):
         for message in self._iterate(campaigns, prepare_record):
             yield message
 
+@attr.s
+class Leads(Stream):
+    state = attr.ib()
+    replication_key = "created_time"
+
+    field_class = fb_lead.Lead.Field
+    key_properties = ['id']
+
+    def compare_lead_created_times(self, leadA, leadB):
+        if leadA is None:
+            return leadB
+        timestampA = pendulum.parse(leadA[self.replication_key])
+        timestampB = pendulum.parse(leadB[self.replication_key])
+        if timestampB > timestampA:
+            return leadB
+        else:
+            return leadA
+
+    def sync_batches(self, stream_objects):
+        refs = load_shared_schema_refs()
+        schema = singer.resolve_schema_references(self.catalog_entry.schema.to_dict(), refs)
+        transformer = Transformer(pre_hook=transform_date_hook)
+
+        # Create the initial batch
+        api_batch = API.new_batch()
+        batch_count = 0
+
+        # Keep track of most recent, lead for bookmarking
+        latest_lead = None
+
+        # This loop syncs minimal fb objects
+        for obj in stream_objects:
+
+            latest_lead = self.compare_lead_created_times(latest_lead, obj)
+
+            # Execute and create a new batch for every 50 added
+            if batch_count % 50 == 0:
+                api_batch.execute()
+                api_batch = API.new_batch()
+
+            # Add a call to the batch with the full object
+            obj.api_get(fields=self.fields(),
+                        batch=api_batch,
+                        success=partial(batch_record_success, stream=self, transformer=transformer, schema=schema),
+                        failure=batch_record_failure)
+            batch_count += 1
+
+        # Ensure the final batch is executed
+        api_batch.execute()
+        return str(pendulum.parse(latest_lead[self.replication_key]))
+
+    @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+    def get_ads(self):
+        params = {'limit': RESULT_RETURN_LIMIT}
+        yield from self.account.get_ads(params=params)
+
+    @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+    def get_leads(self, ads, start_time, previous_start_time):
+        start_time = int(start_time.timestamp()) # Get unix timestamp
+        params = {'limit': RESULT_RETURN_LIMIT,
+                  'filtering': [{'field': 'time_created',
+                                  'operator': 'GREATER_THAN',
+                                  'value': previous_start_time - 1},
+                                {'field': 'time_created',
+                                  'operator': 'LESS_THAN',
+                                  'value': start_time}]}
+        for ad in ads:
+            yield from ad.get_leads(params=params)
+
+    def sync(self):
+        start_time = pendulum.utcnow()
+        previous_start_time = self.state.get("bookmarks", {}).get("leads", {}).get(self.replication_key, CONFIG.get('start_date'))
+
+        previous_start_time = pendulum.parse(previous_start_time)
+        ads = self.get_ads()
+        leads = self.get_leads(ads, start_time, int(previous_start_time.timestamp()))
+        latest_lead_time = self.sync_batches(leads)
+
+        if not latest_lead_time is None:
+            singer.write_bookmark(self.state, 'leads', self.replication_key, latest_lead_time)
+            singer.write_state(self.state)
+
 
 ALL_ACTION_ATTRIBUTION_WINDOWS = [
     '1d_click',
@@ -494,7 +606,7 @@ class AdsInsights(Stream):
             }
             buffered_start_date = buffered_start_date.add(days=1)
 
-    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout), max_tries=5, factor=5)
+    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout, FacebookBadObjectError, TypeError), max_tries=5, factor=5)
     def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
         job = self.account.get_insights( # pylint: disable=no-member
@@ -592,6 +704,8 @@ def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many
         return Ads(name, account, stream_alias, catalog_entry, state=state)
     elif name == 'adcreative':
         return AdCreative(name, account, stream_alias, catalog_entry)
+    elif name == 'leads':
+        return Leads(name, account, stream_alias, catalog_entry, state=state)
     else:
         raise TapFacebookException('Unknown stream {}'.format(name))
 
@@ -623,8 +737,9 @@ def do_sync(account, catalog, state):
         bookmark_key = BOOKMARK_KEYS.get(stream.name)
         singer.write_schema(stream.name, schema, stream.key_properties, bookmark_key, stream.stream_alias)
 
+
         # NB: The AdCreative stream is not an iterator
-        if stream.name == 'adcreative':
+        if stream.name in {'adcreative', 'leads'}:
             stream.sync()
             continue
 
@@ -678,7 +793,7 @@ def discover_schemas():
                                                key_properties=stream.key_properties))
 
         bookmark_key = BOOKMARK_KEYS.get(stream.name)
-        if bookmark_key == UPDATED_TIME_KEY:
+        if bookmark_key == UPDATED_TIME_KEY or bookmark_key == CREATED_TIME_KEY :
             mdata = metadata.write(mdata, ('properties', bookmark_key), 'inclusion', 'automatic')
 
         result['streams'].append({'stream': stream.name,
@@ -706,31 +821,41 @@ def do_discover():
 
 
 def main_impl():
-    args = utils.parse_args(REQUIRED_CONFIG_KEYS)
-    account_id = args.config['account_id']
-    access_token = args.config['access_token']
+    try:
+        args = utils.parse_args(REQUIRED_CONFIG_KEYS)
+        account_id = args.config['account_id']
+        access_token = args.config['access_token']
 
-    CONFIG.update(args.config)
+        CONFIG.update(args.config)
 
-    global RESULT_RETURN_LIMIT
-    RESULT_RETURN_LIMIT = CONFIG.get('result_return_limit', RESULT_RETURN_LIMIT)
+        global RESULT_RETURN_LIMIT
+        RESULT_RETURN_LIMIT = CONFIG.get('result_return_limit', RESULT_RETURN_LIMIT)
 
-    global API
-    API = FacebookAdsApi.init(access_token=access_token)
-    user = fb_user.User(fbid='me')
-    accounts = user.get_ad_accounts()
-    account = None
-    for acc in accounts:
-        if acc['account_id'] == account_id:
-            account = acc
-    if not account:
-        raise TapFacebookException("Couldn't find account with id {}".format(account_id))
+        global API
+        API = FacebookAdsApi.init(access_token=access_token)
+        user = fb_user.User(fbid='me')
+
+        accounts = user.get_ad_accounts()
+        account = None
+        for acc in accounts:
+            if acc['account_id'] == account_id:
+                account = acc
+        if not account:
+            raise SingerConfigurationError("Couldn't find account with id {}".format(account_id))
+    except FacebookError as fb_error:
+        raise_from(SingerConfigurationError, fb_error)
 
     if args.discover:
-        do_discover()
+        try:
+            do_discover()
+        except FacebookError as fb_error:
+            raise_from(SingerDiscoveryError, fb_error)
     elif args.properties:
         catalog = Catalog.from_dict(args.properties)
-        do_sync(account, catalog, args.state)
+        try:
+            do_sync(account, catalog, args.state)
+        except FacebookError as fb_error:
+            raise_from(SingerSyncError, fb_error)
     else:
         LOGGER.info("No properties were selected")
 

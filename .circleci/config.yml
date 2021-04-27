@@ -1,8 +1,11 @@
-version: 2
+version: 2.1
+orbs:
+  slack: circleci/slack@3.4.2
+
 jobs:
   build:
     docker:
-      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:tap-tester
+      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:tap-tester-v4
     steps:
       - checkout
       - run:
@@ -10,7 +13,7 @@ jobs:
           command: |
             python3 -mvenv /usr/local/share/virtualenvs/tap-facebook
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-            pip install -U 'pip<19.2' setuptools
+            pip install -U pip setuptools
             pip install .[dev]
       - run:
           name: 'pylint'
@@ -18,6 +21,7 @@ jobs:
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
             pylint tap_facebook -d C,R,W
       - run:
+          when: always
           name: 'Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
@@ -36,18 +40,29 @@ jobs:
                      --password=$SANDBOX_PASSWORD \
                      --client-id=50 \
                      tests
+      - run:
+          name: 'pylint tests'
+          command: |
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            pip install pylint
+            pylint tests/*.py -d 'broad-except,chained-comparison,empty-docstring,fixme,invalid-name,line-too-long,missing-class-docstring,missing-function-docstring,missing-module-docstring,no-else-raise,no-else-return,too-few-public-methods,too-many-arguments,too-many-branches,too-many-lines,too-many-locals,ungrouped-imports,wrong-spelling-in-comment,wrong-spelling-in-docstring,duplicate-code,no-name-in-module,attribute-defined-outside-init,too-many-statements,cell-var-from-loop,too-many-public-methods,missing-docstring,use-a-generator'
+      - slack/notify-on-failure:
+          only_for_branches: master
+
 workflows:
   version: 2
   commit:
     jobs:
-      - build
+      - build:
+          context: circleci-user
   build_daily:
     triggers:
       - schedule:
-          cron: "0 0 * * *"
+          cron: "0 19 * * *"
           filters:
             branches:
               only:
                 - master
     jobs:
-      - build
+      - build:
+          context: circleci-user
