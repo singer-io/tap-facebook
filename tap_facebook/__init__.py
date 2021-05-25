@@ -265,7 +265,6 @@ class AdCreative(Stream):
         # Ensure the final batch is executed
         api_batch.execute()
 
-    field_class = adcreative.AdCreative.Field
     key_properties = ['id']
 
     @retry_pattern(backoff.expo, (FacebookRequestError, TypeError), max_tries=5, factor=5)
@@ -282,7 +281,6 @@ class Ads(IncrementalStream):
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup
     '''
 
-    field_class = fb_ad.Ad.Field
     key_properties = ['id', 'updated_time']
 
     @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
@@ -327,7 +325,6 @@ class AdSets(IncrementalStream):
     doc: https://developers.facebook.com/docs/marketing-api/reference/ad-campaign
     '''
 
-    field_class = adset.AdSet.Field
     key_properties = ['id', 'updated_time']
 
     @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
@@ -369,7 +366,6 @@ class AdSets(IncrementalStream):
 
 class Campaigns(IncrementalStream):
 
-    field_class = fb_campaign.Campaign.Field
     key_properties = ['id']
 
     @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
@@ -381,6 +377,7 @@ class Campaigns(IncrementalStream):
         return self.account.get_campaigns(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
 
     def __iter__(self):
+        # ads is not a field under campaigns in the SDK. To add ads to this stream, we have to make a separate request
         props = self.fields()
         fields = [k for k in props if k != 'ads']
         pull_ads = 'ads' in props
@@ -403,6 +400,7 @@ class Campaigns(IncrementalStream):
 
         @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
         def prepare_record(campaign):
+            """If campaign.ads is selected, make the request and insert the data here"""
             campaign_out = campaign.api_get(fields=fields).export_all_data()
             if pull_ads:
                 campaign_out['ads'] = {'data': []}
@@ -424,7 +422,6 @@ class Leads(Stream):
     state = attr.ib()
     replication_key = "created_time"
 
-    field_class = fb_lead.Lead.Field
     key_properties = ['id']
 
     def compare_lead_created_times(self, leadA, leadB):
@@ -554,7 +551,6 @@ def advance_bookmark(stream, bookmark_key, date):
 
 @attr.s
 class AdsInsights(Stream):
-    field_class = adsinsights.AdsInsights.Field
     base_properties = ['campaign_id', 'adset_id', 'ad_id', 'date_start']
 
     state = attr.ib()
@@ -568,8 +564,11 @@ class AdsInsights(Stream):
 
     bookmark_key = START_DATE_KEY
 
+    # these fields are not defined in the facebook_business library
+    # Sending these fields is not allowed, but they are returned by the api
     invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
                                'age', 'gender', 'country', 'placement', 'region', 'dma']
+    FACEBOOK_INSIGHTS_RETENTION_PERIOD = 37 # months
 
     # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
     def __attrs_post_init__(self):
@@ -586,6 +585,14 @@ class AdsInsights(Stream):
             buffer_days = int(CONFIG.get('insights_buffer_days'))
 
         buffered_start_date = start_date.subtract(days=buffer_days)
+        min_start_date = pendulum.today().subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
+        if buffered_start_date < min_start_date:
+            LOGGER.warning("%s: Start date is earlier than %s months ago, using %s instead. "
+                           "For more information, see https://www.facebook.com/business/help/1695754927158071?id=354406972049255",
+                        self.catalog_entry.tap_stream_id,
+                        self.FACEBOOK_INSIGHTS_RETENTION_PERIOD,
+                        min_start_date.to_date_string())
+            buffered_start_date = min_start_date
 
         end_date = pendulum.now()
         if CONFIG.get('end_date'):
@@ -763,14 +770,7 @@ def get_abs_path(path):
 
 def load_schema(stream):
     path = get_abs_path('schemas/{}.json'.format(stream.name))
-    field_class = stream.field_class
     schema = utils.load_json(path)
-
-    for k in schema['properties']:
-        if k not in field_class.__dict__:
-            LOGGER.warning(
-                'Property %s.%s is not defined in the facebook_business library',
-                stream.name, k)
 
     return schema
 
