@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.12.1
+  * Increased insights job timeout to 300 seconds [#148](https://github.com/singer-io/tap-facebook/pull/148)
+
 # 1.12.0
   * Added leads stream [#143](https://github.com/singer-io/tap-facebook/pull/143)
 
