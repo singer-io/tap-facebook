@@ -119,6 +119,11 @@ class FacebookBaseTest(unittest.TestCase):
                 self.REPLICATION_METHOD: self.INCREMENTAL,
                 self.REPLICATION_KEYS: {"date_start"}
             },
+            "ads_insights_hourly_advertiser": {
+                self.PRIMARY_KEYS: {"hourly_stats_aggregated_by_advertiser_time_zone", "campaign_id", "adset_id", "ad_id", "date_start"},
+                self.REPLICATION_METHOD: self.INCREMENTAL,
+                self.REPLICATION_KEYS: {"date_start"}
+            },
             # "leads": {
             #     self.PRIMARY_KEYS: {"id"},
             #     self.REPLICATION_METHOD: self.INCREMENTAL,
