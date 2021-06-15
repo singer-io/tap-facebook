@@ -88,7 +88,7 @@ class DiscoveryTest(FacebookBaseTest):
                 failing_with_no_replication_keys = {
                     'ads_insights_country', 'adsets', 'adcreative', 'ads', 'ads_insights_region',
                     'campaigns', 'ads_insights_age_and_gender', 'ads_insights_platform_and_device',
-                    'ads_insights_dma', 'ads_insights', 'leads'
+                    'ads_insights_dma', 'ads_insights', 'leads', 'ads_insights_hourly_advertiser'
                 }
                 if stream not in failing_with_no_replication_keys:  # BUG_1
                     # verify replication key(s) match expectations
@@ -105,7 +105,7 @@ class DiscoveryTest(FacebookBaseTest):
                 failing_with_no_replication_method = {
                     'ads_insights_country', 'adsets', 'adcreative', 'ads', 'ads_insights_region',
                     'campaigns', 'ads_insights_age_and_gender', 'ads_insights_platform_and_device',
-                    'ads_insights_dma', 'ads_insights', 'leads'
+                    'ads_insights_dma', 'ads_insights', 'leads', 'ads_insights_hourly_advertiser'
                 }
                 if stream not in failing_with_no_replication_method:  # BUG_2
                     # verify the replication method matches our expectations
