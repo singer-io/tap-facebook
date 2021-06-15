@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.14.0
+  * Add an Ads Insight Stream, broken down by `hourly_stats_aggregated_by_advertiser_time_zone` [#151](https://github.com/singer-io/tap-facebook/pull/151)
+
 # 1.13.0
   * Bump API version from `v9` to `v10` [#146](https://github.com/singer-io/tap-facebook/pull/146)
   * Add feature for AdsInsights stream: The tap will shift the start date to 37 months ago in order to fetch data from this API
