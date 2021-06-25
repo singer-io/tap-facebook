@@ -48,9 +48,11 @@ def main():
     else:
         for account_id in account_ids:
             if account_id not in all_account_ids:
-                raise ValueError(
+                logger.warn(
                     f"invalid account id: {account_id} not in list of valid account ids: {all_account_ids.keys()}"
                 )
+                continue
+
             accnt_ids.append(all_account_ids[account_id])
 
     do_sync(accnt_ids, args.config, args.state)
