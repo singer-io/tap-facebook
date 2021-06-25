@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 import os
-import json
-import sys
 
 import singer
 
-from tap_facebook.utils import load_schema
 from tap_facebook.streams import AdsInsights
 
 from facebook_business.api import FacebookAdsApi
