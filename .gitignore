@@ -94,7 +94,11 @@ ENV/
 ._*
 .DS_Store
 
+# VisualStudioCode
+.vscode/
+
 # Custom stuff
 env.sh
 config.json
+*state.json
 .autoenv.zsh

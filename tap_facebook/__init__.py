@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 import os
-import json
-import sys
 
 import singer
 
-from tap_facebook.utils import load_schema
 from tap_facebook.streams import AdsInsights
 
 from facebook_business.api import FacebookAdsApi
@@ -48,9 +45,11 @@ def main():
     else:
         for account_id in account_ids:
             if account_id not in all_account_ids:
-                raise ValueError(
+                logger.warn(
                     f"invalid account id: {account_id} not in list of valid account ids: {all_account_ids.keys()}"
                 )
+                continue
+
             accnt_ids.append(all_account_ids[account_id])
 
     do_sync(accnt_ids, args.config, args.state)
