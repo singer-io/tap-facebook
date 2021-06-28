@@ -1,6 +1,9 @@
 # Changelog
 
 # 1.14.0
+## 1.15.0
+  * Add `country` to `ad_insights_country`'s composite primary key [#154](https://github.com/singer-io/tap-facebook/pull/154)
+
   * Add an Ads Insight Stream, broken down by `hourly_stats_aggregated_by_advertiser_time_zone` [#151](https://github.com/singer-io/tap-facebook/pull/151)
 
 # 1.13.0
