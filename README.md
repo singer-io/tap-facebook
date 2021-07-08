@@ -3,15 +3,18 @@ This is a [Singer](https://singer.io) tap that produces JSON-formatted data foll
 
 This tap:
 - Pulls raw data from the [Facebook Marketing API](https://developers.facebook.com/docs/marketing-apis)
-- Extracts the following resources from Facebook for a one Ad account:
+- Extracts the following resources from Facebook for one Ad account:
   - Ad Creatives
   - Ads
   - Ad Sets
   - Campaigns
+  - Leads
   - Ads Insights
     - Breakdown by age and gender
     - Breakdown by country
     - Breakdown by placement and device
+    - Breakdown by region
+    - Breakdown by the hour for audiences and advertisers
 - Outputs the schema for each resource
 - Incrementally pulls data based on the input state
 
