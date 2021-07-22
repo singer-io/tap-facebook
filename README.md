@@ -14,7 +14,7 @@ This tap:
     - Breakdown by country
     - Breakdown by placement and device
     - Breakdown by region
-    - Breakdown by the hour for audiences and advertisers
+    - Breakdown by the hour for advertisers
 - Outputs the schema for each resource
 - Incrementally pulls data based on the input state
 
