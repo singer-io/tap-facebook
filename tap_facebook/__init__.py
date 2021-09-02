@@ -34,10 +34,12 @@ def main():
             f"missing required config 'access_token' or environment 'FACEBOOK_ACCESS_TOKEN'"
         )
 
-    FacebookAdsApi.init(access_token=access_token)
+    # use
+    api = FacebookAdsApi.init(access_token=access_token)
 
     all_account_ids = {
-        accnt["account_id"]: accnt["id"] for accnt in User("me").get_ad_accounts()
+        accnt["account_id"]: accnt["id"]
+        for accnt in User("me", api=api).get_ad_accounts(fields=["account_id", "id"])
     }
     accnt_ids = []
     if not account_ids:
@@ -52,6 +54,7 @@ def main():
 
             accnt_ids.append(all_account_ids[account_id])
 
+    print(f"account ids: ", accnt_ids)
     do_sync(accnt_ids, args.config, args.state)
 
 
