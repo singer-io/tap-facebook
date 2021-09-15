@@ -7,6 +7,8 @@ workflows:
           context: circleci-user
       - run_pylint:
           context: circleci-user
+          requires:
+            - ensure_env
 
 executors:
   docker-executor:
