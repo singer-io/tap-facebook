@@ -67,7 +67,7 @@ jobs:
           name: 'Run Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-            nosetest tests/unittests
+            nosetests tests/unittests
   run_integration_tests:
     executor: docker-executor
     parallelism: 2
