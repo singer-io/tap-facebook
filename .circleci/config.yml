@@ -65,7 +65,9 @@ jobs:
           command: |
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
             circleci tests glob "tests/unittests/*.py" | circleci tests split > ./tests-to-run
-            nosetests $(cat tests-to-run)
+            if [ -s ./tests-to-run ]; then
+              nosetests $(cat tests-to-run)
+            fi
 
 
 orbs:
