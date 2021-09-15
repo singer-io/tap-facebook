@@ -76,7 +76,7 @@ jobs:
       - attach_workspace:
           at: /usr/local/share/virtualenvs
       - run:
-          name: 'Run Unit Tests'
+          name: 'Run Integration Tests'
           command: |
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
             source dev_env.sh
