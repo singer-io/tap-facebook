@@ -9,6 +9,10 @@ workflows:
           context: circleci-user
           requires:
             - ensure_env
+      - run_unit_tests:
+          context: circleci-user
+          requires:
+            - ensure_env
 
 executors:
   docker-executor:
@@ -43,8 +47,20 @@ jobs:
     steps:
       - attach_workspace:
           at: /usr/local/share/virtualenvs
-      - source-tap-venv
-      - run: pylint tap_facebook -d C,R,W
+      - run:
+          command: |
+            source /usr/local/share/virtualenvs/tap-facebook/bin/activate
+            pylint tap_facebook -d C,R,W
+  run_unit_tests:
+    executor: docker-executor
+    steps:
+      - attach_workspace:
+          at: /usr/local/share/virtualenvs
+      - run:
+          command: |
+            source /usr/local/share/virtualenvs/tap-facebook/bin/activate
+            nosetests tests/unittests/test_tap_facebook.py
+
 
 orbs:
   slack: circleci/slack@3.4.2
