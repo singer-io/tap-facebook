@@ -55,7 +55,6 @@ jobs:
             pylint tap_facebook -d C,R,W
   run_unit_tests:
     executor: docker-executor
-    parallelism: 4
     steps:
       - checkout
       - attach_workspace:
@@ -64,9 +63,33 @@ jobs:
           name: 'Run Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-            circleci tests glob "tests/unittests/*.py" | circleci tests split > ./tests-to-run
+            nosetest tests/unittests
+  run_integration_tests:
+    executor: docker-executor
+    parallelism: 2
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /usr/local/share/virtualenvs
+      - run:
+          name: 'Run Unit Tests'
+          command: |
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
+            source dev_env.sh
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
+
+            circleci tests glob "tests/*.py" | circleci tests split > ./tests-to-run
             if [ -s ./tests-to-run ]; then
-              nosetests $(cat tests-to-run)
+              for test_file in $(cat ./tests-to-run)
+              do
+                run-test --tap=tap-facebook \
+                         --target=target-stitch \
+                         --orchestrator=stitch-orchestrator \
+                         --email=harrison+sandboxtest@stitchdata.com \
+                         --password=$SANDBOX_PASSWORD \
+                         --client-id=50 \
+                         $test_file
+              done
             fi
 
 
