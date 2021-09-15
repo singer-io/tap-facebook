@@ -13,6 +13,10 @@ workflows:
           context: circleci-user
           requires:
             - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          requires:
+            - ensure_env
 
 executors:
   docker-executor:
