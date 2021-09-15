@@ -49,19 +49,23 @@ jobs:
       - attach_workspace:
           at: /usr/local/share/virtualenvs
       - run:
+          name: 'Run pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
             pylint tap_facebook -d C,R,W
   run_unit_tests:
     executor: docker-executor
+    parallelism: 4
     steps:
       - checkout
       - attach_workspace:
           at: /usr/local/share/virtualenvs
       - run:
+          name: 'Run Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-            nosetests tests/unittests/test_tap_facebook.py
+            circleci tests glob "tests/unittests/*.py" | circleci tests split > ./tests-to-run
+            nosetests $(cat tests-to-run)
 
 
 orbs:
