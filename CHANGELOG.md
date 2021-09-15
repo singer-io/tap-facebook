@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.15.1
+  * Bump tap dependency, `attrs`, from `16.3.0` to `17.3.0` [#161](https://github.com/singer-io/tap-facebook/pull/161)
+
 ## 1.15.0
   * Add `country` to `ad_insights_country`'s composite primary key [#154](https://github.com/singer-io/tap-facebook/pull/154)
 
