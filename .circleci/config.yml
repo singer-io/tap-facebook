@@ -84,8 +84,11 @@ jobs:
 
             circleci tests glob "tests/*.py" | circleci tests split > ./tests-to-run
             if [ -s ./tests-to-run ]; then
+              echo "Tests to run on this machine"
+              cat ./tests-to-run
               for test_file in $(cat ./tests-to-run)
               do
+                echo "Running $test_file"
                 run-test --tap=tap-facebook \
                          --target=target-stitch \
                          --orchestrator=stitch-orchestrator \
