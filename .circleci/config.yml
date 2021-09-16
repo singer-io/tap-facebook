@@ -1,22 +1,7 @@
 version: 2.1
 
-workflows:
-  commit:
-    jobs:
-      - ensure_env:
-          context: circleci-user
-      - run_pylint:
-          context: circleci-user
-          requires:
-            - ensure_env
-      - run_unit_tests:
-          context: circleci-user
-          requires:
-            - ensure_env
-      - run_integration_tests:
-          context: circleci-user
-          requires:
-            - ensure_env
+orbs:
+  slack: circleci/slack@3.4.2
 
 executors:
   docker-executor:
@@ -100,6 +85,20 @@ jobs:
       - slack/notify-on-failure:
           only_for_branches: master
 
-
-orbs:
-  slack: circleci/slack@3.4.2
+workflows:
+  commit:
+    jobs:
+      - ensure_env:
+          context: circleci-user
+      - run_pylint:
+          context: circleci-user
+          requires:
+            - ensure_env
+      - run_unit_tests:
+          context: circleci-user
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          requires:
+            - ensure_env
