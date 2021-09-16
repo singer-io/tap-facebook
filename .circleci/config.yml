@@ -53,8 +53,10 @@ jobs:
       - slack/notify-on-failure:
           only_for_branches: master
   run_integration_tests:
+    parameters:
+      test_name:
+        type: string
     executor: docker-executor
-    parallelism: 2
     steps:
       - checkout
       - attach_workspace:
@@ -66,16 +68,7 @@ jobs:
             source dev_env.sh
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
 
-            circleci tests glob "tests/*.py" | circleci tests split > ./tests-to-run
-            if [ -s ./tests-to-run ]; then
-              echo "Tests to run on this machine"
-              cat ./tests-to-run
-              for test_file in $(cat ./tests-to-run)
-              do
-                echo "Running $test_file"
-                run-test --tap=tap-facebook $test_file
-              done
-            fi
+            run-test --tap=tap-facebook << parameters.test_name >>
       - slack/notify-on-failure:
           only_for_branches: master
 
@@ -95,6 +88,32 @@ workflows:
             - ensure_env
       - run_integration_tests:
           context: circleci-user
+          name: "test_facebook_start_date.py"
+          test_name: "test_facebook_start_date.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_field_selection.py"
+          test_name: "test_facebook_field_selection.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_discovery.py"
+          test_name: "test_facebook_discovery.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_bookmarks.py"
+          test_name: "test_facebook_bookmarks.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_automatic_fields.py"
+          test_name: "test_facebook_automatic_fields.py"
           requires:
             - ensure_env
   build_daily:
