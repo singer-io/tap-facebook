@@ -73,13 +73,7 @@ jobs:
               for test_file in $(cat ./tests-to-run)
               do
                 echo "Running $test_file"
-                run-test --tap=tap-facebook \
-                         --target=target-stitch \
-                         --orchestrator=stitch-orchestrator \
-                         --email=harrison+sandboxtest@stitchdata.com \
-                         --password=$SANDBOX_PASSWORD \
-                         --client-id=50 \
-                         $test_file
+                run-test --tap=tap-facebook $test_file
               done
             fi
       - slack/notify-on-failure:
