@@ -35,6 +35,8 @@ jobs:
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
             pip install -U pip setuptools
             pip install .[dev]
+      - slack/notify-on-failure:
+          only_for_branches: master
       - persist_to_workspace:
           root: /usr/local/share/virtualenvs
           paths:
@@ -50,6 +52,8 @@ jobs:
           command: |
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
             pylint tap_facebook -d C,R,W
+      - slack/notify-on-failure:
+          only_for_branches: master
   run_unit_tests:
     executor: docker-executor
     steps:
@@ -61,6 +65,8 @@ jobs:
           command: |
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
             nosetests tests/unittests
+      - slack/notify-on-failure:
+          only_for_branches: master
   run_integration_tests:
     executor: docker-executor
     parallelism: 2
@@ -91,6 +97,8 @@ jobs:
                          $test_file
               done
             fi
+      - slack/notify-on-failure:
+          only_for_branches: master
 
 
 orbs:
