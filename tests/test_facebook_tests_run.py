@@ -3,7 +3,7 @@ import os
 potential_paths = [
     'tests/',
     '../tests/'
-    'tap-facebook-square/tests/',
+    'tap-facebook/tests/',
     '../tap-facebook/tests/',
 ]
 
