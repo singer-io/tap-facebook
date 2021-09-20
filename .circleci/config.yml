@@ -68,7 +68,7 @@ jobs:
             source dev_env.sh
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
 
-            run-test --tap=tap-facebook << parameters.test_name >>
+            run-test --tap=tap-facebook tests/<< parameters.test_name >>
       - slack/notify-on-failure:
           only_for_branches: master
 
