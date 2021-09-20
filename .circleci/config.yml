@@ -165,3 +165,9 @@ workflows:
           test_name: "test_facebook_automatic_fields.py"
           requires:
             - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_tests_run.py"
+          test_name: "test_facebook_tests_run.py"
+          requires:
+            - ensure_env
