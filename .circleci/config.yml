@@ -127,6 +127,7 @@ workflows:
           requires:
             - ensure_env
       - build:
+          context: circleci-user
           requires:
             - run_pylint
             - run_unit_tests
