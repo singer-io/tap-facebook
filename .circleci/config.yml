@@ -9,6 +9,10 @@ executors:
       - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
 
 jobs:
+  build:
+    executor: docker-executor
+    steps:
+      - run: echo 'CI done'
   ensure_env:
     executor: docker-executor
     steps:
@@ -122,6 +126,11 @@ workflows:
           test_name: "test_facebook_tests_run.py"
           requires:
             - ensure_env
+      - build:
+          requires:
+            - run_pylint
+            - run_unit_tests
+            - run_integration_tests
   build_daily:
     <<: *commit_jobs
     triggers:
