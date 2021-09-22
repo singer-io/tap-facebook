@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.16.0
+  * Bump tap dependency, `facebook_business`, from `10.0.0` to `12.0.0` [#164](https://github.com/singer-io/tap-facebook/pull/164)
+
 ## 1.15.1
   * Bump tap dependency, `attrs`, from `16.3.0` to `17.3.0` [#161](https://github.com/singer-io/tap-facebook/pull/161)
 
