@@ -8,9 +8,7 @@ jobs:
       - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
     steps:
       - run: exit 1
-      - slack/notify-on-failure:
-          event: fail
-          template: basic_fail_1
+      - slack/notify-on-failure
   success_build:
     docker:
       - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
