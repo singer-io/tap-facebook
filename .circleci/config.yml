@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  slack: circleci/slack@4.4.4
+  slack: circleci/slack@3.4.2
 
 jobs:
   fail_build:
@@ -8,7 +8,7 @@ jobs:
       - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
     steps:
       - run: exit 1
-      - slack/notify:
+      - slack/notify-on-failure:
           event: fail
           template: basic_fail_1
   success_build:
@@ -17,26 +17,7 @@ jobs:
     steps:
       - run: exit 0
       - slack/notify:
-          event: pass
-          template: basic_success_1
-  fail_build_channel:
-    docker:
-      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
-    steps:
-      - run: exit 1
-      - slack/notify:
-          event: fail
-          template: basic_fail_1
-          channel: "$STITCH_SOURCES_SLACK"
-  success_build_channel:
-    docker:
-      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
-    steps:
-      - run: exit 0
-      - slack/notify:
-          event: pass
-          channel: "$STITCH_SOURCES_SLACK"
-          template: basic_success_1
+          message: 'This is my custom message. Something succeeded'
 
 
 
@@ -47,14 +28,6 @@ workflows:
       - success_build:
           context: circleci-user
       - fail_build:
-          context: circleci-user
-          requires:
-            - success_build
-      - success_build_channel:
-          context: circleci-user
-          requires:
-            - success_build
-      - fail_build_channel:
           context: circleci-user
           requires:
             - success_build
