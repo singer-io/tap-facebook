@@ -100,6 +100,11 @@ jobs:
             pip install twine
             python setup.py sdist --dist-dir dist
             twine upload --username $PYPI_USERNAME --password $PYPI_PASSWORD ./dist/*
+      - slack/notify-on-failure:
+          only_for_branches: master
+      - slack/notify:
+          message: ':green_circle: A new version of the tap has been tagged and released'
+
 workflows:
   version: 2
   commit:
