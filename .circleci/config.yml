@@ -48,13 +48,13 @@ workflows:
           context: circleci-user
       - fail_build:
           context: circleci-user
-          require:
+          requires:
             - success_build
       - success_build_channel:
           context: circleci-user
-          require:
+          requires:
             - success_build
       - fail_build_channel:
           context: circleci-user
-          require:
+          requires:
             - success_build
