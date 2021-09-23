@@ -164,6 +164,9 @@ workflows:
           context: circleci-user
           requires:
             - build
+          filters:
+            branches:
+              only: master
   build_daily:
     jobs:
       - ensure_env:
