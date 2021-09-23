@@ -78,7 +78,7 @@ jobs:
 
 workflows:
   version: 2
-  commit: &commit_jobs
+  commit:
     jobs:
       - ensure_env:
           context: circleci-user
@@ -138,7 +138,6 @@ workflows:
             - test_facebook_automatic_fields.py
             - test_facebook_tests_run.py
   build_daily:
-    <<: *commit_jobs
     triggers:
       - schedule:
           cron: "0 6 * * *"
