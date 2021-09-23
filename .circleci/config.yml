@@ -1,62 +1,60 @@
 version: 2.1
 orbs:
-  slack: circleci/slack@3.4.2
+  slack: circleci/slack@4.4.4
 
 jobs:
-  build:
+  fail_build:
     docker:
-      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:tap-tester-v4
+      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
     steps:
-      - checkout
-      - run:
-          name: 'Setup virtual env'
-          command: |
-            python3 -mvenv /usr/local/share/virtualenvs/tap-facebook
-            source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-            pip install -U pip setuptools
-            pip install .[dev]
-      - run:
-          name: 'pylint'
-          command: |
-            source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-            pylint tap_facebook -d C,R,W
-      - run:
-          when: always
-          name: 'Unit Tests'
-          command: |
-            source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-            nosetests tests/unittests
-      - add_ssh_keys
-      - run:
-          name: 'Integration Tests'
-          command: |
-            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
-            source dev_env.sh
-            source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            run-test --tap=tap-facebook \
-                     --target=target-stitch \
-                     --orchestrator=stitch-orchestrator \
-                     --email=harrison+sandboxtest@stitchdata.com \
-                     --password=$SANDBOX_PASSWORD \
-                     --client-id=50 \
-                     tests
-      - slack/notify-on-failure:
-          only_for_branches: master
+      - run: exit 1
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+  success_build:
+    docker:
+      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
+    steps:
+      - run: exit 0
+      - slack/notify:
+          event: pass
+          template: basic_success_1
+  fail_build_channel:
+    docker:
+      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
+    steps:
+      - run: exit 1
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+          channel: "$STITCH_SOURCES_SLACK"
+  success_build_channel:
+    docker:
+      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
+    steps:
+      - run: exit 0
+      - slack/notify:
+          event: pass
+          channel: "$STITCH_SOURCES_SLACK"
+          template: basic_success_1
+
+
 
 workflows:
   version: 2
   commit:
     jobs:
-      - build:
+      - success_build:
           context: circleci-user
-  build_daily:
-    triggers:
-      - schedule:
-          cron: "0 6 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - build:
+      - fail_build:
           context: circleci-user
+          require:
+            - success_build
+      - success_build_channel:
+          context: circleci-user
+          require:
+            - success_build
+      - fail_build_channel:
+          context: circleci-user
+          require:
+            - success_build
