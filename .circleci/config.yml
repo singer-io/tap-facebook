@@ -1,55 +1,237 @@
 version: 2.1
+
 orbs:
   slack: circleci/slack@3.4.2
 
+executors:
+  docker-executor:
+    docker:
+      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
+
 jobs:
   build:
-    docker:
-      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:tap-tester-v4
+    executor: docker-executor
+    steps:
+      - run: echo 'CI done'
+  ensure_env:
+    executor: docker-executor
     steps:
       - checkout
       - run:
-          name: 'Setup virtual env'
+          name: 'Setup Virtual Env'
           command: |
-            python3 -mvenv /usr/local/share/virtualenvs/tap-facebook
+            python3 -m venv /usr/local/share/virtualenvs/tap-facebook
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
             pip install -U pip setuptools
             pip install .[dev]
+      - slack/notify-on-failure:
+          only_for_branches: master
+      - persist_to_workspace:
+          root: /usr/local/share/virtualenvs
+          paths:
+            - tap-facebook
+  run_pylint:
+    executor: docker-executor
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /usr/local/share/virtualenvs
       - run:
-          name: 'pylint'
+          name: 'Run pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
             pylint tap_facebook -d C,R,W
+      - slack/notify-on-failure:
+          only_for_branches: master
+  run_unit_tests:
+    executor: docker-executor
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /usr/local/share/virtualenvs
       - run:
-          when: always
-          name: 'Unit Tests'
+          name: 'Run Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
             nosetests tests/unittests
-      - add_ssh_keys
+      - slack/notify-on-failure:
+          only_for_branches: master
+  run_integration_tests:
+    parameters:
+      test_name:
+        type: string
+    executor: docker-executor
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /usr/local/share/virtualenvs
       - run:
-          name: 'Integration Tests'
+          name: 'Run Integration Tests'
           command: |
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
             source dev_env.sh
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            run-test --tap=tap-facebook \
-                     --target=target-stitch \
-                     --orchestrator=stitch-orchestrator \
-                     --email=harrison+sandboxtest@stitchdata.com \
-                     --password=$SANDBOX_PASSWORD \
-                     --client-id=50 \
-                     tests
+
+            run-test --tap=tap-facebook tests/<< parameters.test_name >>
       - slack/notify-on-failure:
           only_for_branches: master
+  deploy:
+    executor: docker-executor
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - '18:3e:7f:b6:39:58:d3:0f:70:54:32:d6:3e:d7:13:4e'
+      - attach_workspace:
+          at: /usr/local/share/virtualenvs
+      - run: source /usr/local/share/virtualenvs/tap-shiphero/bin/activate
+      - run: source /usr/local/share/virtualenvs/tap-facebook/bin/activate
+      - run:
+          name: 'Create git tag'
+          command: |
+            version=$(python setup.py --version)
+            git config user.email "stitchintegrationdev@talend.com"
+            git config user.name "${CIRCLE_USERNAME}"
+            git tag -a v"${version}" -m "version ${version}"
+            git push --tags
+      - run:
+          name: 'Build and Upload'
+          command: |
+            pip install twine
+            python setup.py sdist --dist-dir dist
+            twine upload --username $PYPI_USERNAME --password $PYPI_PASSWORD ./dist/*
+      - slack/notify-on-failure:
+          only_for_branches: master
+      - slack/notify:
+          message: ':green_circle: A new version of the tap has been tagged and released'
 
 workflows:
   version: 2
   commit:
     jobs:
+      - ensure_env:
+          context: circleci-user
+      - run_pylint:
+          context: circleci-user
+          requires:
+            - ensure_env
+      - run_unit_tests:
+          context: circleci-user
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_start_date.py"
+          test_name: "test_facebook_start_date.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_field_selection.py"
+          test_name: "test_facebook_field_selection.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_discovery.py"
+          test_name: "test_facebook_discovery.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_bookmarks.py"
+          test_name: "test_facebook_bookmarks.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_automatic_fields.py"
+          test_name: "test_facebook_automatic_fields.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_tests_run.py"
+          test_name: "test_facebook_tests_run.py"
+          requires:
+            - ensure_env
       - build:
           context: circleci-user
+          requires:
+            - run_pylint
+            - run_unit_tests
+            - test_facebook_start_date.py
+            - test_facebook_field_selection.py
+            - test_facebook_discovery.py
+            - test_facebook_bookmarks.py
+            - test_facebook_automatic_fields.py
+            - test_facebook_tests_run.py
+      - deploy:
+          context: circleci-user
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
   build_daily:
+    jobs:
+      - ensure_env:
+          context: circleci-user
+      - run_pylint:
+          context: circleci-user
+          requires:
+            - ensure_env
+      - run_unit_tests:
+          context: circleci-user
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_start_date.py"
+          test_name: "test_facebook_start_date.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_field_selection.py"
+          test_name: "test_facebook_field_selection.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_discovery.py"
+          test_name: "test_facebook_discovery.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_bookmarks.py"
+          test_name: "test_facebook_bookmarks.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_automatic_fields.py"
+          test_name: "test_facebook_automatic_fields.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_tests_run.py"
+          test_name: "test_facebook_tests_run.py"
+          requires:
+            - ensure_env
+      - build:
+          context: circleci-user
+          requires:
+            - run_pylint
+            - run_unit_tests
+            - test_facebook_start_date.py
+            - test_facebook_field_selection.py
+            - test_facebook_discovery.py
+            - test_facebook_bookmarks.py
+            - test_facebook_automatic_fields.py
+            - test_facebook_tests_run.py
     triggers:
       - schedule:
           cron: "0 6 * * *"
@@ -57,6 +239,3 @@ workflows:
             branches:
               only:
                 - master
-    jobs:
-      - build:
-          context: circleci-user
