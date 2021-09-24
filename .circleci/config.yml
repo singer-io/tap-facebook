@@ -84,7 +84,6 @@ jobs:
             - '18:3e:7f:b6:39:58:d3:0f:70:54:32:d6:3e:d7:13:4e'
       - attach_workspace:
           at: /usr/local/share/virtualenvs
-      - run: source /usr/local/share/virtualenvs/tap-shiphero/bin/activate
       - run: source /usr/local/share/virtualenvs/tap-facebook/bin/activate
       - run:
           name: 'Create git tag'
