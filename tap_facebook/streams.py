@@ -112,7 +112,6 @@ class AdsInsights:
                         "fields": fields,
                         "time_increment": 1,
                         "time_range": timerange,
-                        "breakdowns": ["country"],
                     }
                     insights_resp = AdSet(account_id).get_insights(
                         fields=fields, params=params
