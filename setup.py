@@ -10,12 +10,12 @@ setup(name='tap-facebook',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       py_modules=['tap_facebook'],
       install_requires=[
-          'attrs==21.2.0',
-          'backoff==1.11.1',
+          'attrs~=20.3.0',
+          'backoff~=1.8.0',
           'pendulum==2.1.2',
           'facebook_business==12.0.0',
-          'requests==2.26.0',
-          'singer-python==5.12.2',
+          'requests~=2.26.0',
+          'singer-python~=5.12.1',
       ],
       extras_require={
           'dev': [
