@@ -268,6 +268,7 @@ class AdCreative(Stream):
         api_batch.execute()
 
     key_properties = ['id']
+    replication_method = 'FULL_TABLE'
 
     @retry_pattern(backoff.expo, (FacebookRequestError, TypeError), max_tries=5, factor=5)
     def get_adcreatives(self):
@@ -284,6 +285,7 @@ class Ads(IncrementalStream):
     '''
 
     key_properties = ['id', 'updated_time']
+    replication_method = 'INCREMENTAL'
 
     @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
     def _call_get_ads(self, params):
@@ -328,6 +330,7 @@ class AdSets(IncrementalStream):
     '''
 
     key_properties = ['id', 'updated_time']
+    replication_method = 'INCREMENTAL'
 
     @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
     def _call_get_ad_sets(self, params):
@@ -369,6 +372,7 @@ class AdSets(IncrementalStream):
 class Campaigns(IncrementalStream):
 
     key_properties = ['id']
+    replication_method = 'INCREMENTAL'
 
     @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
     def _call_get_campaigns(self, params):
@@ -425,6 +429,7 @@ class Leads(Stream):
     replication_key = "created_time"
 
     key_properties = ['id']
+    replication_method = 'INCREMENTAL'
 
     def compare_lead_created_times(self, leadA, leadB):
         if leadA is None:
@@ -554,6 +559,7 @@ def advance_bookmark(stream, bookmark_key, date):
 @attr.s
 class AdsInsights(Stream):
     base_properties = ['campaign_id', 'adset_id', 'ad_id', 'date_start']
+    replication_method = 'INCREMENTAL'
 
     state = attr.ib()
     options = attr.ib()
@@ -798,6 +804,7 @@ def discover_schemas():
 
         mdata = metadata.to_map(metadata.get_standard_metadata(schema,
                                                key_properties=stream.key_properties,
+                                               replication_method=stream.replication_method,
                                                valid_replication_keys=[bookmark_key] if bookmark_key else None))
 
         if bookmark_key == UPDATED_TIME_KEY or bookmark_key == CREATED_TIME_KEY :
