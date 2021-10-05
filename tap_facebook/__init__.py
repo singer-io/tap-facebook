@@ -66,17 +66,17 @@ CREATED_TIME_KEY = 'created_time'
 START_DATE_KEY = 'date_start'
 
 BOOKMARK_KEYS = {
-    'ads': UPDATED_TIME_KEY,
-    'adsets': UPDATED_TIME_KEY,
-    'campaigns': UPDATED_TIME_KEY,
-    'ads_insights': START_DATE_KEY,
-    'ads_insights_age_and_gender': START_DATE_KEY,
-    'ads_insights_country': START_DATE_KEY,
-    'ads_insights_platform_and_device': START_DATE_KEY,
-    'ads_insights_region': START_DATE_KEY,
-    'ads_insights_dma': START_DATE_KEY,
-    'ads_insights_hourly_advertiser': START_DATE_KEY,
-    'leads': CREATED_TIME_KEY,
+    'ads': [UPDATED_TIME_KEY],
+    'adsets': [UPDATED_TIME_KEY],
+    'campaigns': [UPDATED_TIME_KEY],
+    'ads_insights': [START_DATE_KEY],
+    'ads_insights_age_and_gender': [START_DATE_KEY],
+    'ads_insights_country': [START_DATE_KEY],
+    'ads_insights_platform_and_device': [START_DATE_KEY],
+    'ads_insights_region': [START_DATE_KEY],
+    'ads_insights_dma': [START_DATE_KEY],
+    'ads_insights_hourly_advertiser': [START_DATE_KEY],
+    'leads': [CREATED_TIME_KEY],
 }
 
 LOGGER = singer.get_logger()
@@ -794,10 +794,12 @@ def discover_schemas():
         LOGGER.info('Loading schema for %s', stream.name)
         schema = singer.resolve_schema_references(load_schema(stream), refs)
 
-        mdata = metadata.to_map(metadata.get_standard_metadata(schema,
-                                               key_properties=stream.key_properties))
-
         bookmark_key = BOOKMARK_KEYS.get(stream.name)
+
+        mdata = metadata.to_map(metadata.get_standard_metadata(schema,
+                                               key_properties=stream.key_properties,
+                                               valid_replication_keys=bookmark_key if bookmark_key else None))
+
         if bookmark_key == UPDATED_TIME_KEY or bookmark_key == CREATED_TIME_KEY :
             mdata = metadata.write(mdata, ('properties', bookmark_key), 'inclusion', 'automatic')
 

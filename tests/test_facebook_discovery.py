@@ -84,17 +84,10 @@ class DiscoveryTest(FacebookBaseTest):
                                 msg="There is NOT only one top level breadcrumb for {}".format(stream) + \
                                 "\nstream_properties | {}".format(stream_properties))
 
-                # BUG_1 | https://stitchdata.atlassian.net/browse/SRCE-4855
-                failing_with_no_replication_keys = {
-                    'ads_insights_country', 'adsets', 'adcreative', 'ads', 'ads_insights_region',
-                    'campaigns', 'ads_insights_age_and_gender', 'ads_insights_platform_and_device',
-                    'ads_insights_dma', 'ads_insights', 'leads', 'ads_insights_hourly_advertiser'
-                }
-                if stream not in failing_with_no_replication_keys:  # BUG_1
-                    # verify replication key(s) match expectations
-                    self.assertSetEqual(
-                        expected_replication_keys, actual_replication_keys
-                    )
+                # verify replication key(s) match expectations
+                self.assertSetEqual(
+                    expected_replication_keys, actual_replication_keys
+                )
 
                 # verify primary key(s) match expectations
                 self.assertSetEqual(
