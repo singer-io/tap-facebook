@@ -99,10 +99,10 @@ class FacebookArchivedData(FacebookBaseTest):
                                        if message.get('action') == 'upsert']
 
                 # Verifying that no ARCHIVED records are returned for sync 1
-                self.assertEqual(True, 'ARCHIVED' not in records_status_sync1)
+                self.assertTrue('ARCHIVED' not in records_status_sync1)
 
                 # Verifying that ARCHIVED records are returned for sync 2
-                self.assertEqual(True, 'ARCHIVED' in records_status_sync2)
+                self.assertTrue('ARCHIVED' in records_status_sync2)
 
                 # Verify the number of records replicated in sync 2 is greater than the number
                 # of records replicated in sync 1
