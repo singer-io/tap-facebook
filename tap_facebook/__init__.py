@@ -153,6 +153,8 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
             return True
         elif isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
             return True
+        elif isinstance(exception, AttributeError):
+            return True
         return False
 
     return backoff.on_exception(
@@ -241,6 +243,7 @@ class AdCreative(Stream):
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
     '''
 
+    @retry_pattern(backoff.expo, AttributeError, max_tries=5, factor=5)
     def sync_batches(self, stream_objects):
         refs = load_shared_schema_refs()
         schema = singer.resolve_schema_references(self.catalog_entry.schema.to_dict(), refs)
@@ -436,6 +439,7 @@ class Leads(Stream):
         else:
             return leadA
 
+    @retry_pattern(backoff.expo, AttributeError, max_tries=5, factor=5)
     def sync_batches(self, stream_objects):
         refs = load_shared_schema_refs()
         schema = singer.resolve_schema_references(self.catalog_entry.schema.to_dict(), refs)
