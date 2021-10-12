@@ -1,13 +1,10 @@
-import json
 import unittest
 from unittest import mock
-from unittest.mock import Mock, patch
-from tap_facebook import FacebookRequestError
-from facebook_business import FacebookAdsApi
+from unittest.mock import Mock
 from tap_facebook import AdCreative, Leads
 from singer import resolve_schema_references
 from singer.schema import Schema
-from singer.catalog import Catalog, CatalogEntry
+from singer.catalog import CatalogEntry
 
 # Mock object for the batch object
 class MockBatch:
