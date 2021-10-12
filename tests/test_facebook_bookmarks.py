@@ -6,7 +6,8 @@ import pytz
 from tap_tester import runner, menagerie, connections
 
 from base import FacebookBaseTest
-
+import singer
+LOGGER = singer.get_logger()
 
 class FacebookBookmarks(FacebookBaseTest):
     @staticmethod
@@ -141,6 +142,8 @@ class FacebookBookmarks(FacebookBaseTest):
         second_sync_record_count = self.run_and_verify_sync(conn_id)
         second_sync_records = runner.get_records_from_target_output()
         second_sync_bookmarks = menagerie.get_state(conn_id)
+        LOGGER.info("*******************{}".format(first_sync_bookmarks))
+        LOGGER.info("*******************{}".format(second_sync_bookmarks))
 
         ##########################################################################
         ### Test By Stream
