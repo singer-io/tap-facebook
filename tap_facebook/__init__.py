@@ -243,7 +243,7 @@ class AdCreative(Stream):
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
     '''
 
-    @retry_pattern(backoff.expo, AttributeError, max_tries=5, factor=5)
+    @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
     def sync_batches(self, stream_objects):
         refs = load_shared_schema_refs()
         schema = singer.resolve_schema_references(self.catalog_entry.schema.to_dict(), refs)
@@ -439,7 +439,7 @@ class Leads(Stream):
         else:
             return leadA
 
-    @retry_pattern(backoff.expo, AttributeError, max_tries=5, factor=5)
+    @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
     def sync_batches(self, stream_objects):
         refs = load_shared_schema_refs()
         schema = singer.resolve_schema_references(self.catalog_entry.schema.to_dict(), refs)
