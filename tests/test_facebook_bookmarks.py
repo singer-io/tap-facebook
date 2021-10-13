@@ -196,11 +196,6 @@ class FacebookBookmarks(FacebookBaseTest):
 
                         # Verify the second sync records respect the previous (simulated) bookmark value
                         replication_key_value = record.get(replication_key)
-                        if stream in {'ads_insights_age_and_gender', 'ads_insights_hourly_advertiser'}: # BUG | https://stitchdata.atlassian.net/browse/SRCE-4873
-                            replication_key_value = datetime.datetime.strftime(
-                                dateutil.parser.parse(replication_key_value),
-                                self.BOOKMARK_COMPARISON_FORMAT
-                            )
                         self.assertGreaterEqual(replication_key_value, simulated_bookmark_minus_lookback,
                                                 msg="Second sync records do not repect the previous bookmark.")
 
