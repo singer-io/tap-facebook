@@ -65,7 +65,6 @@ class TestRequestTimeoutBackoff(unittest.TestCase):
         mocked_account = Mock()
         mocked_account.get_ads = Mock()
         mocked_account.get_ads.side_effect = [[mocked_ad]]
-        # mocked_account.get_ads.side_effect = [[MockedEntity()]]
 
         # Iterate ads object which calls prepare_record() inside and verify Timeout is raised
         ad_object = Ads('', mocked_account, '', '', '')
