@@ -475,12 +475,12 @@ class Leads(Stream):
         api_batch.execute()
         return str(pendulum.parse(latest_lead[self.replication_key]))
 
-    @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+    @retry_pattern(backoff.expo, (FacebookRequestError, Timeout), max_tries=5, factor=5)
     def get_ads(self):
         params = {'limit': RESULT_RETURN_LIMIT}
         yield from self.account.get_ads(params=params)
 
-    @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+    @retry_pattern(backoff.expo, (FacebookRequestError, Timeout), max_tries=5, factor=5)
     def get_leads(self, ads, start_time, previous_start_time):
         start_time = int(start_time.timestamp()) # Get unix timestamp
         params = {'limit': RESULT_RETURN_LIMIT,
@@ -842,8 +842,10 @@ def main_impl():
         global RESULT_RETURN_LIMIT
         RESULT_RETURN_LIMIT = CONFIG.get('result_return_limit', RESULT_RETURN_LIMIT)
 
+        request_timeout = CONFIG.get('request_timeout', REQUEST_TIMEOUT)
+
         global API
-        API = FacebookAdsApi.init(access_token=access_token, timeout=REQUEST_TIMEOUT)
+        API = FacebookAdsApi.init(access_token=access_token, timeout=request_timeout)
         user = fb_user.User(fbid='me')
 
         accounts = user.get_ad_accounts()
