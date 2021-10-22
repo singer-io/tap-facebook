@@ -845,7 +845,7 @@ def main_impl():
         request_timeout = CONFIG.get('request_timeout', REQUEST_TIMEOUT)
 
         global API
-        API = FacebookAdsApi.init(access_token=access_token, timeout=request_timeout)
+        API = FacebookAdsApi.init(access_token=access_token, timeout=float(request_timeout))
         user = fb_user.User(fbid='me')
 
         accounts = user.get_ad_accounts()
