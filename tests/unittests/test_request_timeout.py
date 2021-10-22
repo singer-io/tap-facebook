@@ -256,7 +256,7 @@ class TestRequestTimeoutValue(unittest.TestCase):
             unit tests to ensure that request timeout is set based on config(float value)
         """
         tap_facebook.CONFIG = {}
-        # request_timeout provided in config with 100(float)
+        # request_timeout provided in config with 100.5(float)
         config = {'account_id': 'test', 'access_token': 'test', 'request_timeout': 100.5}
         mocked_args.return_value = Args(config)
 
