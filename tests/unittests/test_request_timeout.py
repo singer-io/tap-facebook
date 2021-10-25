@@ -212,7 +212,7 @@ class TestRequestTimeoutValue(unittest.TestCase):
 
     def test_default_value_request_timeout(self, mocked_user, mocked_facebook_api, mocked_args):
         """ 
-            unit tests to ensure that request timeout is set based on config or default valie
+            unit tests to ensure that request timeout is set based on config or default value
         """
         tap_facebook.CONFIG = {}
         config = {'account_id': 'test', 'access_token': 'test'} # No request_timeout in config
@@ -292,3 +292,24 @@ class TestRequestTimeoutValue(unittest.TestCase):
 
         # verify that FacebookAdsApi.init() called with timeout provided in config
         mocked_facebook_api.assert_called_with(access_token='test', timeout=100)
+
+    def test_config_provided_empty_request_timeout(self, mocked_user, mocked_facebook_api, mocked_args):
+        """
+            unit tests to ensure that request timeout is set based on default value as config file has empty string
+        """
+        tap_facebook.CONFIG = {}
+        # request_timeout provided in config with empty string
+        config = {'account_id': 'test', 'access_token': 'test', 'request_timeout': ''}
+        mocked_args.return_value = Args(config)
+
+        # Mock fb_user and get_add_accounts
+        mocked_fb_user = Mock()
+        mocked_fb_user.get_ad_accounts = Mock()
+        mocked_fb_user.get_ad_accounts.return_value = [{'account_id': 'test'}]
+        mocked_user.return_value = mocked_fb_user
+
+        # Call main_impl function which initialize FacebookAdsApi with timeout
+        tap_facebook.main_impl()
+
+        # verify that FacebookAdsApi.init() called with default timeout
+        mocked_facebook_api.assert_called_with(access_token='test', timeout=300)

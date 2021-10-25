@@ -842,7 +842,7 @@ def main_impl():
         global RESULT_RETURN_LIMIT
         RESULT_RETURN_LIMIT = CONFIG.get('result_return_limit', RESULT_RETURN_LIMIT)
 
-        request_timeout = CONFIG.get('request_timeout', REQUEST_TIMEOUT)
+        request_timeout = CONFIG.get('request_timeout') or REQUEST_TIMEOUT
 
         global API
         API = FacebookAdsApi.init(access_token=access_token, timeout=float(request_timeout))
