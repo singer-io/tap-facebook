@@ -624,9 +624,18 @@ class AdsInsights(Stream):
         status = None
         time_start = time.time()
         sleep_time = 10
+        count = 0
         while status != "Job Completed":
             duration = time.time() - time_start
-            job = job.api_get()
+            try:
+                job = job.api_get()
+            except FacebookRequesterror as e:
+                count += 1
+                if count>=5:
+                    raise e
+                else:
+                    time.sleep(1)
+                    continue
             status = job['async_status']
             percent_complete = job['async_percent_completion']
 
