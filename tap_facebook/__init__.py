@@ -148,7 +148,12 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
         if isinstance(exception, FacebookBadObjectError):
             return True
         elif isinstance(exception, FacebookRequestError):
-            return exception.api_transient_error() or exception.api_error_subcode() == 99 or exception.http_status() == 500
+            return (exception.api_transient_error()
+                    or exception.api_error_subcode() == 99
+                    or exception.http_status() == 500
+                    # This subcode corresponds to a race condition between AdInsights Job creation and polling
+                    or exception.api_error_subcode() == 33
+                    )
         elif isinstance(exception, InsightsJobTimeout):
             return True
         elif isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
@@ -634,6 +639,7 @@ class AdsInsights(Stream):
                 if count>=5:
                     raise e
                 else:
+                    LOGGER.info('Insights Job Not Prepared; Sleeping for 1 second.')
                     time.sleep(1)
                     continue
             status = job['async_status']
