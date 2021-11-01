@@ -629,7 +629,7 @@ class AdsInsights(Stream):
             duration = time.time() - time_start
             try:
                 job = job.api_get()
-            except FacebookRequesterror as e:
+            except FacebookRequestError as e:
                 count += 1
                 if count>=5:
                     raise e
