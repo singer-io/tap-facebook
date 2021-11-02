@@ -635,7 +635,6 @@ class AdsInsights(Stream):
         status = None
         time_start = time.time()
         sleep_time = 10
-        count = 0
         while status != "Job Completed":
             duration = time.time() - time_start
             job = AdsInsights.__api_get_with_retry(job)
