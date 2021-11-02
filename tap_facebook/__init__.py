@@ -151,7 +151,7 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
             return (exception.api_transient_error()
                     or exception.api_error_subcode() == 99
                     or exception.http_status() == 500
-                    # This subcode corresponds to a race condition between AdInsights Job creation and polling
+                    # This subcode corresponds to a race condition between AdsInsights job creation and polling
                     or exception.api_error_subcode() == 33
                     )
         elif isinstance(exception, InsightsJobTimeout):
@@ -168,6 +168,11 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
         giveup=lambda exc: not should_retry_api_error(exc),
         **wait_gen_kwargs
     )
+
+@retry_pattern(backoff.constant, FacebookRequestError, max_tries=5, interval=1)
+def api_get_with_retry(job):
+    job = job.api_get()
+    return job
 
 @attr.s
 class Stream(object):
@@ -632,16 +637,7 @@ class AdsInsights(Stream):
         count = 0
         while status != "Job Completed":
             duration = time.time() - time_start
-            try:
-                job = job.api_get()
-            except FacebookRequestError as e:
-                count += 1
-                if count>=5:
-                    raise e
-                else:
-                    LOGGER.info('Insights Job Not Prepared; Sleeping for 1 second.')
-                    time.sleep(1)
-                    continue
+            job = api_get_with_retry(job)
             status = job['async_status']
             percent_complete = job['async_percent_completion']
 

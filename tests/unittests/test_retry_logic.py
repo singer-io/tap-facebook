@@ -209,12 +209,13 @@ class TestInsightJobs(unittest.TestCase):
         mocked_account.get_insights = Mock()
         mocked_account.get_insights.return_value.api_get = mocked_api_get
 
+
         # Initialize the object and call `sync()`
         ad_insights_object = AdsInsights('', mocked_account, '', '', {}, {})
         with self.assertRaises(FacebookRequestError):
             ad_insights_object.run_job({})
         # 5 is the max tries specified in the tap
-        self.assertEquals(25, mocked_account.get_insights.return_value.api_get.call_count) # mocked_baccount.get_insights.api_get.call_count
+        self.assertEquals(25, mocked_account.get_insights.return_value.api_get.call_count)
         self.assertEquals(5, mocked_account.get_insights.call_count )
 
 
