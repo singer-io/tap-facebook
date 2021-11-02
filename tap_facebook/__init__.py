@@ -169,12 +169,6 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
         **wait_gen_kwargs
     )
 
-@staticmethod
-@retry_pattern(backoff.constant, FacebookRequestError, max_tries=5, interval=1)
-def __api_get_with_retry(job):
-    job = job.api_get()
-    return job
-
 @attr.s
 class Stream(object):
     name = attr.ib()
@@ -626,6 +620,12 @@ class AdsInsights(Stream):
             }
             buffered_start_date = buffered_start_date.add(days=1)
 
+    @staticmethod
+    @retry_pattern(backoff.constant, FacebookRequestError, max_tries=5, interval=1)
+    def __api_get_with_retry(job):
+        job = job.api_get()
+        return job
+
     @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout, FacebookBadObjectError, TypeError), max_tries=5, factor=5)
     def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
@@ -638,7 +638,7 @@ class AdsInsights(Stream):
         count = 0
         while status != "Job Completed":
             duration = time.time() - time_start
-            job = __api_get_with_retry(job)
+            job = AdsInsights.__api_get_with_retry(job)
             status = job['async_status']
             percent_complete = job['async_percent_completion']
 
