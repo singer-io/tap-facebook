@@ -169,8 +169,9 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
         **wait_gen_kwargs
     )
 
+@staticmethod
 @retry_pattern(backoff.constant, FacebookRequestError, max_tries=5, interval=1)
-def api_get_with_retry(job):
+def __api_get_with_retry(job):
     job = job.api_get()
     return job
 
@@ -637,7 +638,7 @@ class AdsInsights(Stream):
         count = 0
         while status != "Job Completed":
             duration = time.time() - time_start
-            job = api_get_with_retry(job)
+            job = __api_get_with_retry(job)
             status = job['async_status']
             percent_complete = job['async_percent_completion']
 
