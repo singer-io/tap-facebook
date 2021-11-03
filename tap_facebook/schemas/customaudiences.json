@@ -1,0 +1,50 @@
+{
+  "type": [
+    "null",
+    "object"
+  ],
+  "properties": {
+    "id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "account_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "approximate_count": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "approximate_count_lower_bound": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "approximate_count_upper_bound": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "subtype": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "time_updated": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    }
+  }
+}

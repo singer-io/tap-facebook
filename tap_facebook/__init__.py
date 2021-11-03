@@ -65,6 +65,8 @@ STREAMS = [
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
 UPDATED_TIME_KEY = 'updated_time'
 CREATED_TIME_KEY = 'created_time'
+TIME_CREATED_KEY = 'time_created'
+TIME_UPDATED_KEY = 'time_updated'
 START_DATE_KEY = 'date_start'
 
 BOOKMARK_KEYS = {
@@ -79,7 +81,7 @@ BOOKMARK_KEYS = {
     'ads_insights_dma': START_DATE_KEY,
     'ads_insights_hourly_advertiser': START_DATE_KEY,
     'leads': CREATED_TIME_KEY,
-    'customaudiences': CREATED_TIME_KEY,
+    'customaudiences': START_DATE_KEY,
 }
 
 LOGGER = singer.get_logger()
@@ -203,15 +205,19 @@ class Stream(object):
 class IncrementalStream(Stream):
 
     state = attr.ib()
+    time_key = UPDATED_TIME_KEY
 
     def __attrs_post_init__(self):
-        self.current_bookmark = get_start(self, UPDATED_TIME_KEY)
+        self.current_bookmark = get_start(self, self.time_key)
 
     def _iterate(self, generator, record_preparation):
         max_bookmark = None
         for recordset in generator:
             for record in recordset:
-                updated_at = pendulum.parse(record[UPDATED_TIME_KEY])
+                if isinstance(record[self.time_key], str):
+                    updated_at = pendulum.parse(record[self.time_key])
+                else:
+                    updated_at = pendulum.fromtimestamp(record[self.time_key])
 
                 if self.current_bookmark and self.current_bookmark >= updated_at:
                     continue
@@ -222,7 +228,7 @@ class IncrementalStream(Stream):
                 yield {'record': record}
 
             if max_bookmark:
-                yield {'state': advance_bookmark(self, UPDATED_TIME_KEY, str(max_bookmark))}
+                yield {'state': advance_bookmark(self, self.time_key, str(max_bookmark))}
 
 
 def batch_record_success(response, stream=None, transformer=None, schema=None):
@@ -375,7 +381,8 @@ class CustomAudiences(IncrementalStream):
     doc: https://developers.facebook.com/docs/marketing-api/reference/custom-audience/
     '''
 
-    key_properties = ['id', 'updated_time']
+    key_properties = ['id', 'time_updated']
+    time_key = TIME_UPDATED_KEY
 
     @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
     def _call_get_custom_audiences(self, params):
@@ -389,14 +396,14 @@ class CustomAudiences(IncrementalStream):
         def do_request():
             params = {'limit': RESULT_RETURN_LIMIT}
             if self.current_bookmark:
-                params.update({'filtering': [{'field': 'customeaudience.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
+                params.update({'filtering': [{'field': 'customaudience.' + TIME_UPDATED_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
             yield self._call_get_custom_audiences(params)
 
         def do_request_multiple():
             params = {'limit': RESULT_RETURN_LIMIT}
             bookmark_params = []
             if self.current_bookmark:
-                bookmark_params.append({'field': 'customaudience.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+                bookmark_params.append({'field': 'customaudience.' + TIME_UPDATED_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
             for del_info_filt in iter_delivery_info_filter('customaudience'):
                 params.update({'filtering': [del_info_filt] + bookmark_params})
                 filt_adsets = self._call_get_custom_audiences(params)

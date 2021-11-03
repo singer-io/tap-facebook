@@ -74,6 +74,14 @@ You can provide JSON file that contains a date for the streams to force the appl
 
 `tap-facebook -c config.json -p properties.json -s state.json`
 
+
+### Modifying and running locally
+
+`pip install -e . &&  tap-facebook -c config.json -p properties.json`
+
+For fields to be included, they have to have "selected":true on them. Same for schemas. 
+
+
 ---
 
 Copyright &copy; 2018 Stitch

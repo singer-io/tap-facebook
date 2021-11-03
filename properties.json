@@ -1,0 +1,3795 @@
+{
+    "streams": [
+        {
+            "stream": "adsets",
+            "tap_stream_id": "adsets",
+            "schema": {
+                "type": [
+                    "null",
+                    "object"
+                ],
+                "properties": {
+                    "name": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "end_time": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "date-time"
+                    },
+                    "promoted_object": {
+                        "type": [
+                            "null",
+                            "object"
+                        ],
+                        "properties": {
+                            "custom_event_type": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "pixel_id": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "pixel_rule": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "page_id": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "object_store_url": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "application_id": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "product_set_id": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "offer_id": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            }
+                        }
+                    },
+                    "id": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "account_id": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "updated_time": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "date-time"
+                    },
+                    "daily_budget": {
+                        "type": [
+                            "null",
+                            "number"
+                        ],
+                        "maximum": 100000000000000000000000000000000,
+                        "minimum": -100000000000000000000000000000000,
+                        "multipleOf": 1e-06,
+                        "exclusiveMaximum": true,
+                        "exclusiveMinimum": true
+                    },
+                    "budget_remaining": {
+                        "type": [
+                            "null",
+                            "number"
+                        ],
+                        "maximum": 100000000000000000000000000000000,
+                        "minimum": -100000000000000000000000000000000,
+                        "multipleOf": 1e-06,
+                        "exclusiveMaximum": true,
+                        "exclusiveMinimum": true
+                    },
+                    "effective_status": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "campaign_id": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "created_time": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "date-time"
+                    },
+                    "start_time": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "date-time"
+                    },
+                    "lifetime_budget": {
+                        "type": [
+                            "null",
+                            "number"
+                        ],
+                        "maximum": 100000000000000000000000000000000,
+                        "minimum": -100000000000000000000000000000000,
+                        "multipleOf": 1e-06,
+                        "exclusiveMaximum": true,
+                        "exclusiveMinimum": true
+                    },
+                    "targeting": {
+                        "definitions": {
+                            "id_name_pairs": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "targeting_fields": {
+                                "type": [
+                                    "null",
+                                    "object"
+                                ],
+                                "properties": {
+                                    "household_composition": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "home_type": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "friends_of_connections": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "family_statuses": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "work_positions": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "education_majors": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "life_events": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "moms": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "custom_audiences": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "interests": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "behaviors": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "connections": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "excluded_connections": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "user_adclusters": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "income": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "excluded_custom_audiences": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "work_employers": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "industries": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "net_worth": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "relationship_statuses": {
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ],
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "integer"
+                                            ]
+                                        }
+                                    },
+                                    "generation": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "home_ownership": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "politics": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        "type": [
+                            "null",
+                            "object"
+                        ],
+                        "properties": {
+                            "excluded_custom_audiences": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "messenger_positions": {
+                                "type": [
+                                    "null",
+                                    "array"
+                                ],
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "string"
+                                    ]
+                                }
+                            },
+                            "locales": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "integer"
+                                    ]
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "connections": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "instagram_positions": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "string"
+                                    ]
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "audience_network_positions": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "string"
+                                    ]
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "exclusions": {
+                                "type": [
+                                    "null",
+                                    "object"
+                                ],
+                                "properties": {
+                                    "household_composition": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "home_type": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "friends_of_connections": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "family_statuses": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "work_positions": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "education_majors": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "life_events": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "moms": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "custom_audiences": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "interests": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "behaviors": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "connections": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "excluded_connections": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "user_adclusters": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "income": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "excluded_custom_audiences": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "work_employers": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "industries": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "net_worth": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "relationship_statuses": {
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ],
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "integer"
+                                            ]
+                                        }
+                                    },
+                                    "generation": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "home_ownership": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "politics": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    }
+                                }
+                            },
+                            "interests": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "geo_locations": {
+                                "type": [
+                                    "null",
+                                    "object"
+                                ],
+                                "properties": {
+                                    "regions": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "country": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "key": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "countries": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "cities": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "key": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "distance_unit": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "region": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "country": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "region_id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "radius": {
+                                                    "type": [
+                                                        "null",
+                                                        "integer"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "location_types": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "zips": {
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ],
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "country": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "key": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "primary_city_id": {
+                                                    "type": [
+                                                        "null",
+                                                        "integer"
+                                                    ]
+                                                },
+                                                "region_id": {
+                                                    "type": [
+                                                        "null",
+                                                        "integer"
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "custom_locations": {
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ],
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "address_string": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "country": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "distance_unit": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "latitude": {
+                                                    "type": [
+                                                        "null",
+                                                        "number"
+                                                    ]
+                                                },
+                                                "longitude": {
+                                                    "type": [
+                                                        "null",
+                                                        "number"
+                                                    ]
+                                                },
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "primary_city_id": {
+                                                    "type": [
+                                                        "null",
+                                                        "integer"
+                                                    ]
+                                                },
+                                                "radius": {
+                                                    "type": [
+                                                        "null",
+                                                        "integer"
+                                                    ]
+                                                },
+                                                "region_id": {
+                                                    "type": [
+                                                        "null",
+                                                        "integer"
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "country_groups": {
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ],
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    },
+                                    "geo-markets": {
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ],
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "key": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "excluded_geo_locations": {
+                                "type": [
+                                    "null",
+                                    "object"
+                                ],
+                                "properties": {
+                                    "regions": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "country": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "key": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "countries": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "cities": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "key": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "distance_unit": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "region": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "country": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "region_id": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "radius": {
+                                                    "type": [
+                                                        "null",
+                                                        "integer"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "location_types": {
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ]
+                                    },
+                                    "zips": {
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ],
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "country": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "key": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "primary_city_id": {
+                                                    "type": [
+                                                        "null",
+                                                        "integer"
+                                                    ]
+                                                },
+                                                "region_id": {
+                                                    "type": [
+                                                        "null",
+                                                        "integer"
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "custom_locations": {
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ],
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "address_string": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "country": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "distance_unit": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "latitude": {
+                                                    "type": [
+                                                        "null",
+                                                        "number"
+                                                    ]
+                                                },
+                                                "longitude": {
+                                                    "type": [
+                                                        "null",
+                                                        "number"
+                                                    ]
+                                                },
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "primary_city_id": {
+                                                    "type": [
+                                                        "null",
+                                                        "integer"
+                                                    ]
+                                                },
+                                                "radius": {
+                                                    "type": [
+                                                        "null",
+                                                        "integer"
+                                                    ]
+                                                },
+                                                "region_id": {
+                                                    "type": [
+                                                        "null",
+                                                        "integer"
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "country_groups": {
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ],
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    },
+                                    "geo-markets": {
+                                        "type": [
+                                            "null",
+                                            "array"
+                                        ],
+                                        "items": {
+                                            "type": [
+                                                "null",
+                                                "object"
+                                            ],
+                                            "properties": {
+                                                "key": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                },
+                                                "name": {
+                                                    "type": [
+                                                        "null",
+                                                        "string"
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "work_positions": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "education_statuses": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "integer"
+                                    ]
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "publisher_platforms": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "string"
+                                    ]
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "age_max": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            },
+                            "custom_audiences": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "device_platforms": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "string"
+                                    ]
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "age_min": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            },
+                            "facebook_positions": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "string"
+                                    ]
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "excluded_connections": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "flexible_spec": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "household_composition": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "home_type": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "friends_of_connections": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "family_statuses": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "work_positions": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "education_majors": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "life_events": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "moms": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "custom_audiences": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "interests": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "behaviors": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "connections": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "excluded_connections": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "user_adclusters": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "income": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "excluded_custom_audiences": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "work_employers": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "industries": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "net_worth": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "relationship_statuses": {
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ],
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "integer"
+                                                ]
+                                            }
+                                        },
+                                        "generation": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "home_ownership": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        },
+                                        "politics": {
+                                            "items": {
+                                                "type": [
+                                                    "null",
+                                                    "object"
+                                                ],
+                                                "properties": {
+                                                    "name": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": [
+                                                            "null",
+                                                            "string"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "type": [
+                                                "null",
+                                                "array"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "friends_of_connections": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "user_os": {
+                                "type": [
+                                    "null",
+                                    "array"
+                                ],
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "string"
+                                    ]
+                                }
+                            },
+                            "user_device": {
+                                "type": [
+                                    "null",
+                                    "array"
+                                ],
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "string"
+                                    ]
+                                }
+                            },
+                            "excluded_publisher_categories": {
+                                "type": [
+                                    "null",
+                                    "array"
+                                ],
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "string"
+                                    ]
+                                }
+                            },
+                            "genders": {
+                                "type": [
+                                    "null",
+                                    "array"
+                                ],
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "integer"
+                                    ]
+                                }
+                            },
+                            "targeting_optimization": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "user_adclusters": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "generation": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "behaviors": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "moms": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "home_ownership": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "office_type": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "home_type": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "family_statuses": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "relationship_statuses": {
+                                "type": [
+                                    "null",
+                                    "array"
+                                ],
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "integer"
+                                    ]
+                                }
+                            },
+                            "industries": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "income": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "app_install_state": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "net_worth": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "politics": {
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ],
+                                    "properties": {
+                                        "name": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        },
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            },
+                            "interested_in": {
+                                "type": [
+                                    "null",
+                                    "array"
+                                ],
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "integer"
+                                    ]
+                                }
+                            },
+                            "excluded_user_device": {
+                                "type": [
+                                    "null",
+                                    "array"
+                                ],
+                                "items": {
+                                    "type": [
+                                        "null",
+                                        "string"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "bid_info": {
+                        "type": [
+                            "null",
+                            "object"
+                        ],
+                        "properties": {
+                            "CLICKS": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            },
+                            "ACTIONS": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            },
+                            "IMPRESSIONS": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            },
+                            "REACH": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            }
+                        }
+                    },
+                    "adlabels": {
+                        "type": [
+                            "null",
+                            "array"
+                        ],
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "created_time": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "updated_time": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "metadata": [
+                {
+                    "breadcrumb": [],
+                    "metadata": {
+                        "table-key-properties": [
+                            "id",
+                            "updated_time"
+                        ],
+                        "inclusion": "available",
+                        "selected": true
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "name"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "end_time"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "promoted_object"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "id"
+                    ],
+                    "metadata": {
+                        "inclusion": "automatic"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "account_id"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "updated_time"
+                    ],
+                    "metadata": {
+                        "inclusion": "automatic"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "daily_budget"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "budget_remaining"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "effective_status"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "campaign_id"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "created_time"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "start_time"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "lifetime_budget"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "targeting"
+                    ],
+                    "metadata": {
+                        "inclusion": "available",
+                        "selected": true
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "bid_info"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "adlabels"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                }
+            ]
+        },
+        {
+            "stream": "campaigns",
+            "tap_stream_id": "campaigns",
+            "schema": {
+                "properties": {
+                    "name": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "objective": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "id": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "account_id": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "effective_status": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "buying_type": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "spend_cap": {
+                        "type": [
+                            "null",
+                            "number"
+                        ]
+                    },
+                    "start_time": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_time": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "ads": {
+                        "properties": {
+                            "data": {
+                                "items": {
+                                    "properties": {
+                                        "id": {
+                                            "type": [
+                                                "null",
+                                                "string"
+                                            ]
+                                        }
+                                    },
+                                    "type": [
+                                        "null",
+                                        "object"
+                                    ]
+                                },
+                                "type": [
+                                    "null",
+                                    "array"
+                                ]
+                            }
+                        },
+                        "type": [
+                            "null",
+                            "object"
+                        ]
+                    },
+                    "adlabels": {
+                        "type": [
+                            "null",
+                            "array"
+                        ],
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "created_time": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "updated_time": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                }
+                            }
+                        }
+                    }
+                },
+                "type": [
+                    "null",
+                    "object"
+                ]
+            },
+            "metadata": [
+                {
+                    "breadcrumb": [],
+                    "metadata": {
+                        "table-key-properties": [
+                            "id"
+                        ],
+                        "inclusion": "available",
+                        "selected": true
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "name"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "objective"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "id"
+                    ],
+                    "metadata": {
+                        "inclusion": "automatic"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "account_id"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "effective_status"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "buying_type"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "spend_cap"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "start_time"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "updated_time"
+                    ],
+                    "metadata": {
+                        "inclusion": "automatic"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "ads"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "adlabels"
+                    ],
+                    "metadata": {
+                        "inclusion": "available"
+                    }
+                }
+            ]
+        },
+        {
+            "stream": "customaudiences",
+            "tap_stream_id": "customaudiences",
+            "schema": {
+                "type": [
+                    "null",
+                    "object"
+                ],
+                "properties": {
+                    "id": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "account_id": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "approximate_count": {
+                        "type": [
+                            "null",
+                            "integer"
+                        ]
+                    },
+                    "approximate_count_lower_bound": {
+                        "type": [
+                            "null",
+                            "integer"
+                        ]
+                    },
+                    "approximate_count_upper_bound": {
+                        "type": [
+                            "null",
+                            "integer"
+                        ]
+                    },
+                    "subtype": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "time_updated": {
+                        "type": [
+                            "null",
+                            "integer"
+                        ]
+                    }
+                }
+            },
+            "metadata": [
+                {
+                    "breadcrumb": [],
+                    "metadata": {
+                        "table-key-properties": [
+                            "id",
+                            "time_updated"
+                        ],
+                        "inclusion": "available",
+                        "selected": true
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "id"
+                    ],
+                    "metadata": {
+                        "inclusion": "automatic"
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "account_id"
+                    ],
+                    "metadata": {
+                        "inclusion": "available",
+                        "selected": true
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "approximate_count"
+                    ],
+                    "metadata": {
+                        "inclusion": "available",
+                        "selected": true
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "approximate_count_lower_bound"
+                    ],
+                    "metadata": {
+                        "inclusion": "available",
+                        "selected": true
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "approximate_count_upper_bound"
+                    ],
+                    "metadata": {
+                        "inclusion": "available",
+                        "selected": true
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "subtype"
+                    ],
+                    "metadata": {
+                        "inclusion": "available",
+                        "selected": true
+                    }
+                },
+                {
+                    "breadcrumb": [
+                        "properties",
+                        "time_updated"
+                    ],
+                    "metadata": {
+                        "inclusion": "automatic"
+                    }
+                }
+            ]
+        }
+    ]
+}
