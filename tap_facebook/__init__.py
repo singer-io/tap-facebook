@@ -34,6 +34,7 @@ import facebook_business.adobjects.campaign as fb_campaign
 import facebook_business.adobjects.adsinsights as adsinsights
 import facebook_business.adobjects.user as fb_user
 import facebook_business.adobjects.lead as fb_lead
+import facebook_business.adobjects.customaudience as customaudience
 
 from facebook_business.exceptions import FacebookError, FacebookRequestError, FacebookBadObjectError
 
@@ -57,7 +58,8 @@ STREAMS = [
     'ads_insights_region',
     'ads_insights_dma',
     'ads_insights_hourly_advertiser',
-    #'leads',
+    'leads',
+    'customaudiences',
 ]
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
@@ -77,6 +79,7 @@ BOOKMARK_KEYS = {
     'ads_insights_dma': START_DATE_KEY,
     'ads_insights_hourly_advertiser': START_DATE_KEY,
     'leads': CREATED_TIME_KEY,
+    'customaudiences': CREATED_TIME_KEY,
 }
 
 LOGGER = singer.get_logger()
@@ -364,6 +367,51 @@ class AdSets(IncrementalStream):
             ad_sets = do_request()
 
         for message in self._iterate(ad_sets, prepare_record):
+            yield message
+
+
+class CustomAudiences(IncrementalStream):
+    '''
+    doc: https://developers.facebook.com/docs/marketing-api/reference/custom-audience/
+    '''
+
+    key_properties = ['id', 'updated_time']
+
+    @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+    def _call_get_custom_audiences(self, params):
+        """
+        This is necessary because the functions that call this endpoint return
+        a generator, whose calls need decorated with a backoff.
+        """
+        return self.account.get_custom_audiences(fields=self.automatic_fields(), params=params) # pylint: disable=no-member
+
+    def __iter__(self):
+        def do_request():
+            params = {'limit': RESULT_RETURN_LIMIT}
+            if self.current_bookmark:
+                params.update({'filtering': [{'field': 'customeaudience.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
+            yield self._call_get_custom_audiences(params)
+
+        def do_request_multiple():
+            params = {'limit': RESULT_RETURN_LIMIT}
+            bookmark_params = []
+            if self.current_bookmark:
+                bookmark_params.append({'field': 'customaudience.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
+            for del_info_filt in iter_delivery_info_filter('customaudience'):
+                params.update({'filtering': [del_info_filt] + bookmark_params})
+                filt_adsets = self._call_get_custom_audiences(params)
+                yield filt_adsets
+
+        @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
+        def prepare_record(ad_set):
+            return ad_set.api_get(fields=self.fields()).export_all_data()
+
+        if CONFIG.get('include_deleted', 'false').lower() == 'true':
+            custom_audiences = do_request_multiple()
+        else:
+            custom_audiences = do_request()
+
+        for message in self._iterate(custom_audiences, prepare_record):
             yield message
 
 class Campaigns(IncrementalStream):
@@ -718,6 +766,8 @@ def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many
         return AdCreative(name, account, stream_alias, catalog_entry)
     elif name == 'leads':
         return Leads(name, account, stream_alias, catalog_entry, state=state)
+    elif name == 'customaudiences':
+        return CustomAudiences(name, account, stream_alias, catalog_entry, state=state)
     else:
         raise TapFacebookException('Unknown stream {}'.format(name))
 
