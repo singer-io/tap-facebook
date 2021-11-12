@@ -149,15 +149,13 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
         if isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
             LOGGER.info('TypeError due to bad JSON response')
     def should_retry_api_error(exception):
-        if isinstance(exception, FacebookBadObjectError):
+        if isinstance(exception, FacebookBadObjectError) or isinstance(exception, Timeout):
             return True
         elif isinstance(exception, FacebookRequestError):
             return exception.api_transient_error() or exception.api_error_subcode() == 99 or exception.http_status() == 500
         elif isinstance(exception, InsightsJobTimeout):
             return True
         elif isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
-            return True
-        elif isinstance(exception, Timeout):
             return True
         return False
 
