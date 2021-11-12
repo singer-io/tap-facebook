@@ -170,6 +170,7 @@ class Stream(object):
     account = attr.ib()
     stream_alias = attr.ib()
     catalog_entry = attr.ib()
+    replication_method = 'FULL_TABLE'
 
     def automatic_fields(self):
         fields = set()
@@ -200,6 +201,7 @@ class Stream(object):
 class IncrementalStream(Stream):
 
     state = attr.ib()
+    replication_method = 'INCREMENTAL'
 
     def __attrs_post_init__(self):
         self.current_bookmark = get_start(self, UPDATED_TIME_KEY)
@@ -268,7 +270,6 @@ class AdCreative(Stream):
         api_batch.execute()
 
     key_properties = ['id']
-    replication_method = 'FULL_TABLE'
 
     @retry_pattern(backoff.expo, (FacebookRequestError, TypeError), max_tries=5, factor=5)
     def get_adcreatives(self):
@@ -285,7 +286,6 @@ class Ads(IncrementalStream):
     '''
 
     key_properties = ['id', 'updated_time']
-    replication_method = 'INCREMENTAL'
 
     @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
     def _call_get_ads(self, params):
@@ -330,7 +330,6 @@ class AdSets(IncrementalStream):
     '''
 
     key_properties = ['id', 'updated_time']
-    replication_method = 'INCREMENTAL'
 
     @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
     def _call_get_ad_sets(self, params):
@@ -372,7 +371,6 @@ class AdSets(IncrementalStream):
 class Campaigns(IncrementalStream):
 
     key_properties = ['id']
-    replication_method = 'INCREMENTAL'
 
     @retry_pattern(backoff.expo, FacebookRequestError, max_tries=5, factor=5)
     def _call_get_campaigns(self, params):
