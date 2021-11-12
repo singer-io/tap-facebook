@@ -7,7 +7,7 @@ from base import FacebookBaseTest
 class FacebookAttributionWindow(FacebookBaseTest):
 
     # set attribution window
-    attrubution_window = 7
+    ATTRIBUTION_WINDOW = 7
 
     @staticmethod
     def name():
@@ -19,7 +19,7 @@ class FacebookAttributionWindow(FacebookBaseTest):
             'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
             'start_date' : '2019-07-24T00:00:00Z',
             'end_date' : '2019-07-26T00:00:00Z',
-            'insights_buffer_days': str(self.attrubution_window)
+            'insights_buffer_days': str(self.ATTRIBUTION_WINDOW)
         }
         if original:
             return return_value
@@ -28,10 +28,10 @@ class FacebookAttributionWindow(FacebookBaseTest):
         return return_value
 
     def test_run(self):
-        self.run_test(self.attrubution_window) # attribution window: 7
+        self.run_test(self.ATTRIBUTION_WINDOW) # attribution window: 7
 
-        self.attrubution_window = 28
-        self.run_test(self.attrubution_window) # attribution window: 28
+        self.ATTRIBUTION_WINDOW = 28
+        self.run_test(self.ATTRIBUTION_WINDOW) # attribution window: 28
 
     def run_test(self, attr_window):
         """
