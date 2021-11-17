@@ -48,7 +48,7 @@ class TestAdCreativeSyncBbatches(unittest.TestCase):
         with self.assertRaises(AttributeError):
             ad_creative_object.sync_batches([])
 
-        # verify calls inside sync_batches are called 5 times as max 5 reties provided for function
+        # verify calls inside sync_batches are called 5 times as max 5 retries provided for function
         self.assertEquals(5, mocked_api.new_batch.call_count)
         self.assertEquals(5, mocked_schema.call_count)
 
