@@ -223,6 +223,13 @@ class FacebookBookmarks(FacebookBaseTest):
                         )
 
                     for record in first_sync_messages:
+                        # for "ads_insights_age_and_gender" and "ads_insights_hourly_advertiser"
+                        # verify that the "date_start" and "date_stop" is in expected format
+                        if stream in ["ads_insights_age_and_gender", "ads_insights_hourly_advertiser"]:
+                            date_start = record.get("date_start")
+                            self.assertTrue(self.is_expected_date_format(date_start))
+                            date_stop = record.get("date_stop")
+                            self.assertTrue(self.is_expected_date_format(date_stop))
 
                         # Verify the first sync bookmark value is the max replication key value for a given stream
                         replication_key_value = record.get(replication_key)
