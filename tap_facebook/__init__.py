@@ -585,6 +585,9 @@ class AdsInsights(Stream):
         buffer_days = 28
         if CONFIG.get('insights_buffer_days'):
             buffer_days = int(CONFIG.get('insights_buffer_days'))
+            # attribution window should only be 1, 7 or 28
+            if buffer_days not in [1, 7, 28]:
+                raise TapFacebookException("The attribution window must be 1, 7 or 28.")
 
         buffered_start_date = start_date.subtract(days=buffer_days)
         min_start_date = pendulum.today().subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
