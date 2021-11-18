@@ -26,7 +26,7 @@ class TestAttributErrorBackoff(unittest.TestCase):
         # verify get_ad_creatives() is called 5 times as max 5 reties provided for function
         self.assertEquals(mocked_account.get_ad_creatives.call_count, 5)
 
-    def test__call_get_ads(self, mocked_sleep):
+    def test_call_get_ads(self, mocked_sleep):
         """ 
             Ads._call_get_ads calls a `facebook_business` method,`get_ads()`, to get a batch of ads. 
             We mock this method to raise a `AttributeError` and expect the tap to retry this that function up to 5 times,
