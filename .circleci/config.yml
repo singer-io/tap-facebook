@@ -53,7 +53,13 @@ jobs:
           name: 'Run Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-            nosetests tests/unittests
+            pip install nose coverage
+            nosetests --with-coverage --cover-erase --cover-package=tap_facebook --cover-html-dir=htmlcov tests/unittests
+            coverage html
+      - store_test_results:
+          path: test_output/report.xml
+      - store_artifacts:
+          path: htmlcov
       - slack/notify-on-failure:
           only_for_branches: master
   run_integration_tests:
@@ -154,6 +160,12 @@ workflows:
           test_name: "test_facebook_tests_run.py"
           requires:
             - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_archived_data.py"
+          test_name: "test_facebook_archived_data.py"
+          requires:
+            - ensure_env
       - build:
           context: circleci-user
           requires:
@@ -165,6 +177,7 @@ workflows:
             - test_facebook_bookmarks.py
             - test_facebook_automatic_fields.py
             - test_facebook_tests_run.py
+            - test_facebook_archived_data.py
       - deploy:
           context: circleci-user
           requires:
@@ -220,6 +233,12 @@ workflows:
           test_name: "test_facebook_tests_run.py"
           requires:
             - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_archived_data.py"
+          test_name: "test_facebook_archived_data.py"
+          requires:
+            - ensure_env
       - build:
           context: circleci-user
           requires:
@@ -231,6 +250,7 @@ workflows:
             - test_facebook_bookmarks.py
             - test_facebook_automatic_fields.py
             - test_facebook_tests_run.py
+            - test_facebook_archived_data.py
     triggers:
       - schedule:
           cron: "0 6 * * *"
