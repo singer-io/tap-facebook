@@ -175,6 +175,7 @@ class Stream(object):
     account = attr.ib()
     stream_alias = attr.ib()
     catalog_entry = attr.ib()
+    replication_method = 'FULL_TABLE'
 
     def automatic_fields(self):
         fields = set()
@@ -205,6 +206,7 @@ class Stream(object):
 class IncrementalStream(Stream):
 
     state = attr.ib()
+    replication_method = 'INCREMENTAL'
 
     def __attrs_post_init__(self):
         self.current_bookmark = get_start(self, UPDATED_TIME_KEY)
@@ -430,6 +432,7 @@ class Leads(Stream):
     replication_key = "created_time"
 
     key_properties = ['id']
+    replication_method = 'INCREMENTAL'
 
     def compare_lead_created_times(self, leadA, leadB):
         if leadA is None:
@@ -559,6 +562,7 @@ def advance_bookmark(stream, bookmark_key, date):
 @attr.s
 class AdsInsights(Stream):
     base_properties = ['campaign_id', 'adset_id', 'ad_id', 'date_start']
+    replication_method = 'INCREMENTAL'
 
     state = attr.ib()
     options = attr.ib()
@@ -584,14 +588,17 @@ class AdsInsights(Stream):
         if self.options.get('primary-keys'):
             self.key_properties.extend(self.options['primary-keys'])
 
+        self.buffer_days = 28
+        if CONFIG.get('insights_buffer_days'):
+            self.buffer_days = int(CONFIG.get('insights_buffer_days'))
+            # attribution window should only be 1, 7 or 28
+            if self.buffer_days not in [1, 7, 28]:
+                raise Exception("The attribution window must be 1, 7 or 28.")
+
     def job_params(self):
         start_date = get_start(self, self.bookmark_key)
 
-        buffer_days = 28
-        if CONFIG.get('insights_buffer_days'):
-            buffer_days = int(CONFIG.get('insights_buffer_days'))
-
-        buffered_start_date = start_date.subtract(days=buffer_days)
+        buffered_start_date = start_date.subtract(days=self.buffer_days)
         min_start_date = pendulum.today().subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
         if buffered_start_date < min_start_date:
             LOGGER.warning("%s: Start date is earlier than %s months ago, using %s instead. "
@@ -805,10 +812,13 @@ def discover_schemas():
         LOGGER.info('Loading schema for %s', stream.name)
         schema = singer.resolve_schema_references(load_schema(stream), refs)
 
-        mdata = metadata.to_map(metadata.get_standard_metadata(schema,
-                                               key_properties=stream.key_properties))
-
         bookmark_key = BOOKMARK_KEYS.get(stream.name)
+
+        mdata = metadata.to_map(metadata.get_standard_metadata(schema,
+                                               key_properties=stream.key_properties,
+                                               replication_method=stream.replication_method,
+                                               valid_replication_keys=[bookmark_key] if bookmark_key else None))
+
         if bookmark_key == UPDATED_TIME_KEY or bookmark_key == CREATED_TIME_KEY :
             mdata = metadata.write(mdata, ('properties', bookmark_key), 'inclusion', 'automatic')
 
