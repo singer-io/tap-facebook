@@ -31,4 +31,4 @@ class FacebookInvalidAttributionWindow(FacebookBaseTest):
         conn_id = connections.ensure_connection(self)
 
         # runner.run_check_mode(self, conn_id)
-        self.assertRaisesRegex(Exception, "The attribution window must be 1, 7 or 28.", runner.run_check_job_and_check_status, self)
+        self.assertRaisesRegex(Exception, "The attribution window must be 1, 7 or 28.", runner.run_check_job_and_check_status(conn_id), self)
