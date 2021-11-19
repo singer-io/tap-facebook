@@ -18,13 +18,10 @@ class TestAttributionWindow(unittest.TestCase):
             "insights_buffer_days": 30
         }
 
-        # initialize 'AdsInsights' stream as attribution window is only supported in those streams
-        ads_insights_stream = tap_facebook.AdsInsights("test", "test", "test", None, {}, {})
         try:
-            # loop over the object as '__iter__' is used
-            for data in ads_insights_stream:
-                pass
-        except tap_facebook.TapFacebookException as e:
+            # initialize 'AdsInsights' stream as attribution window is only supported in those streams
+            tap_facebook.AdsInsights("test", "test", "test", None, {}, {})
+        except Exception as e:
             # save error message for assertion
             error_message = str(e)
 
