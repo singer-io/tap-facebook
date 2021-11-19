@@ -124,48 +124,48 @@ workflows:
           context: circleci-user
           requires:
             - ensure_env
-      # - run_integration_tests:
-      #     context: circleci-user
-      #     name: "test_facebook_start_date.py"
-      #     test_name: "test_facebook_start_date.py"
-      #     requires:
-      #       - ensure_env
-      # - run_integration_tests:
-      #     context: circleci-user
-      #     name: "test_facebook_field_selection.py"
-      #     test_name: "test_facebook_field_selection.py"
-      #     requires:
-      #       - ensure_env
-      # - run_integration_tests:
-      #     context: circleci-user
-      #     name: "test_facebook_discovery.py"
-      #     test_name: "test_facebook_discovery.py"
-      #     requires:
-      #       - ensure_env
-      # - run_integration_tests:
-      #     context: circleci-user
-      #     name: "test_facebook_bookmarks.py"
-      #     test_name: "test_facebook_bookmarks.py"
-      #     requires:
-      #       - ensure_env
-      # - run_integration_tests:
-      #     context: circleci-user
-      #     name: "test_facebook_automatic_fields.py"
-      #     test_name: "test_facebook_automatic_fields.py"
-      #     requires:
-      #       - ensure_env
-      # - run_integration_tests:
-      #     context: circleci-user
-      #     name: "test_facebook_tests_run.py"
-      #     test_name: "test_facebook_tests_run.py"
-      #     requires:
-      #       - ensure_env
-      # - run_integration_tests:
-      #     context: circleci-user
-      #     name: "test_facebook_attribution_window.py"
-      #     test_name: "test_facebook_attribution_window.py"
-      #     requires:
-      #       - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_start_date.py"
+          test_name: "test_facebook_start_date.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_field_selection.py"
+          test_name: "test_facebook_field_selection.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_discovery.py"
+          test_name: "test_facebook_discovery.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_bookmarks.py"
+          test_name: "test_facebook_bookmarks.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_automatic_fields.py"
+          test_name: "test_facebook_automatic_fields.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_tests_run.py"
+          test_name: "test_facebook_tests_run.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_attribution_window.py"
+          test_name: "test_facebook_attribution_window.py"
+          requires:
+            - ensure_env
       - run_integration_tests:
           context: circleci-user
           name: "test_facebook_invalid_attribution_window.py"
@@ -177,13 +177,13 @@ workflows:
           requires:
             - run_pylint
             - run_unit_tests
-            # - test_facebook_start_date.py
-            # - test_facebook_field_selection.py
-            # - test_facebook_discovery.py
-            # - test_facebook_bookmarks.py
-            # - test_facebook_automatic_fields.py
-            # - test_facebook_tests_run.py
-            # - test_facebook_attribution_window.py
+            - test_facebook_start_date.py
+            - test_facebook_field_selection.py
+            - test_facebook_discovery.py
+            - test_facebook_bookmarks.py
+            - test_facebook_automatic_fields.py
+            - test_facebook_tests_run.py
+            - test_facebook_attribution_window.py
             - test_facebook_invalid_attribution_window.py
       - deploy:
           context: circleci-user

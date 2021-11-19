@@ -28,8 +28,13 @@ class FacebookInvalidAttributionWindow(FacebookBaseTest):
         """
             Test to verify that the error is raise when passing attribution window other than 1, 7 or 28
         """
+        # create connection
         conn_id = connections.ensure_connection(self)
+        # run check mode
         check_job_name = runner.run_check_mode(self, conn_id)
+        # get exit status
         exit_status = menagerie.get_exit_status(conn_id, check_job_name)
+        # get discovery error message
         discovery_error_message = exit_status.get('discovery_error_message')
+        # validate the error message
         self.assertEquals(discovery_error_message, "The attribution window must be 1, 7 or 28.")
