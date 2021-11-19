@@ -16,7 +16,7 @@ class FacebookInvalidAttributionWindow(FacebookBaseTest):
             'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
             'start_date' : '2019-07-24T00:00:00Z',
             'end_date' : '2019-07-26T00:00:00Z',
-            'insights_buffer_days': '10'
+            'insights_buffer_days': '10' # set attribution window other than 1, 7 or 28
         }
         if original:
             return return_value

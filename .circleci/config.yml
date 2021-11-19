@@ -162,6 +162,12 @@ workflows:
             - ensure_env
       - run_integration_tests:
           context: circleci-user
+          name: "test_facebook_archived_data.py"
+          test_name: "test_facebook_archived_data.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
           name: "test_facebook_attribution_window.py"
           test_name: "test_facebook_attribution_window.py"
           requires:
@@ -183,6 +189,7 @@ workflows:
             - test_facebook_bookmarks.py
             - test_facebook_automatic_fields.py
             - test_facebook_tests_run.py
+            - test_facebook_archived_data.py
             - test_facebook_attribution_window.py
             - test_facebook_invalid_attribution_window.py
       - deploy:
@@ -242,8 +249,20 @@ workflows:
             - ensure_env
       - run_integration_tests:
           context: circleci-user
+          name: "test_facebook_archived_data.py"
+          test_name: "test_facebook_archived_data.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
           name: "test_facebook_attribution_window.py"
           test_name: "test_facebook_attribution_window.py"
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_invalid_attribution_window.py"
+          test_name: "test_facebook_invalid_attribution_window.py"
           requires:
             - ensure_env
       - build:
@@ -257,7 +276,9 @@ workflows:
             - test_facebook_bookmarks.py
             - test_facebook_automatic_fields.py
             - test_facebook_tests_run.py
+            - test_facebook_archived_data.py
             - test_facebook_attribution_window.py
+            - test_facebook_invalid_attribution_window.py
     triggers:
       - schedule:
           cron: "0 6 * * *"

@@ -148,7 +148,12 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
         if isinstance(exception, FacebookBadObjectError):
             return True
         elif isinstance(exception, FacebookRequestError):
-            return exception.api_transient_error() or exception.api_error_subcode() == 99 or exception.http_status() == 500
+            return (exception.api_transient_error()
+                    or exception.api_error_subcode() == 99
+                    or exception.http_status() == 500
+                    # This subcode corresponds to a race condition between AdsInsights job creation and polling
+                    or exception.api_error_subcode() == 33
+                    )
         elif isinstance(exception, InsightsJobTimeout):
             return True
         elif isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
@@ -170,6 +175,7 @@ class Stream(object):
     account = attr.ib()
     stream_alias = attr.ib()
     catalog_entry = attr.ib()
+    replication_method = 'FULL_TABLE'
 
     def automatic_fields(self):
         fields = set()
@@ -200,6 +206,7 @@ class Stream(object):
 class IncrementalStream(Stream):
 
     state = attr.ib()
+    replication_method = 'INCREMENTAL'
 
     def __attrs_post_init__(self):
         self.current_bookmark = get_start(self, UPDATED_TIME_KEY)
@@ -425,6 +432,7 @@ class Leads(Stream):
     replication_key = "created_time"
 
     key_properties = ['id']
+    replication_method = 'INCREMENTAL'
 
     def compare_lead_created_times(self, leadA, leadB):
         if leadA is None:
@@ -554,6 +562,7 @@ def advance_bookmark(stream, bookmark_key, date):
 @attr.s
 class AdsInsights(Stream):
     base_properties = ['campaign_id', 'adset_id', 'ad_id', 'date_start']
+    replication_method = 'INCREMENTAL'
 
     state = attr.ib()
     options = attr.ib()
@@ -618,6 +627,12 @@ class AdsInsights(Stream):
             }
             buffered_start_date = buffered_start_date.add(days=1)
 
+    @staticmethod
+    @retry_pattern(backoff.constant, FacebookRequestError, max_tries=5, interval=1)
+    def __api_get_with_retry(job):
+        job = job.api_get()
+        return job
+
     @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout, FacebookBadObjectError, TypeError), max_tries=5, factor=5)
     def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
@@ -629,7 +644,7 @@ class AdsInsights(Stream):
         sleep_time = 10
         while status != "Job Completed":
             duration = time.time() - time_start
-            job = job.api_get()
+            job = AdsInsights.__api_get_with_retry(job)
             status = job['async_status']
             percent_complete = job['async_percent_completion']
 
@@ -797,10 +812,13 @@ def discover_schemas():
         LOGGER.info('Loading schema for %s', stream.name)
         schema = singer.resolve_schema_references(load_schema(stream), refs)
 
-        mdata = metadata.to_map(metadata.get_standard_metadata(schema,
-                                               key_properties=stream.key_properties))
-
         bookmark_key = BOOKMARK_KEYS.get(stream.name)
+
+        mdata = metadata.to_map(metadata.get_standard_metadata(schema,
+                                               key_properties=stream.key_properties,
+                                               replication_method=stream.replication_method,
+                                               valid_replication_keys=[bookmark_key] if bookmark_key else None))
+
         if bookmark_key == UPDATED_TIME_KEY or bookmark_key == CREATED_TIME_KEY :
             mdata = metadata.write(mdata, ('properties', bookmark_key), 'inclusion', 'automatic')
 

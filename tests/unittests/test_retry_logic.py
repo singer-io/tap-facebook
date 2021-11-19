@@ -186,3 +186,76 @@ class TestInsightJobs(unittest.TestCase):
 
         # Clean up tests
         patcher.stop()
+
+
+    def test_job_polling_retry(self):
+        """AdInsights.api_get() polls the job status of an insights job we've requested
+        that Facebook generate. This test makes a request with a mock response to
+        raise a 400 status error that should be retried.
+
+        We expect the tap to retry this request up to 5 times for each insights job attempted.
+        """
+
+        mocked_api_get = Mock()
+        mocked_api_get.side_effect = FacebookRequestError(
+            message='Unsupported get request; Object does not exist',
+            request_context={"":Mock()},
+            http_status=400,
+            http_headers=Mock(),
+            body={"error": {"error_subcode": 33}}
+        )
+        # Create the mock and force the function to throw an error
+        mocked_account = Mock()
+        mocked_account.get_insights = Mock()
+        mocked_account.get_insights.return_value.api_get = mocked_api_get
+
+
+        # Initialize the object and call `sync()`
+        ad_insights_object = AdsInsights('', mocked_account, '', '', {}, {})
+        with self.assertRaises(FacebookRequestError):
+            ad_insights_object.run_job({})
+        # 5 is the max tries specified in the tap
+        self.assertEquals(25, mocked_account.get_insights.return_value.api_get.call_count)
+        self.assertEquals(5, mocked_account.get_insights.call_count )
+
+
+
+    def test_job_polling_retry_succeeds_eventually(self):
+        """AdInsights.api_get() polls the job status of an insights job we've requested
+        that Facebook generate. This test makes a request with a mock response to
+        raise a 400 status error that should be retried.
+
+        We expect the tap to retry this request up to 5 times for each insights job attempted.
+        """
+
+        mocked_bad_response = FacebookRequestError(
+                message='Unsupported get request; Object does not exist',
+                request_context={"":Mock()},
+                http_status=400,
+                http_headers=Mock(),
+                body={"error": {"error_subcode": 33}}
+            )
+
+        mocked_good_response = {
+            "async_status": "Job Completed",
+            "async_percent_completion": 100,
+            "id": "2134"
+        }
+
+        mocked_api_get = Mock()
+        mocked_api_get.side_effect = [
+            mocked_bad_response,
+            mocked_bad_response,
+            mocked_good_response
+        ]
+
+        # Create the mock and force the function to throw an error
+        mocked_account = Mock()
+        mocked_account.get_insights = Mock()
+        mocked_account.get_insights.return_value.api_get = mocked_api_get
+
+        # Initialize the object and call `sync()`
+        ad_insights_object = AdsInsights('', mocked_account, '', '', {}, {})
+        ad_insights_object.run_job({})
+        self.assertEquals(3, mocked_account.get_insights.return_value.api_get.call_count)
+        self.assertEquals(1, mocked_account.get_insights.call_count)
