@@ -1,6 +1,6 @@
 import os
 
-from tap_tester import runner, connections
+from tap_tester import runner, connections, menagerie
 
 from base import FacebookBaseTest
 
@@ -28,7 +28,8 @@ class FacebookInvalidAttributionWindow(FacebookBaseTest):
         """
             Test to verify that the error is raise when passing attribution window other than 1, 7 or 28
         """
-        self.conn_id = connections.ensure_connection(self)
-
-        # runner.run_check_mode(self, conn_id)
-        self.assertRaisesRegex(Exception, "The attribution window must be 1, 7 or 28.", runner.run_check_job_and_check_status(self), self)
+        conn_id = connections.ensure_connection(self)
+        check_job_name = runner.run_check_mode(self, conn_id)
+        exit_status = menagerie.get_exit_status(conn_id, check_job_name)
+        discovery_error_message = exit_status.get('discovery_error_message')
+        self.assertEquals(discovery_error_message, "The attribution window must be 1, 7 or 28.")
