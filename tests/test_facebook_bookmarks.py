@@ -84,6 +84,16 @@ class FacebookBookmarks(FacebookBaseTest):
 
         return stream_to_calculated_state
 
+    # function for verifying the date format
+    def is_expected_date_format(self, date):
+        try:
+            # parse date
+            datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%fZ")
+        except ValueError:
+            # return False if date is in not expected format
+            return False
+        # return True in case of no error
+        return True
 
     def test_run(self):
         expected_streams =  self.expected_streams()
@@ -193,14 +203,16 @@ class FacebookBookmarks(FacebookBaseTest):
 
 
                     for record in second_sync_messages:
+                        # for "ads_insights_age_and_gender" and "ads_insights_hourly_advertiser"
+                        # verify that the "date_start" and "date_stop" is in expected format
+                        if stream in ["ads_insights_age_and_gender", "ads_insights_hourly_advertiser"]:
+                            date_start = record.get("date_start")
+                            self.assertTrue(self.is_expected_date_format(date_start))
+                            date_stop = record.get("date_stop")
+                            self.assertTrue(self.is_expected_date_format(date_stop))
 
                         # Verify the second sync records respect the previous (simulated) bookmark value
                         replication_key_value = record.get(replication_key)
-                        if stream in {'ads_insights_age_and_gender', 'ads_insights_hourly_advertiser'}: # BUG | https://stitchdata.atlassian.net/browse/SRCE-4873
-                            replication_key_value = datetime.datetime.strftime(
-                                dateutil.parser.parse(replication_key_value),
-                                self.BOOKMARK_COMPARISON_FORMAT
-                            )
                         self.assertGreaterEqual(replication_key_value, simulated_bookmark_minus_lookback,
                                                 msg="Second sync records do not repect the previous bookmark.")
 
@@ -211,6 +223,13 @@ class FacebookBookmarks(FacebookBaseTest):
                         )
 
                     for record in first_sync_messages:
+                        # for "ads_insights_age_and_gender" and "ads_insights_hourly_advertiser"
+                        # verify that the "date_start" and "date_stop" is in expected format
+                        if stream in ["ads_insights_age_and_gender", "ads_insights_hourly_advertiser"]:
+                            date_start = record.get("date_start")
+                            self.assertTrue(self.is_expected_date_format(date_start))
+                            date_stop = record.get("date_stop")
+                            self.assertTrue(self.is_expected_date_format(date_stop))
 
                         # Verify the first sync bookmark value is the max replication key value for a given stream
                         replication_key_value = record.get(replication_key)

@@ -165,13 +165,15 @@
       "type": [
         "null",
         "string"
-      ]
+      ],
+      "format": "date-time"
     },
     "date_stop": {
       "type": [
         "null",
         "string"
-      ]
+      ],
+      "format": "date-time"
     },
     "engagement_rate_ranking": {
       "type": [
