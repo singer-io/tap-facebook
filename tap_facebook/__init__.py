@@ -148,7 +148,12 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
         if isinstance(exception, FacebookBadObjectError):
             return True
         elif isinstance(exception, FacebookRequestError):
-            return exception.api_transient_error() or exception.api_error_subcode() == 99 or exception.http_status() == 500
+            return (exception.api_transient_error()
+                    or exception.api_error_subcode() == 99
+                    or exception.http_status() == 500
+                    # This subcode corresponds to a race condition between AdsInsights job creation and polling
+                    or exception.api_error_subcode() == 33
+                    )
         elif isinstance(exception, InsightsJobTimeout):
             return True
         elif isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
@@ -619,6 +624,12 @@ class AdsInsights(Stream):
             }
             buffered_start_date = buffered_start_date.add(days=1)
 
+    @staticmethod
+    @retry_pattern(backoff.constant, FacebookRequestError, max_tries=5, interval=1)
+    def __api_get_with_retry(job):
+        job = job.api_get()
+        return job
+
     @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout, FacebookBadObjectError, TypeError), max_tries=5, factor=5)
     def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
@@ -630,7 +641,7 @@ class AdsInsights(Stream):
         sleep_time = 10
         while status != "Job Completed":
             duration = time.time() - time_start
-            job = job.api_get()
+            job = AdsInsights.__api_get_with_retry(job)
             status = job['async_status']
             percent_complete = job['async_percent_completion']
 

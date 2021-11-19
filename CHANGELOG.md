@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.17.0
+  * Added retry to AdsInsights job polling to resolve race-condition errors [#174](https://github.com/singer-io/tap-facebook/pull/174)
+
 ## 1.16.0
   * Bump tap dependency, `facebook_business`, from `10.0.0` to `12.0.0` [#164](https://github.com/singer-io/tap-facebook/pull/164)
 
