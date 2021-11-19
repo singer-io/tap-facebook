@@ -160,6 +160,12 @@ workflows:
           test_name: "test_facebook_tests_run.py"
           requires:
             - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_archived_data.py"
+          test_name: "test_facebook_archived_data.py"
+          requires:
+            - ensure_env
       - build:
           context: circleci-user
           requires:
@@ -171,6 +177,7 @@ workflows:
             - test_facebook_bookmarks.py
             - test_facebook_automatic_fields.py
             - test_facebook_tests_run.py
+            - test_facebook_archived_data.py
       - deploy:
           context: circleci-user
           requires:
@@ -226,6 +233,12 @@ workflows:
           test_name: "test_facebook_tests_run.py"
           requires:
             - ensure_env
+      - run_integration_tests:
+          context: circleci-user
+          name: "test_facebook_archived_data.py"
+          test_name: "test_facebook_archived_data.py"
+          requires:
+            - ensure_env
       - build:
           context: circleci-user
           requires:
@@ -237,6 +250,7 @@ workflows:
             - test_facebook_bookmarks.py
             - test_facebook_automatic_fields.py
             - test_facebook_tests_run.py
+            - test_facebook_archived_data.py
     triggers:
       - schedule:
           cron: "0 6 * * *"
