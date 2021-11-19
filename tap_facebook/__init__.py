@@ -621,6 +621,7 @@ class AdsInsights(Stream):
     def job_params(self):
         start_date = get_start(self, self.bookmark_key)
 
+        # Set start date and end date using buffer days and facebook retention period
         buffered_start_date = start_date.subtract(days=self.buffer_days)
         min_start_date = pendulum.today().subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
         if buffered_start_date < min_start_date:
