@@ -588,14 +588,17 @@ class AdsInsights(Stream):
         if self.options.get('primary-keys'):
             self.key_properties.extend(self.options['primary-keys'])
 
+        self.buffer_days = 28
+        if CONFIG.get('insights_buffer_days'):
+            self.buffer_days = int(CONFIG.get('insights_buffer_days'))
+            # attribution window should only be 1, 7 or 28
+            if self.buffer_days not in [1, 7, 28]:
+                raise Exception("The attribution window must be 1, 7 or 28.")
+
     def job_params(self):
         start_date = get_start(self, self.bookmark_key)
 
-        buffer_days = 28
-        if CONFIG.get('insights_buffer_days'):
-            buffer_days = int(CONFIG.get('insights_buffer_days'))
-
-        buffered_start_date = start_date.subtract(days=buffer_days)
+        buffered_start_date = start_date.subtract(days=self.buffer_days)
         min_start_date = pendulum.today().subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
         if buffered_start_date < min_start_date:
             LOGGER.warning("%s: Start date is earlier than %s months ago, using %s instead. "
