@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.18.0
+  * Forced Replication Method implemented for couple of streams and replication keys [167](https://github.com/singer-io/tap-facebook/pull/167)
+  * Added Tap-tester test cases [168](https://github.com/singer-io/tap-facebook/pull/168)
+  * Stream ads_insights_age_gender has unexpected datatype for replication key field date_start [#172](https://github.com/singer-io/tap-facebook/pull/172)
+
 ## 1.17.0
   * Added retry to AdsInsights job polling to resolve race-condition errors [#174](https://github.com/singer-io/tap-facebook/pull/174)
 
