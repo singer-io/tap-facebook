@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.18.0
+## 1.18.1
   * Forced Replication Method implemented for couple of streams and replication keys [167](https://github.com/singer-io/tap-facebook/pull/167)
   * Added Tap-tester test cases [168](https://github.com/singer-io/tap-facebook/pull/168)
   * Updated schema file of ads_insights_age_and_gender and ads_insights_hourly_advertiser and added "format": "date-time" [#172](https://github.com/singer-io/tap-facebook/pull/172)
