@@ -37,6 +37,7 @@ class FacebookStartDateTest(FacebookBaseTest):
         self.start_date = self.start_date_1
 
         expected_streams = self.expected_streams()
+        # Don't have data for leads and it's required some chargeable actions so as per discussion skipping the 'leads' stream.(TDL-6619)
         expected_streams = expected_streams - {"leads"}
 
         ##########################################################################

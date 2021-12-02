@@ -97,6 +97,7 @@ class FacebookFieldSelection(FacebookBaseTest):  # TODO use base.py, determine i
         all_excluded_fields = {}
         # select all catalogs
         for c in found_catalogs:
+            # Don't have data for leads and it's required some chargeable actions so as per discussion skipping the 'leads' stream.(TDL-6619)
             if c['stream_name'] == 'ads' or c['stream_name'] == 'leads':
                 continue
 

@@ -98,6 +98,7 @@ class FacebookBookmarks(FacebookBaseTest):
     def test_run(self):
         expected_streams =  self.expected_streams()
         non_insight_streams = {stream for stream in expected_streams if not self.is_insight(stream)}
+        # Don't have data for leads and it's required some chargeable actions so as per discussion skipping the 'leads' stream.(TDL-6619)
         non_insight_streams = non_insight_streams - {"leads"}
         insight_streams = {stream for stream in expected_streams if self.is_insight(stream)}
 
