@@ -98,6 +98,7 @@ class FacebookBookmarks(FacebookBaseTest):
     def test_run(self):
         expected_streams =  self.expected_streams()
         non_insight_streams = {stream for stream in expected_streams if not self.is_insight(stream)}
+        non_insight_streams = non_insight_streams - {"leads"}
         insight_streams = {stream for stream in expected_streams if self.is_insight(stream)}
 
         # Testing against ads insights objects

@@ -57,7 +57,7 @@ STREAMS = [
     'ads_insights_region',
     'ads_insights_dma',
     'ads_insights_hourly_advertiser',
-    #'leads',
+    'leads',
 ]
 
 REQUIRED_CONFIG_KEYS = ['start_date', 'account_id', 'access_token']
@@ -486,7 +486,9 @@ class Leads(Stream):
 
         # Ensure the final batch is executed
         api_batch.execute()
-        return str(pendulum.parse(latest_lead[self.replication_key]))
+        # Return lead with maximum replication_key for bookmark if any leads found
+        if latest_lead:
+            return str(pendulum.parse(latest_lead[self.replication_key]))
 
     # Added retry_pattern to handle AttributeError raised from account.get_ads() below
     @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)

@@ -42,6 +42,7 @@ class FacebookAutomaticFields(FacebookBaseTest):
         """
 
         expected_streams = self.expected_streams()
+        expected_streams = expected_streams - {"leads"}
 
         # instantiate connection
         conn_id = connections.ensure_connection(self)

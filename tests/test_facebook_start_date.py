@@ -37,6 +37,7 @@ class FacebookStartDateTest(FacebookBaseTest):
         self.start_date = self.start_date_1
 
         expected_streams = self.expected_streams()
+        expected_streams = expected_streams - {"leads"}
 
         ##########################################################################
         ### First Sync
