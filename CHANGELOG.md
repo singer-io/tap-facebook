@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.18.2
+  * Implemented Request Timeout [#173](https://github.com/singer-io/tap-facebook/pull/173)
+
 ## 1.18.1
   * Forced Replication Method implemented for couple of streams and replication keys [167](https://github.com/singer-io/tap-facebook/pull/167)
   * Added Tap-tester test cases [168](https://github.com/singer-io/tap-facebook/pull/168)
