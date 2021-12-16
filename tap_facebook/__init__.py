@@ -679,7 +679,8 @@ class AdsInsights(Stream):
             job_id = job['id']
             LOGGER.info('%s, %d%% done', status, percent_complete)
 
-            if status == "Job Completed":
+            # check that both async_status should be 'Job Completed' and the completion percentage should be 100
+            if status == "Job Completed" or job['async_percent_completion'] == 100:
                 return job
 
             if duration > INSIGHTS_MAX_WAIT_TO_START_SECONDS and percent_complete == 0:
