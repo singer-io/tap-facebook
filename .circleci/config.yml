@@ -115,71 +115,97 @@ workflows:
   commit:
     jobs:
       - ensure_env:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
       - run_pylint:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           requires:
             - ensure_env
       - run_unit_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_start_date.py"
           test_name: "test_facebook_start_date.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_field_selection.py"
           test_name: "test_facebook_field_selection.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_discovery.py"
           test_name: "test_facebook_discovery.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_bookmarks.py"
           test_name: "test_facebook_bookmarks.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_automatic_fields.py"
           test_name: "test_facebook_automatic_fields.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_tests_run.py"
           test_name: "test_facebook_tests_run.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_archived_data.py"
           test_name: "test_facebook_archived_data.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_attribution_window.py"
           test_name: "test_facebook_attribution_window.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_invalid_attribution_window.py"
           test_name: "test_facebook_invalid_attribution_window.py"
           requires:
             - ensure_env
       - build:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           requires:
             - run_pylint
             - run_unit_tests
@@ -202,71 +228,97 @@ workflows:
   build_daily:
     jobs:
       - ensure_env:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
       - run_pylint:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           requires:
             - ensure_env
       - run_unit_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_start_date.py"
           test_name: "test_facebook_start_date.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_field_selection.py"
           test_name: "test_facebook_field_selection.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_discovery.py"
           test_name: "test_facebook_discovery.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_bookmarks.py"
           test_name: "test_facebook_bookmarks.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_automatic_fields.py"
           test_name: "test_facebook_automatic_fields.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_tests_run.py"
           test_name: "test_facebook_tests_run.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_archived_data.py"
           test_name: "test_facebook_archived_data.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_attribution_window.py"
           test_name: "test_facebook_attribution_window.py"
           requires:
             - ensure_env
       - run_integration_tests:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           name: "test_facebook_invalid_attribution_window.py"
           test_name: "test_facebook_invalid_attribution_window.py"
           requires:
             - ensure_env
       - build:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           requires:
             - run_pylint
             - run_unit_tests
@@ -281,7 +333,7 @@ workflows:
             - test_facebook_invalid_attribution_window.py
     triggers:
       - schedule:
-          cron: "0 6 * * *"
+          cron: "0 1 * * *"
           filters:
             branches:
               only:
