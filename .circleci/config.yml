@@ -169,7 +169,7 @@ workflows:
       - push_pypi:
           context: circleci-user
           requires:
-            - build
+            - git_tag
           filters:
             branches:
               only: master
