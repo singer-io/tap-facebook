@@ -34,6 +34,7 @@ import facebook_business.adobjects.campaign as fb_campaign
 import facebook_business.adobjects.adsinsights as adsinsights
 import facebook_business.adobjects.user as fb_user
 import facebook_business.adobjects.lead as fb_lead
+from facebook_business.adobjects.adaccount import AdAccount
 
 from facebook_business.exceptions import FacebookError, FacebookRequestError, FacebookBadObjectError
 
@@ -132,6 +133,7 @@ def raise_from(singer_error, fb_error):
         # All other facebook errors are `FacebookError`s and we handle
         # them the same as a python error
         error_message = str(fb_error)
+    
     raise singer_error(error_message) from fb_error
 
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
@@ -223,6 +225,7 @@ class IncrementalStream(Stream):
                     max_bookmark = updated_at
 
                 record = record_preparation(record)
+
                 yield {'record': record}
 
             if max_bookmark:
@@ -241,6 +244,17 @@ def batch_record_failure(response):
     '''A failure callback for the FB Batch endpoint used when syncing AdCreatives. Raises the error
     so it fails the sync process.'''
     raise response.error()
+
+
+def rest(account):
+    response = account.get_insights(fields = ['ad_id'], params = {'limit': 1})
+    rate_limit = json.loads(response.headers()['x-fb-ads-insights-throttle'])
+    LOGGER.info("The percentage of allocated capacity for the associated ad account_id has consumed:  %s", rate_limit['acc_id_util_pct'])
+    if rate_limit['acc_id_util_pct'] > 70:
+        while(rate_limit['acc_id_util_pct'] > 5):
+            time.sleep(60)
+            response = account.get_insights(fields = ['ad_id'], params = {'limit': 1})
+            rate_limit = json.loads(response.headers()['x-fb-ads-insights-throttle'])
 
 # AdCreative is not an iterable stream as it uses the batch endpoint
 class AdCreative(Stream):
@@ -266,6 +280,7 @@ class AdCreative(Stream):
                 api_batch.execute()
                 api_batch = API.new_batch()
 
+            rest(self.account)
             # Add a call to the batch with the full object
             obj.api_get(fields=self.fields(),
                         batch=api_batch,
@@ -281,7 +296,8 @@ class AdCreative(Stream):
     # Added retry_pattern to handle AttributeError raised from account.get_ad_creatives() below
     @retry_pattern(backoff.expo, (FacebookRequestError, TypeError, AttributeError), max_tries=5, factor=5)
     def get_adcreatives(self):
-        return self.account.get_ad_creatives(params={'limit': RESULT_RETURN_LIMIT})
+        result = self.account.get_ad_creatives(params={'limit': RESULT_RETURN_LIMIT})
+        return result
 
     def sync(self):
         adcreatives = self.get_adcreatives()
@@ -324,6 +340,7 @@ class Ads(IncrementalStream):
         # Added retry_pattern to handle AttributeError raised from ad.api_get() below
         @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
         def prepare_record(ad):
+            rest(self.account)
             return ad.api_get(fields=self.fields()).export_all_data()
 
         if CONFIG.get('include_deleted', 'false').lower() == 'true':
@@ -370,6 +387,7 @@ class AdSets(IncrementalStream):
         # Added retry_pattern to handle AttributeError raised from ad_set.api_get() below
         @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
         def prepare_record(ad_set):
+            rest(self.account)
             return ad_set.api_get(fields=self.fields()).export_all_data()
 
         if CONFIG.get('include_deleted', 'false').lower() == 'true':
@@ -419,6 +437,7 @@ class Campaigns(IncrementalStream):
         @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
         def prepare_record(campaign):
             """If campaign.ads is selected, make the request and insert the data here"""
+            rest(self.account)
             campaign_out = campaign.api_get(fields=fields).export_all_data()
             if pull_ads:
                 campaign_out['ads'] = {'data': []}
@@ -477,11 +496,13 @@ class Leads(Stream):
                 api_batch.execute()
                 api_batch = API.new_batch()
 
+            rest(self.account)
             # Add a call to the batch with the full object
             obj.api_get(fields=self.fields(),
                         batch=api_batch,
                         success=partial(batch_record_success, stream=self, transformer=transformer, schema=schema),
                         failure=batch_record_failure)
+
             batch_count += 1
 
         # Ensure the final batch is executed
@@ -653,6 +674,7 @@ class AdsInsights(Stream):
         job = self.account.get_insights( # pylint: disable=no-member
             params=params,
             is_async=True)
+        rest(self.account)
         status = None
         time_start = time.time()
         sleep_time = 10
@@ -758,11 +780,13 @@ def get_streams_to_sync(account, catalog, state):
     streams = []
     for stream in STREAMS:
         catalog_entry = next((s for s in catalog.streams if s.tap_stream_id == stream), None)
+        init_stream = initialize_stream(account, catalog_entry, state)
+        streams.append(init_stream)
+        # streams.append(initialize_stream(account, catalog_entry, state))
         if catalog_entry and catalog_entry.is_selected():
             # TODO: Don't need name and stream_alias since it's on catalog_entry
             name = catalog_entry.stream
             stream_alias = catalog_entry.stream_alias
-            streams.append(initialize_stream(account, catalog_entry, state))
     return streams
 
 def transform_date_hook(data, typ, schema):
@@ -873,6 +897,7 @@ def main_impl():
 
         global API
         API = FacebookAdsApi.init(access_token=access_token)
+
         user = fb_user.User(fbid='me')
 
         accounts = user.get_ad_accounts()
