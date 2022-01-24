@@ -799,30 +799,31 @@ def do_sync(account, catalog, state):
     streams_to_sync = get_streams_to_sync(account, catalog, state)
     refs = load_shared_schema_refs()
     for stream in streams_to_sync:
-        LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields())
-        schema = singer.resolve_schema_references(load_schema(stream), refs)
-        metadata_map = metadata.to_map(stream.catalog_entry.metadata)
-        bookmark_key = BOOKMARK_KEYS.get(stream.name)
-        singer.write_schema(stream.name, schema, stream.key_properties, bookmark_key, stream.stream_alias)
+        if len(stream.fields()) > 0:
+            LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields())
+            schema = singer.resolve_schema_references(load_schema(stream), refs)
+            metadata_map = metadata.to_map(stream.catalog_entry.metadata)
+            bookmark_key = BOOKMARK_KEYS.get(stream.name)
+            singer.write_schema(stream.name, schema, stream.key_properties, bookmark_key, stream.stream_alias)
 
 
-        # NB: The AdCreative stream is not an iterator
-        if stream.name in {'adcreative', 'leads'}:
-            stream.sync()
-            continue
+            # NB: The AdCreative stream is not an iterator
+            if stream.name in {'adcreative', 'leads'}:
+                stream.sync()
+                continue
 
-        with Transformer(pre_hook=transform_date_hook) as transformer:
-            with metrics.record_counter(stream.name) as counter:
-                for message in stream:
-                    if 'record' in message:
-                        counter.increment()
-                        time_extracted = utils.now()
-                        record = transformer.transform(message['record'], schema, metadata=metadata_map)
-                        singer.write_record(stream.name, record, stream.stream_alias, time_extracted)
-                    elif 'state' in message:
-                        singer.write_state(message['state'])
-                    else:
-                        raise TapFacebookException('Unrecognized message {}'.format(message))
+            with Transformer(pre_hook=transform_date_hook) as transformer:
+                with metrics.record_counter(stream.name) as counter:
+                    for message in stream:
+                        if 'record' in message:
+                            counter.increment()
+                            time_extracted = utils.now()
+                            record = transformer.transform(message['record'], schema, metadata=metadata_map)
+                            singer.write_record(stream.name, record, stream.stream_alias, time_extracted)
+                        elif 'state' in message:
+                            singer.write_state(message['state'])
+                        else:
+                            raise TapFacebookException('Unrecognized message {}'.format(message))
 
 
 def get_abs_path(path):
@@ -889,6 +890,8 @@ def main_impl():
         args = utils.parse_args(REQUIRED_CONFIG_KEYS)
         account_id = args.config['account_id']
         access_token = args.config['access_token']
+        app_id = args.config.get('app_id', None)
+        app_secret = args.config.get('app_secret', None)
 
         CONFIG.update(args.config)
 
@@ -896,7 +899,11 @@ def main_impl():
         RESULT_RETURN_LIMIT = CONFIG.get('result_return_limit', RESULT_RETURN_LIMIT)
 
         global API
-        API = FacebookAdsApi.init(access_token=access_token)
+        # Allow token-only auth to remain backwards compatible
+        if app_id is None or app_secret is None:
+            API = FacebookAdsApi.init(access_token=access_token)
+        else:
+            API = FacebookAdsApi.init(app_id, app_secret, access_token)
 
         user = fb_user.User(fbid='me')
 
@@ -919,7 +926,7 @@ def main_impl():
         catalog = Catalog.from_dict(args.properties)
         try:
             do_sync(account, catalog, args.state)
-        except FacebookError as fb_error:
+        except FacebookError as fb_error:   
             raise_from(SingerSyncError, fb_error)
     else:
         LOGGER.info("No properties were selected")

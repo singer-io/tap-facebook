@@ -94,5 +94,11 @@ ENV/
 
 # Custom stuff
 env.sh
-config.json
 .autoenv.zsh
+
+# Visual Studio Code
+.vscode/
+
+# Singer
+catalog.json
+config.json
