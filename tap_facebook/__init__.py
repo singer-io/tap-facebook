@@ -280,10 +280,10 @@ class AdCreative(Stream):
         for obj in stream_objects:
             # Execute and create a new batch for every 50 added
             if batch_count % 50 == 0:
+                rest(self.account)
                 api_batch.execute()
                 api_batch = API.new_batch()
 
-            rest(self.account)
             # Add a call to the batch with the full object
             obj.api_get(fields=self.fields(),
                         batch=api_batch,
@@ -292,6 +292,7 @@ class AdCreative(Stream):
             batch_count += 1
 
         # Ensure the final batch is executed
+        rest(self.account)
         api_batch.execute()
 
     key_properties = ['id']
@@ -299,6 +300,7 @@ class AdCreative(Stream):
     # Added retry_pattern to handle AttributeError raised from account.get_ad_creatives() below
     @retry_pattern(backoff.expo, (FacebookRequestError, TypeError, AttributeError), max_tries=5, factor=5)
     def get_adcreatives(self):
+        rest(self.account)
         result = self.account.get_ad_creatives(params={'limit': RESULT_RETURN_LIMIT})
         return result
 
