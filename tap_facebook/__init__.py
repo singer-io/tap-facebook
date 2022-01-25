@@ -253,8 +253,8 @@ def rest(account):
     if rate_limit['acc_id_util_pct'] > 70:
         LOGGER.info("Utilization over 70%, backing off until capacity below 5%")
         while(rate_limit['acc_id_util_pct'] > 5):
-            LOGGER.info("Sleeping for 1 minute")
-            time.sleep(60)
+            LOGGER.info("Sleeping for 5 minutes")
+            time.sleep(60 * 5)
             response = account.get_insights(fields = ['ad_id'], params = {'limit': 1})
             rate_limit = json.loads(response.headers()['x-fb-ads-insights-throttle'])
             LOGGER.info("The percentage of allocated capacity for the associated ad account_id has consumed:  %s", rate_limit['acc_id_util_pct'])
