@@ -15,7 +15,7 @@ class FacebookPaginationTest(FacebookBaseTest):
             'start_date' : '2019-07-22T00:00:00Z',
             'end_date' : '2019-07-23T00:00:00Z',
             'insights_buffer_days': '1',
-            'result_return_limit': '1'
+            'result_return_limit': 1
         }
         if original:
             return return_value
