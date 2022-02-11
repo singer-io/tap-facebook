@@ -80,3 +80,15 @@ class FacebookAutomaticFields(FacebookBaseTest):
                 # Verify that only the automatic fields are sent to the target
                 for actual_keys in record_messages_keys:
                     self.assertSetEqual(expected_keys, actual_keys)
+
+                # Iterate over data and get all PKs in set
+                records_pks_set = {tuple([message.get('data').get(primary_key) for primary_key in expected_keys])
+                                          for message in data.get('messages')}
+
+                # Iterate over data and get all PKs in list
+                records_pks_list = [tuple([message.get('data').get(primary_key) for primary_key in expected_keys])
+                                           for message in data.get('messages')]
+
+                # Verify that all replicated records have unique primary key values.
+                self.assertCountEqual(records_pks_set, records_pks_list,
+                                      msg="Duplicate records found for {}".format(stream))
