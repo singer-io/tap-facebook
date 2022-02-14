@@ -22,7 +22,6 @@ jobs:
           command: |
             python3 -m venv /usr/local/share/virtualenvs/tap-facebook
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-            pip install -U pip setuptools
             pip install .[dev]
       - slack/notify-on-failure:
           only_for_branches: master
