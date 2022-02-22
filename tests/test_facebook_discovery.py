@@ -22,6 +22,7 @@ class DiscoveryTest(FacebookBaseTest):
         • Verify stream names follow naming convention
           streams should only have lowercase alphas and underscores
         • verify there is only 1 top level breadcrumb
+        • verify there are no duplicate metadata entries
         • verify replication key(s)
         • verify primary key(s)
         • verify that if there is a replication key we are doing INCREMENTAL otherwise FULL
@@ -60,6 +61,13 @@ class DiscoveryTest(FacebookBaseTest):
                 schema_and_metadata = menagerie.get_annotated_schema(conn_id, catalog['stream_id'])
                 metadata = schema_and_metadata["metadata"]
                 stream_properties = [item for item in metadata if item.get("breadcrumb") == []]
+
+                # Collecting the field entries from metadata
+                actual_metadata_fields = []
+                for md_entry in metadata:
+                    if md_entry['breadcrumb'] != []:
+                        actual_metadata_fields.append(md_entry['breadcrumb'][1])
+
                 actual_primary_keys = set(
                     stream_properties[0].get(
                         "metadata", {self.PRIMARY_KEYS: []}).get(self.PRIMARY_KEYS, [])
@@ -83,6 +91,9 @@ class DiscoveryTest(FacebookBaseTest):
                 self.assertTrue(len(stream_properties) == 1,
                                 msg="There is NOT only one top level breadcrumb for {}".format(stream) + \
                                 "\nstream_properties | {}".format(stream_properties))
+
+                # verify there are no duplicate metadata entries
+                self.assertEqual(len(actual_metadata_fields), len(set(actual_metadata_fields)), msg = "Duplicates in the fields retrieved")
 
                 # verify replication key(s) match expectations
                 self.assertSetEqual(
