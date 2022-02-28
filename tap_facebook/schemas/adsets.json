@@ -92,28 +92,6 @@
       ],
       "format": "date-time"
     },
-    "daily_budget": {
-      "type": [
-        "null",
-        "number"
-      ],
-      "maximum": 100000000000000000000000000000000,
-      "minimum": -100000000000000000000000000000000,
-      "multipleOf": 0.000001,
-      "exclusiveMaximum": true,
-      "exclusiveMinimum": true
-    },
-    "budget_remaining": {
-      "type": [
-        "null",
-        "number"
-      ],
-      "maximum": 100000000000000000000000000000000,
-      "minimum": -100000000000000000000000000000000,
-      "multipleOf": 0.000001,
-      "exclusiveMaximum": true,
-      "exclusiveMinimum": true
-    },
     "effective_status": {
       "type": [
         "null",
@@ -139,62 +117,6 @@
         "string"
       ],
       "format": "date-time"
-    },
-    "lifetime_budget": {
-      "type": [
-        "null",
-        "number"
-      ],
-      "maximum": 100000000000000000000000000000000,
-      "minimum": -100000000000000000000000000000000,
-      "multipleOf": 0.000001,
-      "exclusiveMaximum": true,
-      "exclusiveMinimum": true
-    },
-    "targeting": { "$ref": "targeting.json"},
-    "bid_info": {
-      "type": [
-        "null",
-        "object"
-      ],
-      "properties": {
-        "CLICKS": {
-          "type": [
-            "null",
-            "integer"
-          ]
-        },
-        "ACTIONS": {
-          "type": [
-            "null",
-            "integer"
-          ]
-        },
-        "IMPRESSIONS": {
-          "type": [
-            "null",
-            "integer"
-          ]
-        },
-        "REACH": {
-          "type": [
-            "null",
-            "integer"
-          ]
-        }
-      }
-    },
-    "adlabels": {
-      "type": ["null", "array"],
-      "items": {
-        "type": "object",
-        "properties": {
-          "id": {"type": "string"},
-          "name": {"type": "string"},
-          "created_time": {"type": "string", "format": "date-time"},
-          "updated_time": {"type": "string", "format": "date-time"}
-        }
-      }
     }
   }
 }
