@@ -808,6 +808,7 @@ def do_sync(account, catalog, state):
                         counter.increment()
                         time_extracted = utils.now()
                         record = transformer.transform(message['record'], schema, metadata=metadata_map)
+                        record = fill_columns(record, stream.fields())
                         singer.write_record(stream.name, record, stream.stream_alias, time_extracted)
                     elif 'state' in message:
                         singer.write_state(message['state'])
@@ -815,6 +816,15 @@ def do_sync(account, catalog, state):
                         raise TapFacebookException('Unrecognized message {}'.format(message))
 
 
+def fill_columns(json, schema):
+    out = {}
+    for s in schema:
+        if s in list(json):
+            out.update({s: json[s]})
+        else:
+            out.update({s: None})
+    return out
+    
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
 
@@ -911,10 +921,9 @@ def main_impl():
             do_discover()
         except FacebookError as fb_error:
             raise_from(SingerDiscoveryError, fb_error)
-    elif args.properties:
-        catalog = Catalog.from_dict(args.properties)
+    elif args.catalog:
         try:
-            do_sync(account, catalog, args.state)
+            do_sync(account, args.catalog, args.state)
         except FacebookError as fb_error:
             raise_from(SingerSyncError, fb_error)
     else:
