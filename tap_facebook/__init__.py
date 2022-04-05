@@ -42,17 +42,15 @@ def main():
         for accnt in User("me", api=api).get_ad_accounts(fields=["account_id", "id"])
     }
     accnt_ids = []
-    if not account_ids:
-        accnt_ids = all_account_ids.values()
-    else:
-        for account_id in account_ids:
-            if account_id not in all_account_ids:
-                logger.warn(
-                    f"invalid account id: {account_id} not in list of valid account ids: {all_account_ids.keys()}"
-                )
-                continue
 
-            accnt_ids.append(all_account_ids[account_id])
+    for account_id in account_ids:
+        if account_id not in all_account_ids:
+            logger.warn(
+                f"invalid account id: {account_id} not in list of valid account ids: {all_account_ids.keys()}"
+            )
+            continue
+
+        accnt_ids.append(all_account_ids[account_id])
 
     print(f"account ids: ", accnt_ids)
     do_sync(accnt_ids, args.config, args.state)
