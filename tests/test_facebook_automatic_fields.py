@@ -15,6 +15,9 @@ class FacebookAutomaticFields(FacebookBaseTest):
     def name():
         return "tap_tester_facebook_automatic_fields"
 
+    def streams_to_test(self):
+        return self.expected_streams()
+
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
         return_value = {
@@ -41,7 +44,7 @@ class FacebookAutomaticFields(FacebookBaseTest):
         that 251 (or more) records have been posted for that stream.
         """
 
-        expected_streams = self.expected_streams()
+        expected_streams = self.streams_to_test()
 
         # instantiate connection
         conn_id = connections.ensure_connection(self)

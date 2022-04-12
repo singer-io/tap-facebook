@@ -10,6 +10,11 @@ class FacebookAttributionWindow(FacebookBaseTest):
     def name():
         return "tap_tester_facebook_attribution_window"
 
+    def streams_to_test(self):
+        """ 'attribution window' is only supported for 'ads_insights' streams """
+        return [stream for stream in self.expected_streams() if self.is_insight(stream)]
+
+
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
         return_value = {
@@ -50,20 +55,14 @@ class FacebookAttributionWindow(FacebookBaseTest):
             Test to check the attribution window
         """
 
+        expected_streams = self.streams_to_test()
+
         conn_id = connections.ensure_connection(self)
 
         # calculate start date with attribution window
         start_date_with_attribution_window = self.timedelta_formatted(start_date, days=-attr_window)
 
-        # 'attribution window' is only supported for 'ads_insights' streams
-        expected_insights_streams = []
-        for stream in self.expected_streams():
-            if self.is_insight(stream):
-                expected_insights_streams.append(stream)
-
-        # core streams does not respect start date so will be descoped from this test
-
-        # # Run in check mode
+        # Run in check mode
         found_catalogs = self.run_and_verify_check_mode(conn_id)
 
         # Select only the expected streams tables

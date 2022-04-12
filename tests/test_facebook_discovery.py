@@ -1,17 +1,19 @@
 """Test tap discovery mode and metadata."""
 import re
 
-from tap_tester import menagerie, connections, LOGGER
+from tap_tester import menagerie, connections
 
 from base import FacebookBaseTest
 
 
 class DiscoveryTest(FacebookBaseTest):
     """Test tap discovery mode and metadata conforms to standards."""
-
     @staticmethod
     def name():
         return "tap_tester_facebook_discovery_test"
+
+    def streams_to_test(self):
+        return self.expected_streams()
 
     def test_run(self):
         """
@@ -30,8 +32,7 @@ class DiscoveryTest(FacebookBaseTest):
           are given the inclusion of automatic.
         • verify that all other fields have inclusion of available metadata.
         """
-        streams_to_test = self.expected_streams()
-        LOGGER.info("STARTING TEST | Discovery | streams covered: %s", streams_to_test)
+        streams_to_test = self.streams_to_test()
 
         conn_id = connections.ensure_connection(self)
 

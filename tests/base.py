@@ -362,3 +362,15 @@ class FacebookBaseTest(unittest.TestCase):
     @staticmethod
     def is_insight(stream):
         return stream.startswith('ads_insights')
+
+    def setUp(self):
+        LOGGER.info("-------------------------------------------- STARTING TEST ---------------------------------------------------")
+        LOGGER.info("test: %s", self.name())
+        LOGGER.info("streams covered: %s", self.streams_to_test())
+        LOGGER.info("--------------------------------------------------------------------------------------------------------------")
+
+    def tearDown(self):
+        LOGGER.info("--------------------------------------------- ENDING TEST ----------------------------------------------------")
+        LOGGER.info("test: %s", self.name())
+        LOGGER.info("streams covered: %s", self.streams_to_test())
+        LOGGER.info("--------------------------------------------------------------------------------------------------------------")
