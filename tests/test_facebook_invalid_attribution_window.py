@@ -1,4 +1,5 @@
 import os
+import unittest
 
 from tap_tester import runner, connections, menagerie
 
@@ -51,7 +52,8 @@ class FacebookInvalidAttributionWindowStr(FacebookInvalidAttributionWindowInt):
     @staticmethod
     def name():
         return "tt_facebook_invalid_window_str"
-
+    
+    @unittest.skip("BUG: TDL-18569")
     def test_run(self):
         self.ATTRIBUTION_WINDOW = 'something'
         self.run_test()
