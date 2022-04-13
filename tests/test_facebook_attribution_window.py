@@ -4,6 +4,7 @@ from tap_tester import runner, connections
 
 from base import FacebookBaseTest
 
+
 class FacebookAttributionWindow(FacebookBaseTest):
 
     @staticmethod
@@ -13,7 +14,6 @@ class FacebookAttributionWindow(FacebookBaseTest):
     def streams_to_test(self):
         """ 'attribution window' is only supported for 'ads_insights' streams """
         return [stream for stream in self.expected_streams() if self.is_insight(stream)]
-
 
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
@@ -29,8 +29,11 @@ class FacebookAttributionWindow(FacebookBaseTest):
         return_value["start_date"] = self.start_date
         return return_value
 
-    # For the test ad set up in facebook ads manager we see data on April 7th, start date is based on this data
     def test_run(self):
+        """
+        For the test ad set up in facebook ads manager we see data
+        on April 7th, start date is based on this data
+        """
         # attrribution window = 7
         self.ATTRIBUTION_WINDOW = 7
         self.start_date = '2021-04-14T00:00:00Z'
@@ -48,7 +51,6 @@ class FacebookAttributionWindow(FacebookBaseTest):
         self.start_date = '2021-04-08T00:00:00Z'
         self.end_date = '2021-04-09T00:00:00Z'
         self.run_test(self.ATTRIBUTION_WINDOW, self.start_date, self.end_date)
-
 
     def run_test(self, attr_window, start_date, end_date):
         """
