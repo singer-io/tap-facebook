@@ -11,6 +11,10 @@ class FacebookInvalidAttributionWindowInt(FacebookBaseTest):
     def name():
         return "tt_facebook_invalid_window_int"
 
+    @staticmethod
+    def streams_to_test():
+        return []
+
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
         return_value = {
@@ -31,7 +35,7 @@ class FacebookInvalidAttributionWindowInt(FacebookBaseTest):
 
     def run_test(self):
         """
-            Test to verify that the error is raise when passing attribution window other than 1, 7 or 28
+        Test to verify that the error is raise when passing attribution window other than 1, 7 or 28
         """
         # create connection
         conn_id = connections.ensure_connection(self)
