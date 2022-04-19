@@ -68,7 +68,7 @@ class FacebookAttributionWindow(FacebookBaseTest):
         found_catalogs = self.run_and_verify_check_mode(conn_id)
 
         # Select only the expected streams tables
-        catalog_entries = [ce for ce in found_catalogs if ce['tap_stream_id'] in expected_insights_streams]
+        catalog_entries = [ce for ce in found_catalogs if ce['tap_stream_id'] in expected_streams]
         self.perform_and_verify_table_and_field_selection(conn_id, catalog_entries, select_all_fields=True)
 
         # Run a sync job using orchestrator
@@ -77,7 +77,7 @@ class FacebookAttributionWindow(FacebookBaseTest):
 
         expected_replication_keys = self.expected_replication_keys()
 
-        for stream in expected_insights_streams:
+        for stream in expected_streams:
             with self.subTest(stream=stream):
 
                 replication_key = next(iter(expected_replication_keys[stream]))
