@@ -13,6 +13,9 @@ class FacebookBookmarks(FacebookBaseTest):
     def name():
         return "tap_tester_facebook_bookmarks"
 
+    def streams_to_test(self):
+        return self.expected_streams()
+
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
         return_value = {
@@ -96,7 +99,7 @@ class FacebookBookmarks(FacebookBaseTest):
         return True
 
     def test_run(self):
-        expected_streams =  self.expected_streams()
+        expected_streams = self.streams_to_test()
         non_insight_streams = {stream for stream in expected_streams if not self.is_insight(stream)}
         insight_streams = {stream for stream in expected_streams if self.is_insight(stream)}
 

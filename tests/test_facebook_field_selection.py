@@ -13,7 +13,7 @@ class FacebookFieldSelection(FacebookBaseTest):  # TODO use base.py, determine i
         return "tap_tester_facebook_field_selection"
 
     @staticmethod
-    def expected_check_streams():
+    def streams_to_test():
         return {
             'ads',
             'adcreative',
@@ -27,23 +27,6 @@ class FacebookFieldSelection(FacebookBaseTest):  # TODO use base.py, determine i
             'ads_insights_dma',
             "ads_insights_hourly_advertiser",
             #'leads',
-        }
-
-    @staticmethod
-    def expected_sync_streams():
-        return {
-            "ads",
-            "adcreative",
-            "adsets",
-            "campaigns",
-            "ads_insights",
-            "ads_insights_age_and_gender",
-            "ads_insights_country",
-            "ads_insights_platform_and_device",
-            "ads_insights_region",
-            "ads_insights_dma",
-            "ads_insights_hourly_advertiser",
-            #"leads",
         }
 
     @staticmethod
@@ -76,6 +59,9 @@ class FacebookFieldSelection(FacebookBaseTest):  # TODO use base.py, determine i
         }
 
     def test_run(self):
+
+        expected_streams = self.streams_to_test()
+
         conn_id = connections.ensure_connection(self)
 
         # run in check mode
@@ -90,7 +76,7 @@ class FacebookFieldSelection(FacebookBaseTest):  # TODO use base.py, determine i
 
         found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
 
-        diff = self.expected_check_streams().symmetric_difference( found_catalog_names )
+        diff = expected_streams.symmetric_difference( found_catalog_names )
         self.assertEqual(len(diff), 0, msg="discovered schemas do not match: {}".format(diff))
         print("discovered schemas are kosher")
 
@@ -118,7 +104,7 @@ class FacebookFieldSelection(FacebookBaseTest):  # TODO use base.py, determine i
         menagerie.verify_sync_exit_status(self, exit_status, sync_job_name)
 
         # This should be validating the the PKs are written in each record
-        record_count_by_stream = runner.examine_target_output_file(self, conn_id, self.expected_sync_streams(), self.expected_pks())
+        record_count_by_stream = runner.examine_target_output_file(self, conn_id, expected_streams, self.expected_pks())
         replicated_row_count =  reduce(lambda accum,c : accum + c, record_count_by_stream.values())
         self.assertGreater(replicated_row_count, 0, msg="failed to replicate any data: {}".format(record_count_by_stream))
         print("total replicated row count: {}".format(replicated_row_count))

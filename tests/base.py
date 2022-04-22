@@ -7,8 +7,8 @@ import os
 from datetime import timedelta
 from datetime import datetime as dt
 
-import singer
 from tap_tester import connections, menagerie, runner
+from tap_tester.logger import LOGGER
 
 
 class FacebookBaseTest(unittest.TestCase):
@@ -29,7 +29,6 @@ class FacebookBaseTest(unittest.TestCase):
     FULL_TABLE = "FULL_TABLE"
     START_DATE_FORMAT = "%Y-%m-%dT00:00:00Z"
     BOOKMARK_COMPARISON_FORMAT = "%Y-%m-%dT00:00:00+00:00"
-    LOGGER = singer.get_logger()
 
     start_date = ""
 
@@ -216,7 +215,7 @@ class FacebookBaseTest(unittest.TestCase):
         found_catalog_names = set(map(lambda c: c['stream_name'], found_catalogs))
 
         self.assertSetEqual(self.expected_streams(), found_catalog_names, msg="discovered schemas do not match")
-        print("discovered schemas are OK")
+        LOGGER.info("discovered schemas are OK")
 
         return found_catalogs
 
@@ -240,7 +239,7 @@ class FacebookBaseTest(unittest.TestCase):
             sum(sync_record_count.values()), 0,
             msg="failed to replicate any data: {}".format(sync_record_count)
         )
-        print("total replicated row count: {}".format(sum(sync_record_count.values())))
+        LOGGER.info("total replicated row count: %s", sum(sync_record_count.values()))
 
         return sync_record_count
 
@@ -270,7 +269,7 @@ class FacebookBaseTest(unittest.TestCase):
 
             # Verify all testable streams are selected
             selected = catalog_entry.get('annotated-schema').get('selected')
-            print("Validating selection on {}: {}".format(cat['stream_name'], selected))
+            LOGGER.info("Validating selection on %s: %s", cat['stream_name'], selected)
             if cat['stream_name'] not in expected_selected:
                 self.assertFalse(selected, msg="Stream selected, but not testable.")
                 continue # Skip remaining assertions if we aren't selecting this stream
@@ -280,8 +279,8 @@ class FacebookBaseTest(unittest.TestCase):
                 # Verify all fields within each selected stream are selected
                 for field, field_props in catalog_entry.get('annotated-schema').get('properties').items():
                     field_selected = field_props.get('selected')
-                    print("\tValidating selection on {}.{}: {}".format(
-                        cat['stream_name'], field, field_selected))
+                    LOGGER.info("\tValidating selection on %s.%s: %s",
+                                cat['stream_name'], field, field_selected)
                     self.assertTrue(field_selected, msg="Field not selected.")
             else:
                 # Verify only automatic fields are selected
@@ -363,3 +362,15 @@ class FacebookBaseTest(unittest.TestCase):
     @staticmethod
     def is_insight(stream):
         return stream.startswith('ads_insights')
+
+    def setUp(self):
+        LOGGER.info("-------------------------------------------- STARTING TEST ---------------------------------------------------")
+        LOGGER.info("test: %s", self.name())
+        LOGGER.info("streams covered: %s", self.streams_to_test())
+        LOGGER.info("--------------------------------------------------------------------------------------------------------------")
+
+    def tearDown(self):
+        LOGGER.info("--------------------------------------------- ENDING TEST ----------------------------------------------------")
+        LOGGER.info("test: %s", self.name())
+        LOGGER.info("streams covered: %s", self.streams_to_test())
+        LOGGER.info("--------------------------------------------------------------------------------------------------------------")
