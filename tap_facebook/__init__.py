@@ -45,7 +45,7 @@ INSIGHTS_MAX_WAIT_TO_START_SECONDS = 5 * 60
 INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS = 30 * 60
 INSIGHTS_MAX_ASYNC_SLEEP_SECONDS = 5 * 60
 
-RESULT_RETURN_LIMIT = 100
+RESULT_RETURN_LIMIT = 1000
 
 REQUEST_TIMEOUT = 300
 
@@ -236,7 +236,10 @@ class IncrementalStream(Stream):
 def batch_record_success(response, stream=None, transformer=None, schema=None):
     '''A success callback for the FB Batch endpoint used when syncing AdCreatives. Needs the stream
     to resolve schema refs and transform the successful response object.'''
-    rec = response.json()
+    try:
+        rec = response.json()
+    except:
+        rec = response
     record = transformer.transform(rec, schema)
     singer.write_record(stream.name, record, stream.stream_alias, utils.now())
 
@@ -286,11 +289,17 @@ class AdCreative(Stream):
     # Added retry_pattern to handle AttributeError raised from account.get_ad_creatives() below
     @retry_pattern(backoff.expo, (FacebookRequestError, TypeError, AttributeError), max_tries=5, factor=5)
     def get_adcreatives(self):
-        return self.account.get_ad_creatives(params={'limit': RESULT_RETURN_LIMIT})
+        return self.account.get_ad_creatives(fields=self.fields(), params={'limit': RESULT_RETURN_LIMIT})
 
     def sync(self):
         adcreatives = self.get_adcreatives()
-        self.sync_batches(adcreatives)
+        refs = load_shared_schema_refs()
+        schema = singer.resolve_schema_references(self.catalog_entry.schema.to_dict(), refs)
+        transformer = Transformer(pre_hook=transform_date_hook)
+        for adc in adcreatives:
+            adcre = adc.export_all_data()
+            batch_record_success(adcre, stream=self, transformer=transformer, schema=schema)
+        # self.sync_batches(adcreatives)
 
 
 class Ads(IncrementalStream):
@@ -299,6 +308,7 @@ class Ads(IncrementalStream):
     '''
 
     key_properties = ['id', 'updated_time']
+    bookmark_key = UPDATED_TIME_KEY
 
     @retry_pattern(backoff.expo, (Timeout, ConnectionError), max_tries=5, factor=2)
     # Added retry_pattern to handle AttributeError raised from account.get_ads() below
@@ -312,13 +322,31 @@ class Ads(IncrementalStream):
 
     def __iter__(self):
         def do_request():
-            params = {'limit': RESULT_RETURN_LIMIT}
+            start_date = get_start(self, self.bookmark_key)
+            end_date = pendulum.now()
+            if CONFIG.get('end_date'):
+                end_date = pendulum.parse(CONFIG.get('end_date'))
+                
+            params = {
+                'limit': RESULT_RETURN_LIMIT,
+                'time_ranges': [{'since': start_date.to_date_string(),
+                                 'until': end_date.to_date_string()}]
+            }
             if self.current_bookmark:
                 params.update({'filtering': [{'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
             yield self._call_get_ads(params)
 
         def do_request_multiple():
-            params = {'limit': RESULT_RETURN_LIMIT}
+            start_date = get_start(self, self.bookmark_key)
+            end_date = pendulum.now()
+            if CONFIG.get('end_date'):
+                end_date = pendulum.parse(CONFIG.get('end_date'))
+                
+            params = {
+                'limit': RESULT_RETURN_LIMIT,
+                'time_ranges': [{'since': start_date.to_date_string(),
+                                 'until': end_date.to_date_string()}]
+            }
             bookmark_params = []
             if self.current_bookmark:
                 bookmark_params.append({'field': 'ad.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp})
@@ -555,11 +583,11 @@ def get_start(stream, bookmark_key):
     state = stream.state or {}
     current_bookmark = singer.get_bookmark(state, tap_stream_id, bookmark_key)
     if current_bookmark is None:
-        if isinstance(stream, IncrementalStream):
-            return None
-        else:
-            LOGGER.info("no bookmark found for %s, using start_date instead...%s", tap_stream_id, CONFIG['start_date'])
-            return pendulum.parse(CONFIG['start_date'])
+        # if isinstance(stream, IncrementalStream):
+        #     return None
+        # else:
+        LOGGER.info("no bookmark found for %s, using start_date instead...%s", tap_stream_id, CONFIG['start_date'])
+        return pendulum.parse(CONFIG['start_date'])
     LOGGER.info("found current bookmark for %s:  %s", tap_stream_id, current_bookmark)
     return pendulum.parse(current_bookmark)
 
