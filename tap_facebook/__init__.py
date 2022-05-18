@@ -3,14 +3,14 @@ import os
 
 import singer
 
-from tap_facebook.streams import AdsInsights
+from tap_facebook.streams import FacebookAdsInsights
 
 from facebook_business.api import FacebookAdsApi
 from facebook_business.adobjects.user import User
 
 logger = singer.get_logger()
 
-STREAMS = {"ads_insights": AdsInsights}
+STREAMS = {"ads_insights": FacebookAdsInsights}
 
 
 def do_sync(account_ids, config, state):

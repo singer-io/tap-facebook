@@ -5,14 +5,13 @@ from dateutil import parser
 
 from tap_facebook import utils
 from facebook_business.adobjects.adset import AdSet
-from facebook_business.adobjects.adsinsights import AdsInsights as FacebookAdsInsights
+from facebook_business.adobjects.adsinsights import AdsInsights
 
 logger = singer.get_logger()
 
 
-class AdsInsights:
+class FacebookAdsInsights:
     def __init__(self, config):
-
         self.config = config
         self.bookmark_key = "date_start"
 
