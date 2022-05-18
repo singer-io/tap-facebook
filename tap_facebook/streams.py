@@ -75,13 +75,15 @@ class FacebookAdsInsights:
             "unique_inline_link_clicks",
         ]
         with singer.record_counter(tap_stream_id) as counter:
-
             if not start_date:
                 raise ValueError("client: start_date is required")
 
             since = utils.parse_date(start_date)
 
             until = date.today() + timedelta(days=-1)
+
+            logger.info(f"start_date: {since}")
+            logger.info(f"end_date: {until}")
 
             if until - since > timedelta(days=1):
                 # for large intervals, the API returns 500
@@ -115,6 +117,9 @@ class FacebookAdsInsights:
                         "time_range": timerange,
                     }
 
+                    logger.info(f"account_id: {account_id}")
+                    logger.info(f"params: {params}")
+
                     async_job = cast(
                         AdReportRun,
                         AdSet(account_id).get_insights(
@@ -127,8 +132,6 @@ class FacebookAdsInsights:
 
                         pct: int = job["async_percent_completion"]
                         status: str = job["async_status"]
-
-                        logger.info(f"{status}: {pct}%")
 
                         # https://developers.facebook.com/docs/marketing-api/insights/best-practices/#asynchronous
                         # both fields need to be set to signify completion
