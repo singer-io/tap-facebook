@@ -1,18 +1,19 @@
 import singer
+import time
 from typing import Sequence, Union, Optional, Dict, cast, List
 from datetime import timedelta, datetime, date
 from dateutil import parser
 
 from tap_facebook import utils
 from facebook_business.adobjects.adset import AdSet
-from facebook_business.adobjects.adsinsights import AdsInsights as FacebookAdsInsights
+from facebook_business.adobjects.adsinsights import AdsInsights
+from facebook_business.adobjects.adreportrun import AdReportRun
 
 logger = singer.get_logger()
 
 
-class AdsInsights:
+class FacebookAdsInsights:
     def __init__(self, config):
-
         self.config = config
         self.bookmark_key = "date_start"
 
@@ -74,13 +75,15 @@ class AdsInsights:
             "unique_inline_link_clicks",
         ]
         with singer.record_counter(tap_stream_id) as counter:
-
             if not start_date:
                 raise ValueError("client: start_date is required")
 
             since = utils.parse_date(start_date)
 
             until = date.today() + timedelta(days=-1)
+
+            logger.info(f"start_date: {since}")
+            logger.info(f"end_date: {until}")
 
             if until - since > timedelta(days=1):
                 # for large intervals, the API returns 500
@@ -113,12 +116,36 @@ class AdsInsights:
                         "time_increment": 1,
                         "time_range": timerange,
                     }
-                    insights_resp = AdSet(account_id).get_insights(
-                        fields=fields, params=params
+
+                    logger.info(f"account_id: {account_id}")
+                    logger.info(f"params: {params}")
+
+                    async_job = cast(
+                        AdReportRun,
+                        AdSet(account_id).get_insights(
+                            fields=fields, params=params, is_async=True
+                        ),
                     )
-                    facebook_insights = cast(List[FacebookAdsInsights], insights_resp)
-                    for facebook_insight in facebook_insights:
-                        insight = dict(facebook_insight)
+
+                    while True:
+                        job = cast(AdReportRun, async_job.api_get())
+
+                        pct: int = job["async_percent_completion"]
+                        status: str = job["async_status"]
+
+                        # https://developers.facebook.com/docs/marketing-api/insights/best-practices/#asynchronous
+                        # both fields need to be set to signify completion
+                        if status == "Job Completed" and pct == 100:
+                            break
+
+                        time.sleep(1)
+
+                    result = async_job.get_result()
+                    ads_insights_result = cast(List[AdsInsights], result)
+
+                    ads_insight: AdsInsights
+                    for ads_insight in ads_insights_result:
+                        insight = dict(ads_insight)
                         singer.write_record(tap_stream_id, insight)
                         counter.increment(1)
 

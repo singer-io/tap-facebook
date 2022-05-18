@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 import os
+from typing import cast
 
 import singer
 
-from tap_facebook.streams import AdsInsights
+from tap_facebook.streams import FacebookAdsInsights
 
 from facebook_business.api import FacebookAdsApi
 from facebook_business.adobjects.user import User
+from facebook_business.adobjects.adaccount import AdAccount
 
 logger = singer.get_logger()
 
-STREAMS = {"ads_insights": AdsInsights}
+STREAMS = {"ads_insights": FacebookAdsInsights}
 
 
 def do_sync(account_ids, config, state):
@@ -37,10 +39,10 @@ def main():
     # use
     api = FacebookAdsApi.init(access_token=access_token)
 
-    all_account_ids = {
-        accnt["account_id"]: accnt["id"]
-        for accnt in User("me", api=api).get_ad_accounts(fields=["account_id", "id"])
-    }
+    user = User("me", api=api)
+    ad_accounts = cast(AdAccount, user.get_ad_accounts(fields=["account_id", "id"]))
+
+    all_account_ids = {accnt["account_id"]: accnt["id"] for accnt in ad_accounts}
     accnt_ids = []
 
     for account_id in account_ids:
