@@ -207,6 +207,8 @@ class FacebookAdsInsights:
 
                 return async_job
 
+            # "Job Completed" does not mean that the job is done, which mweans that getting here=e
+            # implies that status == "Job Completed" and pct < 100
             if status in [
                 "Job Not Started",
                 "Job Started",
