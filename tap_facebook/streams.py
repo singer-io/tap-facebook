@@ -213,7 +213,7 @@ class FacebookAdsInsights:
                 "Job Running",
                 "Job Completed",
             ]:
-                logger.error(f"job<{job_id}>: {status}")
+                logger.info(f"job<{job_id}>: {status}")
 
                 time.sleep(2)
                 continue
