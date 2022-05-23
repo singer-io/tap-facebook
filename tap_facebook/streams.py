@@ -1,6 +1,6 @@
 import singer
 import time
-from typing import Sequence, Union, Optional, Dict, cast, List
+from typing import Any, Sequence, Union, Optional, Dict, cast, List
 from datetime import timedelta, datetime, date
 from dateutil import parser
 
@@ -120,28 +120,9 @@ class FacebookAdsInsights:
                     logger.info(f"account_id: {account_id}")
                     logger.info(f"params: {params}")
 
-                    async_job = cast(
-                        AdReportRun,
-                        AdSet(account_id).get_insights(
-                            fields=fields, params=params, is_async=True
-                        ),
-                    )
+                    result = self.__run_adreport(account_id, fields, params)
 
-                    while True:
-                        job = cast(AdReportRun, async_job.api_get())
-
-                        pct: int = job["async_percent_completion"]
-                        status: str = job["async_status"]
-
-                        # https://developers.facebook.com/docs/marketing-api/insights/best-practices/#asynchronous
-                        # both fields need to be set to signify completion
-                        if status == "Job Completed" and pct == 100:
-                            break
-
-                        time.sleep(1)
-
-                    result = async_job.get_result()
-                    ads_insights_result = cast(List[AdsInsights], result)
+                    ads_insights_result = cast(List[AdsInsights], result.get_result())
 
                     ads_insight: AdsInsights
                     for ads_insight in ads_insights_result:
@@ -192,6 +173,52 @@ class FacebookAdsInsights:
 
         logger.info(f"using 'start_date' from previous state: {current_bookmark}")
         return new_date
+
+    def __run_adreport(
+        self,
+        account_id: str,
+        fields: Optional[Sequence[str]],
+        params: Dict[str, Any],
+    ) -> AdReportRun:
+        async_job = cast(
+            AdReportRun,
+            AdSet(account_id).get_insights(fields=fields, params=params, is_async=True),
+        )
+
+        while True:
+            job = cast(AdReportRun, async_job.api_get())
+
+            pct: int = job["async_percent_completion"]
+            status: str = job["async_status"]
+            job_id = job["id"]
+
+            if status in ["Job Skipped", "Job Failed"]:
+                logger.error(f"job<{job_id}>({params}): failed with status: {status}")
+                return async_job
+
+            # https://developers.facebook.com/docs/marketing-api/insights/best-practices/#asynchronous
+            # both fields need to be set to signify completion
+            if status == "Job Completed" and pct == 100:
+                job_start_time = datetime.fromtimestamp(job["time_ref"])
+                job_completion_time = datetime.fromtimestamp(job["time_completed"])
+                duration = job_completion_time - job_start_time
+
+                logger.info(f"job<{job_id}>: finished in {duration.seconds}s")
+
+                return async_job
+
+            # "Job Completed" does not mean that the job is done, which mweans that getting here=e
+            # implies that status == "Job Completed" and pct < 100
+            if status in [
+                "Job Not Started",
+                "Job Started",
+                "Job Running",
+                "Job Completed",
+            ]:
+                logger.info(f"job<{job_id}>: {status}")
+
+                time.sleep(2)
+                continue
 
     def __advance_bookmark(
         self,

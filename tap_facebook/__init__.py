@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os
-from typing import cast
+from typing import cast, List
 
 import singer
 
@@ -37,10 +37,12 @@ def main():
         )
 
     # use
-    api = FacebookAdsApi.init(access_token=access_token)
+    api = FacebookAdsApi.init(access_token=access_token, timeout=10)
 
     user = User("me", api=api)
-    ad_accounts = cast(AdAccount, user.get_ad_accounts(fields=["account_id", "id"]))
+    ad_accounts = cast(
+        List[AdAccount], user.get_ad_accounts(fields=["account_id", "id"])
+    )
 
     all_account_ids = {accnt["account_id"]: accnt["id"] for accnt in ad_accounts}
     accnt_ids = []
