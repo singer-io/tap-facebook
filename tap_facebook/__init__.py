@@ -37,7 +37,7 @@ def main():
         )
 
     # use
-    api = FacebookAdsApi.init(access_token=access_token)
+    api = FacebookAdsApi.init(access_token=access_token, timeout=10)
 
     user = User("me", api=api)
     ad_accounts = cast(
