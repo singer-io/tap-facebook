@@ -4,11 +4,16 @@ from tap_tester import runner, connections
 
 from base import FacebookBaseTest
 
+
 class FacebookAttributionWindow(FacebookBaseTest):
 
     @staticmethod
     def name():
         return "tap_tester_facebook_attribution_window"
+
+    def streams_to_test(self):
+        """ 'attribution window' is only supported for 'ads_insights' streams """
+        return [stream for stream in self.expected_streams() if self.is_insight(stream)]
 
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
@@ -24,8 +29,11 @@ class FacebookAttributionWindow(FacebookBaseTest):
         return_value["start_date"] = self.start_date
         return return_value
 
-    # For the test ad set up in facebook ads manager we see data on April 7th, start date is based on this data
     def test_run(self):
+        """
+        For the test ad set up in facebook ads manager we see data
+        on April 7th, start date is based on this data
+        """
         # attrribution window = 7
         self.ATTRIBUTION_WINDOW = 7
         self.start_date = '2021-04-14T00:00:00Z'
@@ -44,30 +52,23 @@ class FacebookAttributionWindow(FacebookBaseTest):
         self.end_date = '2021-04-09T00:00:00Z'
         self.run_test(self.ATTRIBUTION_WINDOW, self.start_date, self.end_date)
 
-
     def run_test(self, attr_window, start_date, end_date):
         """
             Test to check the attribution window
         """
+
+        expected_streams = self.streams_to_test()
 
         conn_id = connections.ensure_connection(self)
 
         # calculate start date with attribution window
         start_date_with_attribution_window = self.timedelta_formatted(start_date, days=-attr_window)
 
-        # 'attribution window' is only supported for 'ads_insights' streams
-        expected_insights_streams = []
-        for stream in self.expected_streams():
-            if self.is_insight(stream):
-                expected_insights_streams.append(stream)
-
-        # core streams does not respect start date so will be descoped from this test
-
-        # # Run in check mode
+        # Run in check mode
         found_catalogs = self.run_and_verify_check_mode(conn_id)
 
         # Select only the expected streams tables
-        catalog_entries = [ce for ce in found_catalogs if ce['tap_stream_id'] in expected_insights_streams]
+        catalog_entries = [ce for ce in found_catalogs if ce['tap_stream_id'] in expected_streams]
         self.perform_and_verify_table_and_field_selection(conn_id, catalog_entries, select_all_fields=True)
 
         # Run a sync job using orchestrator
@@ -76,7 +77,7 @@ class FacebookAttributionWindow(FacebookBaseTest):
 
         expected_replication_keys = self.expected_replication_keys()
 
-        for stream in expected_insights_streams:
+        for stream in expected_streams:
             with self.subTest(stream=stream):
 
                 replication_key = next(iter(expected_replication_keys[stream]))

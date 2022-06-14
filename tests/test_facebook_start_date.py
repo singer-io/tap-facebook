@@ -14,6 +14,9 @@ class FacebookStartDateTest(FacebookBaseTest):
     def name():
         return "tap_tester_facebook_start_date_test"
 
+    def streams_to_test(self):
+        return self.expected_streams()
+
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
         return_value = {
@@ -36,7 +39,7 @@ class FacebookStartDateTest(FacebookBaseTest):
 
         self.start_date = self.start_date_1
 
-        expected_streams = self.expected_streams()
+        expected_streams = self.streams_to_test()
 
         ##########################################################################
         ### First Sync
