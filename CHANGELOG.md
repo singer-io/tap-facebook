@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.18.3
+  * Facebook busines API to V13.0 [#191] (https://github.com/singer-io/tap-facebook/pull/191)
 ## 1.18.2
   * Implemented Request Timeout [#173](https://github.com/singer-io/tap-facebook/pull/173)
 
