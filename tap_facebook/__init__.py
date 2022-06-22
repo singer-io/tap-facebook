@@ -668,9 +668,10 @@ class AdsInsights(Stream):
             params=params,
             is_async=True)
         status = None
+        percent_complete = 0
         time_start = time.time()
         sleep_time = 10
-        while status != "Job Completed":
+        while status != "Job Completed" or percent_complete < 100:
             duration = time.time() - time_start
             job = AdsInsights.__api_get_with_retry(job)
             status = job['async_status']
@@ -679,7 +680,7 @@ class AdsInsights(Stream):
             job_id = job['id']
             LOGGER.info('%s, %d%% done', status, percent_complete)
 
-            if status == "Job Completed":
+            if status == "Job Completed" and percent_complete == 100:
                 return job
 
             if duration > INSIGHTS_MAX_WAIT_TO_START_SECONDS and percent_complete == 0:
