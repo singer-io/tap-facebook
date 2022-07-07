@@ -30,6 +30,12 @@
         "string"
       ]
     },
+    "status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "buying_type": {
       "type": [
         "null",
@@ -42,11 +48,31 @@
         "number"
       ]
     },
+    "daily_budget": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "lifetime_budget": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
     "start_time": {
       "type": "string",
       "format": "date-time"
     },
+    "stop_time": {
+      "type": "string",
+      "format": "date-time"
+    },
     "updated_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_time": {
       "type": "string",
       "format": "date-time"
     },
