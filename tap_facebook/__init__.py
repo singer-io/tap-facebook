@@ -304,7 +304,7 @@ class AdCreative(Stream):
 
 
 class AdAccount(Stream):
-    key_properties = ['id']
+    key_properties = ['account_id']
 
     @retry_pattern(backoff.expo, (Timeout, ConnectionError), max_tries=5, factor=2)
     @retry_pattern(backoff.expo, (FacebookRequestError, TypeError, AttributeError), max_tries=5, factor=5)
