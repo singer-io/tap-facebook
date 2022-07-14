@@ -39,14 +39,8 @@ class FacebookAdsInsights:
         # which the facebook API does not support
         if datetime.utcnow() - start_date > timedelta(days=37 * 30):
             start_date = datetime.utcnow() - timedelta(days=36 * 30)
-
-        today = datetime.utcnow()
-
-        if start_date.date() >= today.date() - timedelta(days=1):
-            logger.info(
-                f"start_date {start_date} is yesterday - aborting run to not accidentally skip a day that has not yet received data yet."
-            )
-            return self.__advance_bookmark(account_id, state, None, tap_stream_id)
+        else:
+            start_date -= timedelta(days=1)
 
         prev_bookmark = None
         fields = fields or [
@@ -166,13 +160,8 @@ class FacebookAdsInsights:
             logger.info(f"using 'start_date' from config: {default_date}")
             return default_date
 
-        state_date = parser.isoparse(current_bookmark)
-
-        # increment by one to not reprocess the previous date
-        new_date = state_date + timedelta(days=1)
-
         logger.info(f"using 'start_date' from previous state: {current_bookmark}")
-        return new_date
+        return parser.isoparse(current_bookmark)
 
     def __run_adreport(
         self,
