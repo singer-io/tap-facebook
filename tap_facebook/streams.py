@@ -73,8 +73,7 @@ class FacebookAdsInsights:
                 raise ValueError("client: start_date is required")
 
             since = utils.parse_date(start_date)
-
-            until = date.today() + timedelta(days=-1)
+            until = date.today() - timedelta(days=1)
 
             logger.info(f"start_date: {since}")
             logger.info(f"end_date: {until}")
