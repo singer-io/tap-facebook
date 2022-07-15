@@ -56,7 +56,6 @@ def main():
 
         accnt_ids.append(all_account_ids[account_id])
 
-    print(f"account ids: ", accnt_ids)
     do_sync(accnt_ids, args.config, args.state)
 
 
