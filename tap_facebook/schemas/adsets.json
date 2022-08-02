@@ -114,6 +114,17 @@
       "exclusiveMaximum": true,
       "exclusiveMinimum": true
     },
+    "bid_amount": {
+      "type": [
+        "null",
+        "number"
+      ],
+      "maximum": 100000000000000000000000000000000,
+      "minimum": -100000000000000000000000000000000,
+      "multipleOf": 0.000001,
+      "exclusiveMaximum": true,
+      "exclusiveMinimum": true
+    },
     "effective_status": {
       "type": [
         "null",
