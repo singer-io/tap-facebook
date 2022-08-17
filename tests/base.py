@@ -2,16 +2,15 @@
 Setup expectations for test sub classes
 Run discovery for as a prerequisite for most tests
 """
-import unittest
 import os
 from datetime import timedelta
 from datetime import datetime as dt
 
-from tap_tester import connections, menagerie, runner
-from tap_tester.logger import LOGGER
+from tap_tester import connections, menagerie, runner, LOGGER
+from tap_tester.base_case import BaseCase
 
 
-class FacebookBaseTest(unittest.TestCase):
+class FacebookBaseTest(BaseCase):
     """
     Setup expectations for test sub classes.
     Metadata describing streams.
