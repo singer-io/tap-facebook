@@ -64,7 +64,7 @@ class FacebookStartDateTest(FacebookBaseTest):
         ### Update START DATE Between Syncs
         ##########################################################################
 
-        LOGGER.info("REPLICATION START DATE CHANGE: {} ===>>> {} ".format(self.start_date, self.start_date_2))
+        LOGGER.info("REPLICATION START DATE CHANGE: %s ===>>> %s ", self.start_date, self.start_date_2)
         self.start_date = self.start_date_2
 
         ##########################################################################
