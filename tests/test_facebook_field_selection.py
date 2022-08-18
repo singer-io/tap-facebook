@@ -1,7 +1,7 @@
 import os
 from functools import reduce
 
-from tap_tester import connections, menagerie, runner
+from tap_tester import connections, menagerie, runner, LOGGER
 
 from base import FacebookBaseTest
 
@@ -78,7 +78,7 @@ class FacebookFieldSelection(FacebookBaseTest):  # TODO use base.py, determine i
 
         diff = expected_streams.symmetric_difference( found_catalog_names )
         self.assertEqual(len(diff), 0, msg="discovered schemas do not match: {}".format(diff))
-        print("discovered schemas are kosher")
+        LOGGER.info("discovered schemas are kosher")
 
         all_excluded_fields = {}
         # select all catalogs
