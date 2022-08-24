@@ -127,10 +127,15 @@ def raise_from(singer_error, fb_error):
     """
     if isinstance(fb_error, FacebookRequestError):
         http_method = fb_error.request_context().get('method', 'Unknown HTTP Method')
+        fb_error_body = fb_error.body().get('error', {})
+        if isinstance(fb_error_body, dict):
+            fb_error_message = fb_error_body.get('message')
+        else:
+            fb_error_message = fb_error_body
         error_message = '{}: {} Message: {}'.format(
             http_method,
             fb_error.http_status(),
-            fb_error.body().get('error', {}).get('message')
+            fb_error_message
         )
     else:
         # All other facebook errors are `FacebookError`s and we handle
