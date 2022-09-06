@@ -175,7 +175,8 @@ class FacebookBookmarks(FacebookBaseTest):
                     second_bookmark_value_utc = self.convert_state_to_utc(second_bookmark_value)
                     simulated_bookmark_value = new_states['bookmarks'][stream][replication_key]
                     simulated_bookmark_minus_lookback = self.timedelta_formatted(
-                        simulated_bookmark_value, days=expected_insights_buffer
+                        simulated_bookmark_value, days=expected_insights_buffer,
+                        date_format=self.BOOKMARK_COMPARISON_FORMAT
                     ) if self.is_insight(stream) else simulated_bookmark_value
 
 

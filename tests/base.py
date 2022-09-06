@@ -365,22 +365,15 @@ class FacebookBaseTest(BaseCase):
 
         raise NotImplementedError("Tests do not account for dates of this format: {}".format(date_value))
 
-    def timedelta_formatted(self, dtime, days=0):  # TODO Fix this to pass format
+    def timedelta_formatted(self, dtime, days=0, date_format):
         try:
-            date_stripped = dt.strptime(dtime, self.START_DATE_FORMAT)
+            date_stripped = dt.strptime(dtime, date_format)
             return_date = date_stripped + timedelta(days=days)
 
-            return dt.strftime(return_date, self.START_DATE_FORMAT)
+            return dt.strftime(return_date, date_format)
 
         except ValueError:
-            try:
-                date_stripped = dt.strptime(dtime, self.BOOKMARK_COMPARISON_FORMAT)
-                return_date = date_stripped + timedelta(days=days)
-
-                return dt.strftime(return_date, self.BOOKMARK_COMPARISON_FORMAT)
-
-            except ValueError:
-                return Exception("Datetime object is not of the format: {}".format(self.START_DATE_FORMAT))
+            return Exception("Datetime object is not of the format: {}".format(date_format))
 
     ##########################################################################
     ### Tap Specific Methods
