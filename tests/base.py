@@ -17,6 +17,30 @@ class FacebookBaseTest(BaseCase):
 
     A bunch of shared methods that are used in tap-tester tests.
     Shared tap-specific methods (as needed).
+
+    Insights Test Data by Date Ranges
+        "ads_insights":
+          "2019-08-02T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
+          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
+        "ads_insights_age_and_gender":
+          "2019-08-02T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
+          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
+        "ads_insights_country":
+          "2019-08-02T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
+          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
+        "ads_insights_platform_and_device":
+          "2019-08-02T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
+          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
+        "ads_insights_region":
+          "2019-08-03T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
+          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
+        "ads_insights_dma":
+          "2019-08-03T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
+          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
+        "ads_insights_hourly_advertiser":
+          "2019-08-03T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
+          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
+
     """
     AUTOMATIC_FIELDS = "automatic"
     REPLICATION_KEYS = "valid-replication-keys"
@@ -45,9 +69,9 @@ class FacebookBaseTest(BaseCase):
         """Configuration properties required for the tap."""
         return_value = {
             'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
-            'start_date' : '2015-03-15T00:00:00Z',
-            'end_date': '2015-03-16T00:00:00+00:00',
-            'insights_buffer_days': '1'
+            'start_date' : '2021-04-07T00:00:00Z',
+            'end_date': '2021-04-09T00:00:00Z',
+            'insights_buffer_days': '1',
         }
         if original:
             return return_value
@@ -337,7 +361,7 @@ class FacebookBaseTest(BaseCase):
 
         raise NotImplementedError("Tests do not account for dates of this format: {}".format(date_value))
 
-    def timedelta_formatted(self, dtime, days=0):
+    def timedelta_formatted(self, dtime, days=0):  # TODO Fix this to pass format
         try:
             date_stripped = dt.strptime(dtime, self.START_DATE_FORMAT)
             return_date = date_stripped + timedelta(days=days)

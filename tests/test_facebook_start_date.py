@@ -17,25 +17,11 @@ class FacebookStartDateTest(FacebookBaseTest):
     def streams_to_test(self):
         return self.expected_streams()
 
-    def get_properties(self, original: bool = True):
-        """Configuration properties required for the tap."""
-        return_value = {
-            'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
-            'start_date' : '2019-07-22T00:00:00Z',
-            'end_date' : '2019-07-26T00:00:00Z',
-            'insights_buffer_days': '1'
-        }
-        if original:
-            return return_value
-
-        return_value["start_date"] = self.start_date
-        return return_value
-
     def test_run(self):
         """Instantiate start date according to the desired data set and run the test"""
 
         self.start_date_1 = self.get_properties().get('start_date')
-        self.start_date_2 = self.timedelta_formatted(self.start_date_1, days=3)
+        self.start_date_2 = self.timedelta_formatted(self.start_date_1, days=1)
 
         self.start_date = self.start_date_1
 

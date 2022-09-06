@@ -22,8 +22,8 @@ class FacebookAutomaticFields(FacebookBaseTest):
         """Configuration properties required for the tap."""
         return_value = {
             'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
-            'start_date' : '2019-07-22T00:00:00Z',
-            'end_date' : '2019-07-23T00:00:00Z',
+            'start_date' : '2021-04-08T00:00:00Z',
+            'end_date' : '2021-04-08T00:00:00Z',
             'insights_buffer_days': '1'
         }
         if original:
