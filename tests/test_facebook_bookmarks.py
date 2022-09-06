@@ -16,22 +16,6 @@ class FacebookBookmarks(FacebookBaseTest):
     def streams_to_test(self):
         return self.expected_streams()
 
-    def get_properties(self, original: bool = True):
-        """Configuration properties required for the tap."""
-        return_value = {
-            'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
-            'start_date' : '2019-07-22T00:00:00Z',
-            'end_date' : '2019-07-26T00:00:00Z',
-            'insights_buffer_days': '1'
-        }
-        if original:
-            return return_value
-
-        return_value["start_date"] = self.start_date
-        return_value["end_date"] = self.end_date
-
-        return return_value
-
     @staticmethod
     def convert_state_to_utc(date_str):
         """
@@ -66,7 +50,9 @@ class FacebookBookmarks(FacebookBaseTest):
         leads     '2021-04-07T20:09:39+0000',
                   '2021-04-07T20:08:27+0000',
         """
-        timedelta_by_stream = {stream: [2,0,0]  # {stream_name: [days, hours, minutes], ...}
+        # TODO We want to move this bookmark back by some amount for insgihts streams but
+        # cannot do that unless we have at least 3 days of data. Currently we have 2.
+        timedelta_by_stream = {stream: [0,0,0]  # {stream_name: [days, hours, minutes], ...}
                                for stream in self.expected_streams()}
         timedelta_by_stream['campaigns'] = [0, 1, 0]
         timedelta_by_stream['adsets'] = [0, 1, 0]

@@ -54,6 +54,7 @@ class FacebookBaseTest(BaseCase):
     BOOKMARK_COMPARISON_FORMAT = "%Y-%m-%dT00:00:00+00:00"
 
     start_date = ""
+    end_date = ""
 
     @staticmethod
     def tap_name():
@@ -77,6 +78,9 @@ class FacebookBaseTest(BaseCase):
             return return_value
 
         return_value["start_date"] = self.start_date
+        if self.end_date:
+            return_value["end_date"] = self.end_date
+
         return return_value
 
     @staticmethod
