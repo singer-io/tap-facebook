@@ -365,7 +365,7 @@ class FacebookBaseTest(BaseCase):
 
         raise NotImplementedError("Tests do not account for dates of this format: {}".format(date_value))
 
-    def timedelta_formatted(self, dtime, days=0, date_format):
+    def timedelta_formatted(self, dtime, days=0, date_format=''):
         try:
             date_stripped = dt.strptime(dtime, date_format)
             return_date = date_stripped + timedelta(days=days)

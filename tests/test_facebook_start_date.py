@@ -22,7 +22,7 @@ class FacebookStartDateTest(FacebookBaseTest):
 
         self.start_date_1 = '2021-04-07T00:00:00Z'
         self.start_date_2 = self.timedelta_formatted(
-            self.start_date_1, days=1, date_format=self.START_DATE_FORMAT
+            self.start_date_1, days=2, date_format=self.START_DATE_FORMAT
         )
 
         self.start_date = self.start_date_1
