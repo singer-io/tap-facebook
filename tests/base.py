@@ -373,7 +373,7 @@ class FacebookBaseTest(BaseCase):
             return dt.strftime(return_date, date_format)
 
         except ValueError:
-            return Exception("Datetime object is not of the format: {}".format(date_format))
+            raise AssertionError("Datetime object is not of the format: {}".format(date_format))
 
     ##########################################################################
     ### Tap Specific Methods

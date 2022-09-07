@@ -62,7 +62,9 @@ class FacebookAttributionWindow(FacebookBaseTest):
         conn_id = connections.ensure_connection(self)
 
         # calculate start date with attribution window
-        start_date_with_attribution_window = self.timedelta_formatted(start_date, days=-attr_window)
+        start_date_with_attribution_window = self.timedelta_formatted(
+            start_date, days=-attr_window, date_format=self.START_DATE_FORMAT
+        )
 
         # Run in check mode
         found_catalogs = self.run_and_verify_check_mode(conn_id)
