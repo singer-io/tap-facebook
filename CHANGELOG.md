@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.18.4
+  * Facebook busines API to v14.0 [#201](https://github.com/singer-io/tap-facebook/pull/201)
+
 ## 1.18.3
   * Facebook busines API to V13.0 [#191] (https://github.com/singer-io/tap-facebook/pull/191)
 ## 1.18.2
