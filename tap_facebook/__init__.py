@@ -41,9 +41,9 @@ from requests.exceptions import ConnectionError, Timeout
 
 API = None
 
-INSIGHTS_MAX_WAIT_TO_START_SECONDS = 3 * 60
-INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS = 5 * 60
-INSIGHTS_MAX_ASYNC_SLEEP_SECONDS = 2 * 60
+INSIGHTS_MAX_WAIT_TO_START_SECONDS = 1 * 60
+INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS = 10 * 60
+INSIGHTS_MAX_ASYNC_SLEEP_SECONDS = 20
 
 RESULT_RETURN_LIMIT = 100
 
@@ -697,7 +697,7 @@ class AdsInsights(Stream):
         job = job.api_get()
         return job
 
-    @retry_pattern(backoff.expo, (Timeout, ConnectionError), max_tries=5, factor=2)
+    @retry_pattern(backoff.expo, (Timeout, ConnectionError), max_tries=2, factor=2)
     # Added retry_pattern to handle AttributeError raised from requests call below
     @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout, FacebookBadObjectError, TypeError, AttributeError), max_tries=5, factor=5)
     def run_job(self, params):
@@ -707,7 +707,7 @@ class AdsInsights(Stream):
             is_async=True)
         status = None
         time_start = time.time()
-        sleep_time = 10
+        sleep_time = 2
         while status != "Job Completed":
             duration = time.time() - time_start
             job = AdsInsights.__api_get_with_retry(job)
