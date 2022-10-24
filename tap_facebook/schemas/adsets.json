@@ -137,6 +137,12 @@
         "string"
       ]
     },
+    "bid_strategy": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "optimization_goal": {
       "type": [
         "null",
