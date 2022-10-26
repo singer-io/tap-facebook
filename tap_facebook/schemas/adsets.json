@@ -143,12 +143,6 @@
         "string"
       ]
     },
-    "results": {
-      "type": [
-        "null",
-        "number"
-      ]
-    },
     "optimization_goal": {
       "type": [
         "null",

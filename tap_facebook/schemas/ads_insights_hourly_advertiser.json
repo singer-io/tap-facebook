@@ -217,6 +217,12 @@
         "string"
       ]
     },
+    "results": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "inline_link_click_ctr": {
       "type": [
         "null",
