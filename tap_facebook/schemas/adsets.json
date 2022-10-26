@@ -224,6 +224,14 @@
           "updated_time": {"type": "string", "format": "date-time"}
         }
       }
+    },
+    "learning_stage_info": {
+      "type": "object",
+      "properties": {
+          "conversions": {"type": ["null", "number"]},
+          "status": {"type": ["null", "string"]},
+          "last_sig_edit_ts": {"type": ["null", "number"]}
+        }
     }
   }
 }
