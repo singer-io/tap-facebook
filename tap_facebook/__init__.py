@@ -672,7 +672,8 @@ class AdsInsights(Stream):
                            min_start_date.to_date_string())
             buffered_start_date = min_start_date
 
-        end_date = pendulum.now()
+        account_tz = self.account.api_get(fields=['timezone_name'])['timezone_name']
+        end_date = pendulum.now(tz=account_tz)
         if CONFIG.get('end_date'):
             end_date = pendulum.parse(CONFIG.get('end_date'))
 
