@@ -660,10 +660,11 @@ class AdsInsights(Stream):
                 raise Exception("The attribution window must be 1, 7 or 28.")
 
     def job_params(self):
-        start_date = get_start(self, self.bookmark_key)
+        account_tz = self.account.api_get(fields=['timezone_name'])['timezone_name']
+        start_date = get_start(self, self.bookmark_key).in_timezone(account_tz)
 
         buffered_start_date = start_date.subtract(days=self.buffer_days)
-        min_start_date = pendulum.today().subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
+        min_start_date = pendulum.today(tz=account_tz).subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
         if buffered_start_date < min_start_date:
             LOGGER.warning("%s: Start date is earlier than %s months ago, using %s instead. "
                            "For more information, see https://www.facebook.com/business/help/1695754927158071?id=354406972049255",
@@ -672,8 +673,7 @@ class AdsInsights(Stream):
                            min_start_date.to_date_string())
             buffered_start_date = min_start_date
 
-        account_tz = self.account.api_get(fields=['timezone_name'])['timezone_name']
-        end_date = pendulum.now(tz=account_tz)
+        end_date = pendulum.now(tz=account_tz).end_of('day')
         if CONFIG.get('end_date'):
             end_date = pendulum.parse(CONFIG.get('end_date'))
 
@@ -978,3 +978,6 @@ def main():
         for line in str(e).splitlines():
             LOGGER.critical(line)
         raise e
+
+if __name__ == '__main__':
+    main()
