@@ -219,6 +219,12 @@
         }
       }
     },
+    "is_dynamic_creative": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
     "learning_stage_info": {
       "type": "object",
       "properties": {

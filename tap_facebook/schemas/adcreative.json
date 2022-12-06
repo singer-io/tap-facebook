@@ -1443,6 +1443,28 @@
         "null",
         "string"
       ]
+    },
+    "asset_feed_spec": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "link_urls": {
+          "type": "array",
+          "items": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "website_url": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "type": [
