@@ -125,6 +125,20 @@
       "exclusiveMaximum": true,
       "exclusiveMinimum": true
     },
+    "bid_constraints": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "roas_average_floor": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        }
+      }
+    },
     "effective_status": {
       "type": [
         "null",
