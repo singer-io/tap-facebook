@@ -76,6 +76,8 @@ jobs:
           command: |
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
             source dev_env.sh
+            mkdir /tmp/${CIRCLE_PROJECT_REPONAME}
+            export STITCH_CONFIG_DIR=/tmp/${CIRCLE_PROJECT_REPONAME}
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
             circleci tests glob "tests/*.py" | circleci tests split > ./tests-to-run
             if [ -s ./tests-to-run ]; then
@@ -86,6 +88,8 @@ jobs:
             fi
       - slack/notify-on-failure:
           only_for_branches: master
+      - store_artifacts:
+          path: /tmp/tap-facebook
   # Deploy Job Definitions
   git_tag:
     executor: docker-executor

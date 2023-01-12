@@ -15,12 +15,15 @@ class FacebookAutomaticFields(FacebookBaseTest):
     def name():
         return "tap_tester_facebook_automatic_fields"
 
+    def streams_to_test(self):
+        return self.expected_streams()
+
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
         return_value = {
             'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
-            'start_date' : '2019-07-22T00:00:00Z',
-            'end_date' : '2019-07-23T00:00:00Z',
+            'start_date' : '2021-04-08T00:00:00Z',
+            'end_date' : '2021-04-08T00:00:00Z',
             'insights_buffer_days': '1'
         }
         if original:
@@ -41,7 +44,7 @@ class FacebookAutomaticFields(FacebookBaseTest):
         that 251 (or more) records have been posted for that stream.
         """
 
-        expected_streams = self.expected_streams()
+        expected_streams = self.streams_to_test()
 
         # instantiate connection
         conn_id = connections.ensure_connection(self)
