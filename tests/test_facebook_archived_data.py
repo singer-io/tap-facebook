@@ -10,6 +10,10 @@ class FacebookArchivedData(FacebookBaseTest):
     def name():
         return "tap_tester_facebook_archived_data"
 
+    def streams_to_test(self):
+        """include_deleted is supported for below streams only"""
+        return ['ads', 'adsets', 'campaigns']
+
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
         return_value = {
@@ -29,8 +33,7 @@ class FacebookArchivedData(FacebookBaseTest):
         '''
             Testing the archived data with 'include_deleted' parameter
         '''
-        # include_deleted is supported for below streams only
-        expected_streams = ['ads', 'adsets', 'campaigns']
+        expected_streams = self.streams_to_test()
 
         ##########################################################################
         ### First Sync with include_deleted = false

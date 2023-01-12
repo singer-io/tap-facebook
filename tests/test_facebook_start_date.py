@@ -1,6 +1,6 @@
 import os
 
-from tap_tester import connections, runner
+from tap_tester import connections, runner, LOGGER
 
 from base import FacebookBaseTest
 
@@ -14,29 +14,20 @@ class FacebookStartDateTest(FacebookBaseTest):
     def name():
         return "tap_tester_facebook_start_date_test"
 
-    def get_properties(self, original: bool = True):
-        """Configuration properties required for the tap."""
-        return_value = {
-            'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
-            'start_date' : '2019-07-22T00:00:00Z',
-            'end_date' : '2019-07-26T00:00:00Z',
-            'insights_buffer_days': '1'
-        }
-        if original:
-            return return_value
-
-        return_value["start_date"] = self.start_date
-        return return_value
+    def streams_to_test(self):
+        return self.expected_streams()
 
     def test_run(self):
         """Instantiate start date according to the desired data set and run the test"""
 
-        self.start_date_1 = self.get_properties().get('start_date')
-        self.start_date_2 = self.timedelta_formatted(self.start_date_1, days=3)
+        self.start_date_1 = '2021-04-07T00:00:00Z'
+        self.start_date_2 = self.timedelta_formatted(
+            self.start_date_1, days=2, date_format=self.START_DATE_FORMAT
+        )
 
         self.start_date = self.start_date_1
 
-        expected_streams = self.expected_streams()
+        expected_streams = self.streams_to_test()
 
         ##########################################################################
         ### First Sync
@@ -61,7 +52,7 @@ class FacebookStartDateTest(FacebookBaseTest):
         ### Update START DATE Between Syncs
         ##########################################################################
 
-        print("REPLICATION START DATE CHANGE: {} ===>>> {} ".format(self.start_date, self.start_date_2))
+        LOGGER.info("REPLICATION START DATE CHANGE: %s ===>>> %s ", self.start_date, self.start_date_2)
         self.start_date = self.start_date_2
 
         ##########################################################################
@@ -89,8 +80,12 @@ class FacebookStartDateTest(FacebookBaseTest):
                 # expected values
                 expected_primary_keys = self.expected_primary_keys()[stream]
                 expected_insights_buffer = -1 * int(self.get_properties()['insights_buffer_days'])
-                expected_start_date_1 = self.timedelta_formatted(self.start_date_1, days=expected_insights_buffer)
-                expected_start_date_2 = self.timedelta_formatted(self.start_date_2, days=expected_insights_buffer)
+                expected_start_date_1 = self.timedelta_formatted(
+                    self.start_date_1, days=expected_insights_buffer, date_format=self.START_DATE_FORMAT
+                )
+                expected_start_date_2 = self.timedelta_formatted(
+                    self.start_date_2, days=expected_insights_buffer, date_format=self.START_DATE_FORMAT
+                )
 
                 # collect information for assertions from syncs 1 & 2 base on expected values
                 record_count_sync_1 = record_count_by_stream_1.get(stream, 0)

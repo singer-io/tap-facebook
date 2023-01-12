@@ -2,22 +2,45 @@
 Setup expectations for test sub classes
 Run discovery for as a prerequisite for most tests
 """
-import unittest
 import os
 from datetime import timedelta
 from datetime import datetime as dt
 
-import singer
-from tap_tester import connections, menagerie, runner
+from tap_tester import connections, menagerie, runner, LOGGER
+from tap_tester.base_case import BaseCase
 
 
-class FacebookBaseTest(unittest.TestCase):
+class FacebookBaseTest(BaseCase):
     """
     Setup expectations for test sub classes.
     Metadata describing streams.
 
     A bunch of shared methods that are used in tap-tester tests.
     Shared tap-specific methods (as needed).
+
+    Insights Test Data by Date Ranges
+        "ads_insights":
+          "2019-08-02T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
+          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
+        "ads_insights_age_and_gender":
+          "2019-08-02T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
+          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
+        "ads_insights_country":
+          "2019-08-02T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
+          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
+        "ads_insights_platform_and_device":
+          "2019-08-02T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
+          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
+        "ads_insights_region":
+          "2019-08-03T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
+          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
+        "ads_insights_dma":
+          "2019-08-03T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
+          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
+        "ads_insights_hourly_advertiser":
+          "2019-08-03T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
+          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
+
     """
     AUTOMATIC_FIELDS = "automatic"
     REPLICATION_KEYS = "valid-replication-keys"
@@ -29,9 +52,9 @@ class FacebookBaseTest(unittest.TestCase):
     FULL_TABLE = "FULL_TABLE"
     START_DATE_FORMAT = "%Y-%m-%dT00:00:00Z"
     BOOKMARK_COMPARISON_FORMAT = "%Y-%m-%dT00:00:00+00:00"
-    LOGGER = singer.get_logger()
 
     start_date = ""
+    end_date = ""
 
     @staticmethod
     def tap_name():
@@ -47,14 +70,17 @@ class FacebookBaseTest(unittest.TestCase):
         """Configuration properties required for the tap."""
         return_value = {
             'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
-            'start_date' : '2015-03-15T00:00:00Z',
-            'end_date': '2015-03-16T00:00:00+00:00',
-            'insights_buffer_days': '1'
+            'start_date' : '2021-04-07T00:00:00Z',
+            'end_date': '2021-04-09T00:00:00Z',
+            'insights_buffer_days': '1',
         }
         if original:
             return return_value
 
         return_value["start_date"] = self.start_date
+        if self.end_date:
+            return_value["end_date"] = self.end_date
+
         return return_value
 
     @staticmethod
@@ -216,7 +242,7 @@ class FacebookBaseTest(unittest.TestCase):
         found_catalog_names = set(map(lambda c: c['stream_name'], found_catalogs))
 
         self.assertSetEqual(self.expected_streams(), found_catalog_names, msg="discovered schemas do not match")
-        print("discovered schemas are OK")
+        LOGGER.info("discovered schemas are OK")
 
         return found_catalogs
 
@@ -240,7 +266,7 @@ class FacebookBaseTest(unittest.TestCase):
             sum(sync_record_count.values()), 0,
             msg="failed to replicate any data: {}".format(sync_record_count)
         )
-        print("total replicated row count: {}".format(sum(sync_record_count.values())))
+        LOGGER.info("total replicated row count: %s", sum(sync_record_count.values()))
 
         return sync_record_count
 
@@ -270,7 +296,7 @@ class FacebookBaseTest(unittest.TestCase):
 
             # Verify all testable streams are selected
             selected = catalog_entry.get('annotated-schema').get('selected')
-            print("Validating selection on {}: {}".format(cat['stream_name'], selected))
+            LOGGER.info("Validating selection on %s: %s", cat['stream_name'], selected)
             if cat['stream_name'] not in expected_selected:
                 self.assertFalse(selected, msg="Stream selected, but not testable.")
                 continue # Skip remaining assertions if we aren't selecting this stream
@@ -280,8 +306,8 @@ class FacebookBaseTest(unittest.TestCase):
                 # Verify all fields within each selected stream are selected
                 for field, field_props in catalog_entry.get('annotated-schema').get('properties').items():
                     field_selected = field_props.get('selected')
-                    print("\tValidating selection on {}.{}: {}".format(
-                        cat['stream_name'], field, field_selected))
+                    LOGGER.info("\tValidating selection on %s.%s: %s",
+                                cat['stream_name'], field, field_selected)
                     self.assertTrue(field_selected, msg="Field not selected.")
             else:
                 # Verify only automatic fields are selected
@@ -339,22 +365,15 @@ class FacebookBaseTest(unittest.TestCase):
 
         raise NotImplementedError("Tests do not account for dates of this format: {}".format(date_value))
 
-    def timedelta_formatted(self, dtime, days=0):
+    def timedelta_formatted(self, dtime, days=0, date_format=''):
         try:
-            date_stripped = dt.strptime(dtime, self.START_DATE_FORMAT)
+            date_stripped = dt.strptime(dtime, date_format)
             return_date = date_stripped + timedelta(days=days)
 
-            return dt.strftime(return_date, self.START_DATE_FORMAT)
+            return dt.strftime(return_date, date_format)
 
         except ValueError:
-            try:
-                date_stripped = dt.strptime(dtime, self.BOOKMARK_COMPARISON_FORMAT)
-                return_date = date_stripped + timedelta(days=days)
-
-                return dt.strftime(return_date, self.BOOKMARK_COMPARISON_FORMAT)
-
-            except ValueError:
-                return Exception("Datetime object is not of the format: {}".format(self.START_DATE_FORMAT))
+            raise AssertionError("Datetime object is not of the format: {}".format(date_format))
 
     ##########################################################################
     ### Tap Specific Methods
@@ -363,3 +382,15 @@ class FacebookBaseTest(unittest.TestCase):
     @staticmethod
     def is_insight(stream):
         return stream.startswith('ads_insights')
+
+    def setUp(self):
+        LOGGER.info("-------------------------------------------- STARTING TEST ---------------------------------------------------")
+        LOGGER.info("test: %s", self.name())
+        LOGGER.info("streams covered: %s", self.streams_to_test())
+        LOGGER.info("--------------------------------------------------------------------------------------------------------------")
+
+    def tearDown(self):
+        LOGGER.info("--------------------------------------------- ENDING TEST ----------------------------------------------------")
+        LOGGER.info("test: %s", self.name())
+        LOGGER.info("streams covered: %s", self.streams_to_test())
+        LOGGER.info("--------------------------------------------------------------------------------------------------------------")
