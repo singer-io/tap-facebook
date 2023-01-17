@@ -3,10 +3,12 @@ import os
 from typing import cast, List
 
 import singer
+import sys
 
 from tap_facebook.streams import FacebookAdsInsights
 
 from facebook_business.api import FacebookAdsApi
+from facebook_business.exceptions import FacebookRequestError
 from facebook_business.adobjects.user import User
 from facebook_business.adobjects.adaccount import AdAccount
 
@@ -37,14 +39,20 @@ def main():
         )
 
     # use
-    api = FacebookAdsApi.init(access_token=access_token, timeout=10)
+    try:
+        api = FacebookAdsApi.init(access_token=access_token, timeout=10)
+        user = User("me", api=api)
+        ad_accounts = user.get_ad_accounts(fields=["account_id", "id"])
+    except FacebookRequestError as e:
+        if e.api_error_type() == "OAuthException" and e.api_error_code() == 190:
+            sys.exit(5)
 
-    user = User("me", api=api)
-    ad_accounts = cast(
-        List[AdAccount], user.get_ad_accounts(fields=["account_id", "id"])
+
+    casted_ad_accounts = cast(
+        List[AdAccount], ad_accounts
     )
 
-    all_account_ids = {accnt["account_id"]: accnt["id"] for accnt in ad_accounts}
+    all_account_ids = {accnt["account_id"]: accnt["id"] for accnt in casted_ad_accounts}
     accnt_ids = []
 
     for account_id in account_ids:
