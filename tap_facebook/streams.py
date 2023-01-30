@@ -5,6 +5,7 @@ from datetime import timedelta, datetime, date
 from dateutil import parser
 
 from tap_facebook import utils
+from facebook_business.exceptions import FacebookRequestError
 from facebook_business.adobjects.adset import AdSet
 from facebook_business.adobjects.adsinsights import AdsInsights
 from facebook_business.adobjects.adreportrun import AdReportRun
@@ -113,26 +114,45 @@ class FacebookAdsInsights:
                     logger.info(f"account_id: {account_id}")
                     logger.info(f"params: {params}")
 
-                    result = self.__run_adreport(account_id, fields, params)
+                    attempt = 0
+                    while True:
+                        try:
+                            result = self.__run_adreport(account_id, fields, params)
 
-                    ads_insights_result = cast(List[AdsInsights], result.get_result())
+                            ads_insights_result = cast(List[AdsInsights], result.get_result())
 
-                    ads_insight: AdsInsights
-                    for ads_insight in ads_insights_result:
-                        insight = dict(ads_insight)
-                        singer.write_record(tap_stream_id, insight)
-                        counter.increment(1)
+                            ads_insight: AdsInsights
+                            for ads_insight in ads_insights_result:
+                                insight = dict(ads_insight)
+                                singer.write_record(tap_stream_id, insight)
+                                counter.increment(1)
 
-                        new_bookmark = insight[self.bookmark_key]
-                        if not prev_bookmark:
-                            prev_bookmark = new_bookmark
+                                new_bookmark = insight[self.bookmark_key]
+                                if not prev_bookmark:
+                                    prev_bookmark = new_bookmark
 
-                        if prev_bookmark < new_bookmark:
-                            state = self.__advance_bookmark(
-                                account_id, state, prev_bookmark, tap_stream_id
-                            )
-                            prev_bookmark = new_bookmark
+                                if prev_bookmark < new_bookmark:
+                                    state = self.__advance_bookmark(
+                                        account_id, state, prev_bookmark, tap_stream_id
+                                    )
+                                    prev_bookmark = new_bookmark
 
+                            break
+                        except FacebookRequestError as e:
+                            # We frequently encounter this specific error, and have no concrete explanation for
+                            # what's actually wrong. It's seemingly temporary, since re-running the tap results
+                            # in the job completing just fine.
+                            # When this error occurs, technically the async_status of the AdReportRun indicates
+                            # job failure, but we have no way of extracting the reasoning for the failure from
+                            # the AdReportRun itself. Attempting to get the results of the job is the only real
+                            # way of determining if we can retry.
+                            if e.api_error_code() == 2601 and e.api_error_subcode() == 1815107 and attempt < 5:
+                                logger.warning("encountered unknown, but seemingly temporary async error, retrying in 20s")
+                                time.sleep(20)
+                                attempt += 1
+                                continue
+
+                            raise
             except Exception:
                 self.__advance_bookmark(account_id, state, prev_bookmark, tap_stream_id)
                 raise
