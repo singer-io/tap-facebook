@@ -47,12 +47,12 @@ def main():
         if e.api_error_type() == "OAuthException" and e.api_error_code() == 190:
             sys.exit(5)
 
-
     casted_ad_accounts = cast(
         List[AdAccount], ad_accounts
     )
 
-    all_account_ids = {accnt["account_id"]: accnt["id"] for accnt in casted_ad_accounts}
+    all_account_ids = {accnt["account_id"]: accnt["id"]
+                       for accnt in casted_ad_accounts}
     accnt_ids = []
 
     for account_id in account_ids:
