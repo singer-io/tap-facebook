@@ -390,14 +390,14 @@ class AdSets(IncrementalStream):
 
     def __iter__(self):
         def do_request():
-            params = {'limit': RESULT_RETURN_LIMIT}
+            params = {'limit': CONFIG.get('adsets_page_size', RESULT_RETURN_LIMIT)}
             if self.current_bookmark:
                 params.update(
                     {'filtering': [{'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
             yield self._call_get_ad_sets(params)
 
         def do_request_multiple():
-            params = {'limit': RESULT_RETURN_LIMIT}
+            params = {'limit': CONFIG.get('adsets_page_size', RESULT_RETURN_LIMIT)}
             bookmark_params = []
             if self.current_bookmark:
                 bookmark_params.append(
