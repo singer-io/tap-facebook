@@ -391,7 +391,6 @@ class AdSets(IncrementalStream):
     def __iter__(self):
         def do_request():
             params = {'limit': CONFIG.get('adsets_page_size', RESULT_RETURN_LIMIT)}
-            LOGGER.info(f'{params=}')
             if self.current_bookmark:
                 params.update(
                     {'filtering': [{'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
@@ -399,7 +398,6 @@ class AdSets(IncrementalStream):
 
         def do_request_multiple():
             params = {'limit': CONFIG.get('adsets_page_size', RESULT_RETURN_LIMIT)}
-            LOGGER.info(f'{params=}')
             bookmark_params = []
             if self.current_bookmark:
                 bookmark_params.append(
@@ -413,7 +411,8 @@ class AdSets(IncrementalStream):
         # Added retry_pattern to handle AttributeError raised from ad_set.api_get() below
         @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
         def prepare_record(ad_set):
-            return ad_set.api_get(fields=self.fields()).export_all_data()
+            params = {'limit': CONFIG.get('adsets_page_size', RESULT_RETURN_LIMIT)}
+            return ad_set.api_get(fields=self.fields(), params=params).export_all_data()
 
         if CONFIG.get('include_deleted', 'false').lower() == 'true':
             ad_sets = do_request_multiple()
