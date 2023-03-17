@@ -391,6 +391,7 @@ class AdSets(IncrementalStream):
     def __iter__(self):
         def do_request():
             params = {'limit': CONFIG.get('adsets_page_size', RESULT_RETURN_LIMIT)}
+            LOGGER.info(f'{params=}')
             if self.current_bookmark:
                 params.update(
                     {'filtering': [{'field': 'adset.' + UPDATED_TIME_KEY, 'operator': 'GREATER_THAN', 'value': self.current_bookmark.int_timestamp}]})
@@ -398,6 +399,7 @@ class AdSets(IncrementalStream):
 
         def do_request_multiple():
             params = {'limit': CONFIG.get('adsets_page_size', RESULT_RETURN_LIMIT)}
+            LOGGER.info(f'{params=}')
             bookmark_params = []
             if self.current_bookmark:
                 bookmark_params.append(
