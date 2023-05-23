@@ -694,14 +694,14 @@ class AdsInsights(Stream):
             buffered_start_date = buffered_start_date.add(days=1)
 
     @staticmethod
-    @retry_pattern(backoff.constant, FacebookRequestError, max_tries=5, interval=1)
+    @retry_pattern(backoff.constant, FacebookRequestError, max_tries=2, interval=1)
     def __api_get_with_retry(job):
         job = job.api_get()
         return job
 
     @retry_pattern(backoff.expo, (Timeout, ConnectionError), max_tries=2, factor=2)
     # Added retry_pattern to handle AttributeError raised from requests call below
-    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout, FacebookBadObjectError, TypeError, AttributeError), max_tries=5, factor=5)
+    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout, FacebookBadObjectError, TypeError, AttributeError), max_tries=2, factor=5)
     def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
         job = self.account.get_insights(  # pylint: disable=no-member
