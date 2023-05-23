@@ -42,7 +42,7 @@ from requests.exceptions import ConnectionError, Timeout
 API = None
 
 INSIGHTS_MAX_WAIT_TO_START_SECONDS = 2 * 60
-INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS = 10 * 60
+INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS = 3 * 60
 INSIGHTS_MAX_ASYNC_SLEEP_SECONDS = 20
 
 RESULT_RETURN_LIMIT = 100
@@ -734,7 +734,7 @@ class AdsInsights(Stream):
                                         'You should deselect fields from the schema that are not necessary, ' +
                                         'as that may help improve the reliability of the Facebook API.')
                 raise InsightsJobTimeout(pretty_error_message.format(job_id,
-                                                                     INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS // 60))
+                                                                     INSIGHTS_MAX_WAIT_TO_FINISH_SECONDS))
 
             LOGGER.info("sleeping for %d seconds until job is done", sleep_time)
             time.sleep(sleep_time)
