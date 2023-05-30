@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.18.6
+  * Dependabot update [#216](https://github.com/singer-io/tap-facebook/pull/216)
+
 ## 1.18.5
   * Bump facebook_business SDK to v16.0.2 [#213](https://github.com/singer-io/tap-facebook/pull/213)
 
