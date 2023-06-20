@@ -253,7 +253,7 @@ class AdCreative(Stream):
     '''
 
     # Added retry_pattern to handle AttributeError raised from api_batch.execute() below
-    @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
+    @retry_pattern(backoff.expo, (FacebookRequestError, TypeError, AttributeError), max_tries=5, factor=5)
     def sync_batches(self, stream_objects):
         refs = load_shared_schema_refs()
         schema = singer.resolve_schema_references(self.catalog_entry.schema.to_dict(), refs)
