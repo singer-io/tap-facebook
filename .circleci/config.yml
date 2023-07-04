@@ -90,45 +90,6 @@ jobs:
           only_for_branches: master
       - store_artifacts:
           path: /tmp/tap-facebook
-  # Deploy Job Definitions
-  git_tag:
-    executor: docker-executor
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - '18:3e:7f:b6:39:58:d3:0f:70:54:32:d6:3e:d7:13:4e'
-      - attach_workspace:
-          at: /usr/local/share/virtualenvs
-      - run: source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-      - run:
-          name: 'Create git tag'
-          command: |
-            version=$(python setup.py --version)
-            git config user.email "stitchintegrationdev@talend.com"
-            git config user.name "${CIRCLE_USERNAME}"
-            git tag -a v"${version}" -m "version ${version}"
-            git push --tags
-  push_pypi:
-    executor: docker-executor
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - '18:3e:7f:b6:39:58:d3:0f:70:54:32:d6:3e:d7:13:4e'
-      - attach_workspace:
-          at: /usr/local/share/virtualenvs
-      - run: source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-      - run:
-          name: 'Build and Upload'
-          command: |
-            pip install twine
-            python setup.py sdist --dist-dir dist
-            twine upload --username $PYPI_USERNAME --password $PYPI_PASSWORD ./dist/*
-      - slack/notify-on-failure:
-          only_for_branches: master
-      - slack/notify:
-          message: ':green_circle: A new version of the tap has been tagged and released'
 
 workflows:
   version: 2
@@ -164,20 +125,6 @@ workflows:
             - run_pylint
             - run_unit_tests
             - run_integration_tests
-      - git_tag:
-          context: circleci-user
-          requires:
-            - build
-          filters:
-            branches:
-              only: master
-      - push_pypi:
-          context: circleci-user
-          requires:
-            - git_tag
-          filters:
-            branches:
-              only: master
 
   build_daily:
     jobs:
