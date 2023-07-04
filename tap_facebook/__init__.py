@@ -982,26 +982,27 @@ def initialize_stream(
     account, catalog_entry, state
 ):  # pylint: disable=too-many-return-statements
     name = catalog_entry.stream
+    name_without_id = name.split('__')[0]
     stream_alias = catalog_entry.stream_alias
 
-    if name in INSIGHTS_BREAKDOWNS_OPTIONS:
+    if name_without_id in INSIGHTS_BREAKDOWNS_OPTIONS:
         return AdsInsights(
             name,
             account,
             stream_alias,
             catalog_entry,
             state=state,
-            options=INSIGHTS_BREAKDOWNS_OPTIONS[name],
+            options=INSIGHTS_BREAKDOWNS_OPTIONS[name_without_id],
         )
-    elif name == "campaigns":
+    elif name_without_id == 'campaigns':
         return Campaigns(name, account, stream_alias, catalog_entry, state=state)
-    elif name == "adsets":
+    elif name_without_id == 'adsets':
         return AdSets(name, account, stream_alias, catalog_entry, state=state)
-    elif name == "ads":
+    elif name_without_id == 'ads':
         return Ads(name, account, stream_alias, catalog_entry, state=state)
-    elif name == "adcreative":
+    elif name_without_id == 'adcreative':
         return AdCreative(name, account, stream_alias, catalog_entry)
-    elif name == "leads":
+    elif name_without_id == 'leads':
         return Leads(name, account, stream_alias, catalog_entry, state=state)
     else:
         raise TapFacebookException("Unknown stream {}".format(name))
@@ -1009,14 +1010,15 @@ def initialize_stream(
 
 def get_streams_to_sync(account, catalog, state):
     streams = []
-    for stream in STREAMS:
+    account_streams = [f"{stream}__{CONFIG.get('account_id')}" for stream in STREAMS]
+    for stream in account_streams:
         catalog_entry = next(
             (s for s in catalog.streams if s.tap_stream_id == stream), None
         )
         if catalog_entry and catalog_entry.is_selected():
             # TODO: Don't need name and stream_alias since it's on catalog_entry
-            name = catalog_entry.stream
-            stream_alias = catalog_entry.stream_alias
+            # name = catalog_entry.stream
+            # stream_alias = catalog_entry.stream_alias
             streams.append(initialize_stream(account, catalog_entry, state))
     return streams
 
@@ -1039,7 +1041,7 @@ def do_sync(account, catalog, state):
         LOGGER.info("Syncing %s, fields %s", stream.name, stream.fields())
         schema = singer.resolve_schema_references(load_schema(stream), refs)
         metadata_map = metadata.to_map(stream.catalog_entry.metadata)
-        bookmark_key = BOOKMARK_KEYS.get(stream.name)
+        bookmark_key = BOOKMARK_KEYS.get(stream.name.split('__')[0])
         singer.write_schema(
             stream.name,
             schema,
@@ -1049,7 +1051,7 @@ def do_sync(account, catalog, state):
         )
 
         # NB: The AdCreative stream is not an iterator
-        if stream.name in {"adcreative", "leads"}:
+        if stream.name.split('__')[0] in {"adcreative", "leads"}:
             stream.sync()
             continue
 
@@ -1078,7 +1080,7 @@ def get_abs_path(path):
 
 
 def load_schema(stream):
-    path = get_abs_path("schemas/{}.json".format(stream.name))
+    path = get_abs_path("schemas/{}.json".format(stream.name.split('__')[0]))
     schema = utils.load_json(path)
 
     return schema
@@ -1086,7 +1088,7 @@ def load_schema(stream):
 
 def initialize_streams_for_discovery():  # pylint: disable=invalid-name
     return [
-        initialize_stream(None, CatalogEntry(stream=name), None) for name in STREAMS
+        initialize_stream(None, CatalogEntry(stream=f"{name}__{CONFIG.get('account_id')}"), None) for name in STREAMS
     ]
 
 
@@ -1100,7 +1102,7 @@ def discover_schemas():
         LOGGER.info("Loading schema for %s", stream.name)
         schema = singer.resolve_schema_references(load_schema(stream), refs)
 
-        bookmark_key = BOOKMARK_KEYS.get(stream.name)
+        bookmark_key = BOOKMARK_KEYS.get(stream.name.split('__')[0])
 
         mdata = metadata.to_map(
             metadata.get_standard_metadata(
