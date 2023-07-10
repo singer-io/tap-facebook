@@ -304,7 +304,8 @@ def rest(account):
             rate_limit = json.loads(response.headers()["x-fb-ads-insights-throttle"])
             if  i % 5 == 0:
                 LOGGER.info(
-                    "Current rate limit (account):  %s",
+                    "Current rate limit (account: %s) is:  %s",
+                    CONFIG.get('account_id'),
                     rate_limit["acc_id_util_pct"],
                 )
 
