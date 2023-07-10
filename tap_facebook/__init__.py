@@ -295,11 +295,18 @@ def rest(account):
         "The percentage of allocated capacity for the associated ad account_id has consumed:  %s",
         rate_limit["acc_id_util_pct"],
     )
-    if rate_limit["acc_id_util_pct"] > 90:
+    if rate_limit["acc_id_util_pct"] > 70:
+        i = 0
         while rate_limit["acc_id_util_pct"] > 5:
             time.sleep(60)
+            i += 1
             response = account.get_insights(fields=["ad_id"], params={"limit": 1})
             rate_limit = json.loads(response.headers()["x-fb-ads-insights-throttle"])
+            if  i % 5 == 0:
+                LOGGER.info(
+                    "Current rate limit (account):  %s",
+                    rate_limit["acc_id_util_pct"],
+                )
 
 
 # AdCreative is not an iterable stream as it uses the batch endpoint
