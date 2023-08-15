@@ -580,6 +580,13 @@ ALL_ACTION_ATTRIBUTION_WINDOWS = [
     '28d_view'
 ]
 
+SELECTED_ACTION_ATTRIBUTION_WINDOWS = [
+    '1d_click',
+    '7d_click',
+    '1d_view',
+    '7d_view',
+]
+
 ALL_ACTION_BREAKDOWNS = [
     'action_type',
     'action_target_id',
@@ -649,6 +656,7 @@ class AdsInsights(Stream):
     # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
     def __attrs_post_init__(self):
         self.breakdowns = self.options.get('breakdowns') or []
+        self.action_attribution_windows = self.options.get('action_attribution_windows') or self.action_attribution_windows
         self.key_properties = self.base_properties[:]
         if self.options.get('primary-keys'):
             self.key_properties.extend(self.options['primary-keys'])
@@ -782,6 +790,7 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
     'ads_insights_dma': {"breakdowns": ['dma'],
                          "primary-keys": ['dma']},
     'ads_insights_hourly_advertiser': {'breakdowns': ['hourly_stats_aggregated_by_advertiser_time_zone'],
+                                       'action_attribution_windows': SELECTED_ACTION_ATTRIBUTION_WINDOWS,
                                        "primary-keys": ['hourly_stats_aggregated_by_advertiser_time_zone']},
 }
 
