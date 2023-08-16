@@ -291,18 +291,18 @@ def batch_record_failure(response):
 def rest(account):
     response = account.get_insights(fields=["ad_id"], params={"limit": 1})
     rate_limit = json.loads(response.headers()["x-fb-ads-insights-throttle"])
-    LOGGER.info(
-        "The percentage of allocated capacity for the associated ad account_id has consumed:  %s",
-        rate_limit["acc_id_util_pct"],
-    )
     if rate_limit["acc_id_util_pct"] > 70:
+        LOGGER.info(
+            "The percentage of allocated capacity for the associated ad account_id has consumed:  %s",
+            rate_limit["acc_id_util_pct"],
+        )
         i = 0
         while rate_limit["acc_id_util_pct"] > 5:
             time.sleep(60)
             i += 1
             response = account.get_insights(fields=["ad_id"], params={"limit": 1})
             rate_limit = json.loads(response.headers()["x-fb-ads-insights-throttle"])
-            if  i % 5 == 0:
+            if i % 5 == 0:
                 LOGGER.info(
                     "Current rate limit (account: %s) is:  %s",
                     CONFIG.get('account_id'),
@@ -330,15 +330,13 @@ class AdCreative(Stream):
         # Create the initial batch
         api_batch = API.new_batch()
         batch_count = 0
-
         # This loop syncs minimal fb objects
         for obj in stream_objects:
             # Execute and create a new batch for every 50 added
             if batch_count % 50 == 0:
+                rest(self.account)
                 api_batch.execute()
                 api_batch = API.new_batch()
-
-            rest(self.account)
             # Add a call to the batch with the full object
             obj.api_get(
                 fields=self.fields(),
@@ -639,10 +637,10 @@ class Leads(Stream):
 
             # Execute and create a new batch for every 50 added
             if batch_count % 50 == 0:
+                rest(self.account)
                 api_batch.execute()
                 api_batch = API.new_batch()
 
-            rest(self.account)
             # Add a call to the batch with the full object
             obj.api_get(
                 fields=self.fields(),
@@ -809,7 +807,7 @@ class AdsInsights(Stream):
         if self.options.get("primary-keys"):
             self.key_properties.extend(self.options["primary-keys"])
 
-        self.buffer_days = 28
+        self.buffer_days = 1
         if CONFIG.get("insights_buffer_days"):
             self.buffer_days = int(CONFIG.get("insights_buffer_days"))
             # attribution window should only be 1, 7 or 28
@@ -884,7 +882,7 @@ class AdsInsights(Stream):
         rest(self.account)
         status = None
         time_start = time.time()
-        sleep_time = 10
+        sleep_time = 1
         while status != "Job Completed":
             duration = time.time() - time_start
             job = AdsInsights.__api_get_with_retry(job)
@@ -927,8 +925,6 @@ class AdsInsights(Stream):
 
             LOGGER.info("sleeping for %d seconds until job is done", sleep_time)
             time.sleep(sleep_time)
-            if sleep_time < INSIGHTS_MAX_ASYNC_SLEEP_SECONDS:
-                sleep_time = 2 * sleep_time
         return job
 
     def __iter__(self):
