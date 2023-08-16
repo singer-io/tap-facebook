@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.19.0
+  * Add conversions to insights streams [#204](https://github.com/singer-io/tap-facebook/pull/204)
+
 ## 1.18.6
   * Bump facebook_business SDK to v17.0.2 for token param bug fix [#219](https://github.com/singer-io/tap-facebook/pull/219)
 
