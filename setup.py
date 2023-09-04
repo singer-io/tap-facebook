@@ -27,7 +27,7 @@ setup(name='tap-facebook',
       entry_points='''
           [console_scripts]
           tap-facebook=tap_facebook:main
-      """,
+      ''',
     packages=["tap_facebook"],
     package_data={
         "tap_facebook/schemas": [
