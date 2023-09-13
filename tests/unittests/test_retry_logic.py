@@ -60,7 +60,7 @@ class TestAdCreative(unittest.TestCase):
             request_context={"":Mock()},
             http_status=503,
             http_headers=Mock(),
-            body={}
+            body="Service Uavailable"
         )
 
         # Initialize the object and call `sync()`
