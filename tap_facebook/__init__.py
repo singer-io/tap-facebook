@@ -16,6 +16,7 @@ import backoff
 
 import singer
 import singer.metrics as metrics
+from utils import report_user_type_usages
 from singer import utils, metadata
 from singer import SingerConfigurationError, SingerDiscoveryError, SingerSyncError
 from singer import (transform,
@@ -582,9 +583,7 @@ ALL_ACTION_ATTRIBUTION_WINDOWS = [
 
 SELECTED_ACTION_ATTRIBUTION_WINDOWS = [
     '1d_click',
-    '7d_click',
     '1d_view',
-    '7d_view',
 ]
 
 ALL_ACTION_BREAKDOWNS = [
@@ -935,6 +934,7 @@ def main_impl():
         args = utils.parse_args(REQUIRED_CONFIG_KEYS)
         account_id = args.config['account_id']
         access_token = args.config['access_token']
+        system_user_token = args.config.get('system_user_token')
 
         CONFIG.update(args.config)
 
@@ -957,8 +957,22 @@ def main_impl():
         for acc in accounts:
             if acc['account_id'] == account_id:
                 account = acc
+                report_user_type_usages(
+                    value=1,
+                    dimensions={"provider": 'facebook', "type": "user"},
+                )
         if not account:
-            raise SingerConfigurationError("Couldn't find account with id {}".format(account_id))
+            LOGGER.info(f"Could not find {account_id} for the user credentials of {user.get('name')}.")
+            if system_user_token:
+                # Assuming the system user has access to the account, as it should have been given only in that scenario
+                LOGGER.info(f"Setting credentials to system user token")
+                API = FacebookAdsApi.init(access_token=system_user_token, timeout=request_timeout)
+                report_user_type_usages(
+                    value=1,
+                    dimensions={"provider": 'facebook', "type": "system"},
+                )
+            else:
+                raise SingerConfigurationError("Couldn't find account with id {}".format(account_id))
     except FacebookError as fb_error:
         raise_from(SingerConfigurationError, fb_error)
 
