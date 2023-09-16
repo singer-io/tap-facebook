@@ -16,7 +16,8 @@ setup(name='tap-facebook',
           'facebook_business==16.0.0',
           'requests==2.20.0',
           'singer-python==5.10.0',
-          'boto3'
+          'boto3==1.15.18',
+          'botocore==1.18.18',
       ],
       extras_require={
           'dev': [
