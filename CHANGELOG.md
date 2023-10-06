@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.19.1
+  * Add retry logic for status code - 503 [#226](https://github.com/singer-io/tap-facebook/pull/226)
+
 ## 1.19.0
   * Add conversions to insights streams [#204](https://github.com/singer-io/tap-facebook/pull/204)
 

@@ -130,7 +130,8 @@ def raise_from(singer_error, fb_error):
         error_message = '{}: {} Message: {}'.format(
             http_method,
             fb_error.http_status(),
-            fb_error.body().get('error', {}).get('message')
+            fb_error.body().get('error', {}).get('message') 
+                if isinstance(fb_error.body(), dict) else str(fb_error.body())
         )
     else:
         # All other facebook errors are `FacebookError`s and we handle
@@ -154,7 +155,7 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
         elif isinstance(exception, FacebookRequestError):
             return (exception.api_transient_error()
                     or exception.api_error_subcode() == 99
-                    or exception.http_status() == 500
+                    or exception.http_status() in (500, 503)
                     # This subcode corresponds to a race condition between AdsInsights job creation and polling
                     or exception.api_error_subcode() == 33
                     )

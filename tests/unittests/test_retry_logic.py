@@ -42,6 +42,34 @@ class TestAdCreative(unittest.TestCase):
         # 5 is the max tries specified in the tap
         self.assertEquals(5, mocked_account.get_ad_creatives.call_count )
 
+    def test_retries_on_503(self):
+        """`AdCreative.sync.do_request()` calls a `facebook_business` method,
+        `get_ad_creatives()`, to make a request to the API. We mock this
+        method to raise a `FacebookRequestError` with an `http_status` of
+        `503`.
+
+        We expect the tap to retry this request up to 5 times, which is
+        the current hard coded `max_tries` value.
+        """
+
+        # Create the mock and force the function to throw an error
+        mocked_account = Mock()
+        mocked_account.get_ad_creatives = Mock()
+        mocked_account.get_ad_creatives.side_effect = FacebookRequestError(
+            message='',
+            request_context={"":Mock()},
+            http_status=503,
+            http_headers=Mock(),
+            body="Service Uavailable"
+        )
+
+        # Initialize the object and call `sync()`
+        ad_creative_object = AdCreative('', mocked_account, '', '')
+        with self.assertRaises(FacebookRequestError):
+            ad_creative_object.sync()
+        # 5 is the max tries specified in the tap
+        self.assertEquals(5, mocked_account.get_ad_creatives.call_count )
+
     def test_catch_a_type_error(self):
         """`AdCreative.sync.do_request()` calls a `facebook_business` method `get_ad_creatives()`.
         We want to mock this to throw a `TypeError("string indices must be integers")` and assert
