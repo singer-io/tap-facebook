@@ -61,7 +61,7 @@ class FacebookBaseTest(BaseCase):
             'end_date': '2021-04-09T00:00:00Z',
             'insights_buffer_days': '1',
         }
-        
+
     @staticmethod
     def get_credentials():
         """Authentication information for the test account"""
@@ -150,7 +150,8 @@ class FacebookBaseTest(BaseCase):
             connections.set_non_discoverable_metadata(
                 conn_id, catalog, menagerie.get_annotated_schema(conn_id, catalog['stream_id']), replication_md)
 
-    ### Method to return the fields that are non-upsert to be excluded from the all fields test as these non-upsert fields are not replicated
+    ### Method to return the fields that are upsert only -
+    ### exclude the non-upsert fields from the all fields test as these non-upsert fields are not replicated
     def get_upsert_only_fields(self, selected_fields, stream=None):
         non_upsert_fields = {
             "ads_insights" : {
@@ -352,13 +353,18 @@ class FacebookBaseTest(BaseCase):
         }
         actual_expected = {}
         non_upsert_streams = non_upsert_fields.keys()
-        for key, fields in selected_fields.items():
-            if key in non_upsert_streams:
-                actual_expected[key] = fields.difference(non_upsert_fields.get(key)) 
-            else:
-                actual_expected[key] = fields
+
         if stream:
-            return actual_expected[stream]
+            if stream in non_upsert_streams:
+                actual_expected[stream] = selected_fields.get(stream).difference(non_upsert_fields.get(stream))
+            else:
+                actual_expected[stream] = selected_fields.get(stream)
+        else:
+            for key, fields in selected_fields.items():
+                if key in non_upsert_streams:
+                    actual_expected[key] = fields.difference(non_upsert_fields.get(key))
+                else:
+                    actual_expected[key] = fields
         return actual_expected
 
     @classmethod
