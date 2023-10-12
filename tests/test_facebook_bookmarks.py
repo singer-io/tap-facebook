@@ -1,6 +1,7 @@
-import os
+import base
 import datetime
 import dateutil.parser
+import os
 import pytz
 
 from tap_tester import runner, menagerie, connections
@@ -9,12 +10,22 @@ from base import FacebookBaseTest
 
 
 class FacebookBookmarks(FacebookBaseTest):
+
+    is_done = None
+
     @staticmethod
     def name():
         return "tap_tester_facebook_bookmarks"
 
     def streams_to_test(self):
-        return self.expected_streams()
+        # Fail the test when the JIRA card is done to allow stream to be re-added and tested
+        if self.is_done is None:
+            self.is_done = base.JIRA_CLIENT.get_status_category("TDL-24312") == 'done'
+            self.assert_message = ("JIRA ticket has moved to done, re-add the "
+                                   "ads_insights_hourly_advertiser stream to the test.")
+        assert self.is_done != True, self.assert_message
+
+        return self.expected_streams() - {'ads_insights_hourly_advertiser'}
 
     @staticmethod
     def convert_state_to_utc(date_str):
