@@ -540,9 +540,11 @@ ALL_ACTION_ATTRIBUTION_WINDOWS = [
     '1d_click',
     '7d_click',
     '28d_click',
+    'skan_click'
     '1d_view',
     '7d_view',
-    '28d_view'
+    '28d_view',
+    'skan_view'
 ]
 
 ALL_ACTION_BREAKDOWNS = [
