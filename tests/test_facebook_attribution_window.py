@@ -1,3 +1,4 @@
+import base
 import os
 
 from tap_tester import runner, connections
@@ -7,13 +8,26 @@ from base import FacebookBaseTest
 
 class FacebookAttributionWindow(FacebookBaseTest):
 
+    is_done = None
+
     @staticmethod
     def name():
         return "tap_tester_facebook_attribution_window"
 
     def streams_to_test(self):
         """ 'attribution window' is only supported for 'ads_insights' streams """
-        return [stream for stream in self.expected_streams() if self.is_insight(stream)]
+
+        # Fail the test when the JIRA card is done to allow stream to be re-added and tested
+        if self.is_done is None:
+            self.is_done = base.JIRA_CLIENT.get_status_category("TDL-24312") == 'done'
+            self.assert_message = ("JIRA ticket has moved to done, re-add the "
+                                   "ads_insights_hourly_advertiser stream to the test.")
+        assert self.is_done != True, self.assert_message
+
+        # return [stream for stream in self.expected_streams() if self.is_insight(stream)]
+        return [stream for stream in self.expected_streams()
+                if self.is_insight(stream)
+                and stream != 'ads_insights_hourly_advertiser']
 
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""

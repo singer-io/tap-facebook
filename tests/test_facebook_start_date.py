@@ -1,3 +1,4 @@
+import base
 import os
 
 from tap_tester import connections, runner, LOGGER
@@ -7,6 +8,7 @@ from base import FacebookBaseTest
 
 class FacebookStartDateTest(FacebookBaseTest):
 
+    is_done = None
     start_date_1 = ""
     start_date_2 = ""
 
@@ -15,7 +17,14 @@ class FacebookStartDateTest(FacebookBaseTest):
         return "tap_tester_facebook_start_date_test"
 
     def streams_to_test(self):
-        return self.expected_streams()
+        # Fail the test when the JIRA card is done to allow stream to be re-added and tested
+        if self.is_done is None:
+            self.is_done = base.JIRA_CLIENT.get_status_category("TDL-24312") == 'done'
+            self.assert_message = ("JIRA ticket has moved to done, re-add the "
+                                   "ads_insights_hourly_advertiser stream to the test.")
+        assert self.is_done != True, self.assert_message
+
+        return self.expected_streams() - {'ads_insights_hourly_advertiser'}
 
     def test_run(self):
         """Instantiate start date according to the desired data set and run the test"""
