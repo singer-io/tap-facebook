@@ -37,13 +37,14 @@ class TestClient():
                                                # 'ISSUES_ELECTIONS_POLITICS',  # acct unauthorized
                                                'ONLINE_GAMBLING_AND_GAMING']
 
-        # list of campaign objective values from fb docs below give "invalid" error via api 18.0
+        # list of campaign objective values from fb docs below give "Invalid" error via api 18.0
         # 'APP_INSTALLS', 'BRAND_AWARENESS', 'CONVERSIONS', 'EVENT_RESPONSES', 'LEAD_GENERATION',
         # 'LINK_CLICKS', 'MESSAGES', 'OFFER_CLAIMS', 'PAGE_LIKES', 'POST_ENGAGEMENT',
-        # 'PRODUCT_CATALOG_SALES', 'REACH', 'STORE_VISITS', 'VIDEO_VIEWS',
+        # 'PRODUCT_CATALOG_SALES', 'REACH', 'STORE_VISITS', 'VIDEO_VIEWS'
 
         # LOCAL_AWARENESS gives deprecated error, use REACH (reach is invalid from above)
-        # valid and verified ojcectives listed below
+
+        # valid and verified objectives listed below, objectives above should be re-mapped to these
         self.campaign_objectives = ['OUTCOME_APP_PROMOTION',
                                     'OUTCOME_AWARENESS',
                                     'OUTCOME_ENGAGEMENT',
@@ -56,10 +57,11 @@ class TestClient():
             f'Endpoint undefiend for specified stream: {stream}'
         endpoint = self.stream_endpoint_map[stream]
         url = self.account_url + endpoint
-        params = {'access_token': self.access_token}
+        params = {'access_token': self.access_token,
+                  'limit': 100}
         LOGGER.info(f"Getting url: {url}")
         response = requests.get(url, params)
-        LOGGER.info(f"Returning response: {response}")
+        LOGGER.info(f"Returning get response: {response}")
         return response.json()
 
     def create_account_objects(self, stream):
@@ -70,8 +72,8 @@ class TestClient():
         LOGGER.info(f"Posting to url: {url}")
         params = self.generate_post_params(stream)
         response = requests.post(url, params)
-        LOGGER.info(f"Returning response: {response}")
-        return response.json()
+        LOGGER.info(f"Returning post response: {response}")
+        return response
 
     def generate_post_params(self, stream):
         if stream == 'campaigns':

@@ -1,4 +1,3 @@
-
 import os
 from datetime import timedelta
 from tap_tester import connections, menagerie, runner, LOGGER
@@ -61,7 +60,7 @@ class FacebookBaseTest(BaseCase):
             'end_date': '2021-04-09T00:00:00Z',
             'insights_buffer_days': '1',
         }
-        
+
     @staticmethod
     def get_credentials():
         """Authentication information for the test account"""
@@ -87,7 +86,8 @@ class FacebookBaseTest(BaseCase):
             "campaigns": {
                 BaseCase.PRIMARY_KEYS: {"id", },
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
-                BaseCase.REPLICATION_KEYS: {"updated_time"}
+                BaseCase.REPLICATION_KEYS: {"updated_time"},
+                BaseCase.API_LIMIT: 100
             },
             "ads_insights": {
                 BaseCase.PRIMARY_KEYS: {"campaign_id", "adset_id", "ad_id", "date_start"},
@@ -166,3 +166,16 @@ class FacebookBaseTest(BaseCase):
     @staticmethod
     def is_insight(stream):
         return stream.startswith('ads_insights')
+
+    def expected_page_size(self, stream=None):
+        """
+        return a dictionary with key of table name
+        and value as an integer for the page size of the API requests for that stream.
+        """
+        page_size = {
+            table: properties[BaseCase.API_LIMIT]
+            for table, properties in self.expected_metadata().items()
+            if properties.get(BaseCase.API_LIMIT)}  # TODO only define API_LIMIT for core streams?
+        if not stream:
+            return page_size
+        return page_size[stream]
