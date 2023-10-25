@@ -17,11 +17,11 @@ class TestClient():
     # def __init__(self, config):  # TODO move to dynamic config model?
     def __init__(self):
         # pass in config above and get() from it or hard code?
-        self.base_url  = 'https://graph.facebook.com/'
+        self.base_url  = 'https://graph.facebook.com'
         self.api_version = 'v18.0'
         self.account_id = os.getenv('TAP_FACEBOOK_ACCOUNT_ID')
         self.access_token  = os.getenv('TAP_FACEBOOK_ACCESS_TOKEN')
-        self.account_url = self.base_url + self.api_version +'/act_{}'.format(self.account_id)
+        self.account_url = f"{self.base_url}/{self.api_version}/act_{self.account_id}"
 
         self.stream_endpoint_map = {'ads': '/ads',
                                     'adsets': '/adsets',
@@ -36,6 +36,45 @@ class TestClient():
                                                'CREDIT',
                                                # 'ISSUES_ELECTIONS_POLITICS',  # acct unauthorized
                                                'ONLINE_GAMBLING_AND_GAMING']
+
+        self.adset_billing_events = ['APP_INSTALLS',
+                                     'CLICKS',
+                                     'IMPRESSIONS',
+                                     'LINK_CLICKS',
+                                     'NONE',
+                                     'OFFER_CLAIMS',
+                                     'PAGE_LIKES',
+                                     'POST_ENGAGEMENT',
+                                     'THRUPLAY',
+                                     'PURCHASE',
+                                     'LISTING_INTERACTION']
+
+        self.adset_optimization_goals = ['NONE',
+                                         'APP_INSTALLS',
+                                         'AD_RECALL_LIFT',
+                                         'ENGAGED_USERS',
+                                         'EVENT_RESPONSES',
+                                         'IMPRESSIONS',
+                                         'LEAD_GENERATION',
+                                         'QUALITY_LEAD',
+                                         'LINK_CLICKS',
+                                         'OFFSITE_CONVERSIONS',
+                                         'PAGE_LIKES',
+                                         'POST_ENGAGEMENT',
+                                         'QUALITY_CALL',
+                                         'REACH',
+                                         'LANDING_PAGE_VIEWS',
+                                         'VISIT_INSTAGRAM_PROFILE',
+                                         'VALUE',
+                                         'THRUPLAY',
+                                         'DERIVED_EVENTS',
+                                         'APP_INSTALLS_AND_OFFSITE_CONVERSIONS',
+                                         'CONVERSATIONS',
+                                         'IN_APP_VALUE',
+                                         'MESSAGING_PURCHASE_CONVERSION',
+                                         'MESSAGING_APPOINTMENT_CONVERSION',
+                                         'SUBSCRIBERS',
+                                         'REMINDERS_SET']
 
         # list of campaign objective values from fb docs below give "Invalid" error via api 18.0
         # 'APP_INSTALLS', 'BRAND_AWARENESS', 'CONVERSIONS', 'EVENT_RESPONSES', 'LEAD_GENERATION',
@@ -54,13 +93,14 @@ class TestClient():
 
     def get_account_objects(self, stream):
         assert stream in  self.stream_endpoint_map.keys(), \
-            f'Endpoint undefiend for specified stream: {stream}'
+            f'Endpoint undefined for specified stream: {stream}'
         endpoint = self.stream_endpoint_map[stream]
         url = self.account_url + endpoint
         params = {'access_token': self.access_token,
                   'limit': 100}
         LOGGER.info(f"Getting url: {url}")
         response = requests.get(url, params)
+        response.raise_for_status()
         LOGGER.info(f"Returning get response: {response}")
         return response.json()
 
@@ -72,17 +112,46 @@ class TestClient():
         LOGGER.info(f"Posting to url: {url}")
         params = self.generate_post_params(stream)
         response = requests.post(url, params)
+        response.raise_for_status()
         LOGGER.info(f"Returning post response: {response}")
         return response
 
     def generate_post_params(self, stream):
-        if stream == 'campaigns':
+        if stream == 'ads':
+            params = {
+                'access_token': self.access_token,
+                'name': ''.join(random.choices(string.ascii_letters + string.digits, k=18)),
+                'adset_id': 23847656838230058,  # TODO pick rand adset_id?
+                'creative': str({'creative_id': 23843561378450058}),  # TODO pick rand creative_id?
+                'status': "PAUSED"}
+            return params
+
+        elif stream == 'adsets':
+            # TODO In order to randomize optimization_goal and billing_event the campaign_id
+            #   would need to be examined to determine which goals were supported.  Then an option
+            #   could be selected from the available billing events supported by that goal.
+            params = {
+                'access_token': self.access_token,
+                'name': ''.join(random.choices(string.ascii_letters + string.digits, k=16)),
+                'optimization_goal': 'REACH',
+                'billing_event': 'IMPRESSIONS',
+                'bid_amount': 2,  # TODO random?
+                'daily_budget': 1000, # TODO random? tie to parent campaign?
+                'campaign_id': 120203241386960059,  # TODO pull from campaigns dynamically?
+                'targeting': str({'geo_locations': {'countries': ["US"]},
+                                  'facebook_positions': ["feed"]}),
+                'status': "PAUSED",
+                'promoted_object': str({'page_id': '453760455405317'})}
+            return params
+
+        elif stream == 'campaigns':
             params = {  # generate a campaign with random name, ojbective, and ad category
                 'access_token': self.access_token,
                 'name': ''.join(random.choices(string.ascii_letters + string.digits, k=15)),
                 'objective': random.choice(self.campaign_objectives),
                 'special_ad_categories': random.choice(self.campaign_special_ad_categories)}
             return params
+
         else:
             assert False, f"Post params for stream {stream} not implemented / supported"
 
@@ -122,12 +191,12 @@ class TestClient():
     # Ad Insights TODO
     # Empty data list for all 3 AdSet Ids
 
-    # AdSet Ids TODO
+    # AdSet Ids
     # "data": [{"id": "23847656838230058"},
     #          {"id": "23847292383400058"},
     #          {"id": "23843561338600058"}],
 
-    # Campaign Ids TODO
+    # Campaign Ids
     # "data": [{"id": "23847656838160058"},
     #          {"id": "23847292383380058"},
     #          {"id": "23843561338580058"},

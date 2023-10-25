@@ -18,7 +18,7 @@ class FacebookDiscoveryTest(PaginationTest, FacebookBaseTest):
         return "tt_facebook_pagination"
     def streams_to_test(self):
         # return self.expected_stream_names()
-        return {'campaigns'}  # TODO WIP, expand to all core streams
+        return {'adsets', 'campaigns'}  # TODO WIP, expand to all core streams
 
     def setUp(self):  # pylint: disable=invalid-name
         """
@@ -42,20 +42,22 @@ class FacebookDiscoveryTest(PaginationTest, FacebookBaseTest):
 
         # ensure there is enough data to paginate
         for stream in self.streams_to_test():
+            limit = self.expected_page_size(stream)
+
             response = fb_client.get_account_objects(stream)
             self.assertGreater(len(response['data']), 0,
                                msg='Failed HTTP get response for stream: {}'.format(stream))
             number_of_records = len(response['data'])
-            if number_of_records > self.expected_page_size(stream):
+            if number_of_records >= limit and response.get('paging', {}).get('next'):
                 continue
             LOGGER.info(f"Stream: {stream} - Record count is less than max page size: "
                         f"{self.expected_page_size(stream)}. Posting more records to setUp "
                         "the PaginationTest")
-            for i in range(self.expected_page_size(stream) - number_of_records + 1):
+            for i in range(limit - number_of_records + 1):
                 post_response = fb_client.create_account_objects(stream)
                 self.assertEqual(post_response.status_code, 200,
                                    msg='Failed HTTP post response for stream: {}'.format(stream))
-                LOGGER.info(f"Posted {i + 1} new campaigns, new total: {number_of_records + i + 1}")
+                LOGGER.info(f"Posted {i + 1} new {stream}, new total: {number_of_records + i + 1}")
                 time.sleep(1)
 
         # run initial sync
