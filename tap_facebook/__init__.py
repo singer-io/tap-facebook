@@ -13,7 +13,6 @@ import attr
 import pendulum
 import requests
 import backoff
-
 import singer
 import singer.metrics as metrics
 from singer import utils, metadata
@@ -710,12 +709,12 @@ class Leads(Stream):
 
 
 ALL_ACTION_ATTRIBUTION_WINDOWS = [
-    "1d_click",
-    "7d_click",
-    "28d_click",
-    "1d_view",
-    "7d_view",
-    "28d_view",
+    '1d_click',
+    '7d_click',
+    '28d_click',
+    '1d_view',
+    '7d_view',
+    '28d_view'
 ]
 
 ALL_ACTION_BREAKDOWNS = ["action_type", "action_target_id", "action_destination"]
@@ -886,6 +885,7 @@ class AdsInsights(Stream):
         while status != "Job Completed":
             duration = time.time() - time_start
             job = AdsInsights.__api_get_with_retry(job)
+            
             status = job["async_status"]
             percent_complete = job["async_percent_completion"]
 
@@ -990,13 +990,20 @@ def initialize_stream(
     stream_alias = catalog_entry.stream_alias
 
     if name_without_id in INSIGHTS_BREAKDOWNS_OPTIONS:
+        insight_attrs=dict(
+            state=state,
+            options=INSIGHTS_BREAKDOWNS_OPTIONS[name_without_id]
+        )
+
+        if atrr_window := CONFIG.get('action_attribution_windows'):
+            insight_attrs['action_attribution_windows']=atrr_window
+            
         return AdsInsights(
             name,
             account,
             stream_alias,
             catalog_entry,
-            state=state,
-            options=INSIGHTS_BREAKDOWNS_OPTIONS[name_without_id],
+            **insight_attrs,
         )
     elif name_without_id == 'campaigns':
         return Campaigns(name, account, stream_alias, catalog_entry, state=state)
@@ -1196,6 +1203,7 @@ def main_impl():
             raise_from(SingerDiscoveryError, fb_error)
     elif args.properties:
         catalog = Catalog.from_dict(args.properties)
+        # breakpoint()
         try:
             do_sync(account, catalog, args.state)
         except FacebookError as fb_error:
