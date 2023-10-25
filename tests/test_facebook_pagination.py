@@ -17,8 +17,8 @@ class FacebookDiscoveryTest(PaginationTest, FacebookBaseTest):
     def name():
         return "tt_facebook_pagination"
     def streams_to_test(self):
-        # return self.expected_stream_names()
-        return {'adsets', 'campaigns'}  # TODO WIP, expand to all core streams
+        # TODO expand beyond core streams?  ads_insights empty for account, no post via API
+        return {'adcreative', 'ads', 'adsets', 'campaigns'}
 
     def setUp(self):  # pylint: disable=invalid-name
         """
@@ -43,6 +43,9 @@ class FacebookDiscoveryTest(PaginationTest, FacebookBaseTest):
         # ensure there is enough data to paginate
         for stream in self.streams_to_test():
             limit = self.expected_page_size(stream)
+            if stream == 'ads_insights':
+                import ipdb; ipdb.set_trace()
+                1+1
 
             response = fb_client.get_account_objects(stream)
             self.assertGreater(len(response['data']), 0,

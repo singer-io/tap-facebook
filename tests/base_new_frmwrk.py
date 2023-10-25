@@ -78,6 +78,7 @@ class FacebookBaseTest(BaseCase):
             "adcreative": {
                 BaseCase.PRIMARY_KEYS: {"id"},
                 BaseCase.REPLICATION_METHOD: BaseCase.FULL_TABLE,
+                BaseCase.API_LIMIT: 100
             },
             "adsets": {
                 BaseCase.PRIMARY_KEYS: {"id", "updated_time"},
@@ -94,7 +95,8 @@ class FacebookBaseTest(BaseCase):
             "ads_insights": {
                 BaseCase.PRIMARY_KEYS: {"campaign_id", "adset_id", "ad_id", "date_start"},
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
-                BaseCase.REPLICATION_KEYS: {"date_start"}
+                BaseCase.REPLICATION_KEYS: {"date_start"},
+                BaseCase.API_LIMIT: 100
             },
             "ads_insights_age_and_gender": {
                 BaseCase.PRIMARY_KEYS: {

@@ -117,11 +117,22 @@ class TestClient():
         return response
 
     def generate_post_params(self, stream):
-        if stream == 'ads':
+        if stream == 'adcreative':
             params = {
                 'access_token': self.access_token,
                 'name': ''.join(random.choices(string.ascii_letters + string.digits, k=18)),
-                'adset_id': 23847656838230058,  # TODO pick rand adset_id?
+                'object_story_spec': str({'page_id': '453760455405317',
+                                          'link_data': {'link': 'http://fb.me'}})}
+            return params
+
+        elif stream == 'ads':
+            params = {
+                'access_token': self.access_token,
+                'name': ''.join(random.choices(string.ascii_letters + string.digits, k=17)),
+                # adset is bound to parent campaign_objective, can cause errors posting new ads
+                #   as certain objectives have different requirements. 50 ads per adset max
+                #   adset below can be found under campaign: 120203395323750059
+                'adset_id': 120203403135680059,
                 'creative': str({'creative_id': 23843561378450058}),  # TODO pick rand creative_id?
                 'status': "PAUSED"}
             return params
@@ -143,6 +154,11 @@ class TestClient():
                 'status': "PAUSED",
                 'promoted_object': str({'page_id': '453760455405317'})}
             return params
+
+        # elif stream == 'ad_insights':
+        #     params = {
+        #         }
+        #     return params
 
         elif stream == 'campaigns':
             params = {  # generate a campaign with random name, ojbective, and ad category
@@ -170,7 +186,7 @@ class TestClient():
     #     -d "access_token=<ACCESS_TOKEN>" \
     #     "https://graph.facebook.com/<API_VERSION>/act_<AD_ACCOUNT_ID>/ads"
 
-    # Ad IDs TODO
+    # Ad IDs
     # "data": [{"id": "23843561338620058"},
     #          {"id": "23847656838300058"},
     #          {"id": "23847292383430058"}],
@@ -206,7 +222,7 @@ class TestClient():
     #                    'objective': 'OUTCOME_TRAFFIC',
     #                    'special_ad_categories': ['NONE']}
 
-    # Creative Ids TODO
+    # Creative Ids
     # "data": [{"id": "23850233534140058"},
     #          {"id": "23850233532300058"},
     #          {"id": "23850233210620058"},
