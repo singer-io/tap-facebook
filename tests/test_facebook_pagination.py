@@ -17,7 +17,7 @@ class FacebookDiscoveryTest(PaginationTest, FacebookBaseTest):
     def name():
         return "tt_facebook_pagination"
     def streams_to_test(self):
-        # TODO expand beyond core streams?  ads_insights empty for account, no post via API
+        # TODO ads_insights empty for account, no post via API, spike on generating data
         return {'adcreative', 'ads', 'adsets', 'campaigns'}
 
     def setUp(self):  # pylint: disable=invalid-name
@@ -43,23 +43,21 @@ class FacebookDiscoveryTest(PaginationTest, FacebookBaseTest):
         # ensure there is enough data to paginate
         for stream in self.streams_to_test():
             limit = self.expected_page_size(stream)
-            if stream == 'ads_insights':
-                import ipdb; ipdb.set_trace()
-                1+1
-
             response = fb_client.get_account_objects(stream)
             self.assertGreater(len(response['data']), 0,
                                msg='Failed HTTP get response for stream: {}'.format(stream))
+
             number_of_records = len(response['data'])
             if number_of_records >= limit and response.get('paging', {}).get('next'):
-                continue
-            LOGGER.info(f"Stream: {stream} - Record count is less than max page size: "
-                        f"{self.expected_page_size(stream)}. Posting more records to setUp "
-                        "the PaginationTest")
+                continue  # stream is ready for test, no need for futher action
+
+            LOGGER.info(f"Stream: {stream} - Record count is less than max page size: {limit}, "
+                        "posting more records to setUp the PaginationTest")
             for i in range(limit - number_of_records + 1):
                 post_response = fb_client.create_account_objects(stream)
                 self.assertEqual(post_response.status_code, 200,
                                    msg='Failed HTTP post response for stream: {}'.format(stream))
+
                 LOGGER.info(f"Posted {i + 1} new {stream}, new total: {number_of_records + i + 1}")
                 time.sleep(1)
 

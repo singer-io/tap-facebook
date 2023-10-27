@@ -26,7 +26,7 @@ class TestClient():
         self.stream_endpoint_map = {'ads': '/ads',
                                     'adsets': '/adsets',
                                     'adcreative': '/adcreatives',
-                                    'ads_insights': '/insights',
+                                    'ads_insights': '/insights',  # GET only endpoint
                                     'campaigns': '/campaigns',
                                     'users': '/users',}
 
@@ -155,11 +155,6 @@ class TestClient():
                 'promoted_object': str({'page_id': '453760455405317'})}
             return params
 
-        # elif stream == 'ad_insights':
-        #     params = {
-        #         }
-        #     return params
-
         elif stream == 'campaigns':
             params = {  # generate a campaign with random name, ojbective, and ad category
                 'access_token': self.access_token,
@@ -172,75 +167,15 @@ class TestClient():
             assert False, f"Post params for stream {stream} not implemented / supported"
 
 
-    # Create multiplue ads at a time async $ get notif when complete
-    # Make an HTTP POST to:
-    # https://graph.facebook.com/{API_VERSION}/act_{AD_ACCOUNT_ID}/asyncadrequestsets
-
-    # HTTP to get ads for an account
-    # GET /v18.0/act_{ad-account-id}/ads HTTP/1.1
-    # Host: graph.facebook.com
-
-    # cURL to read all ads from one ad account example
-    # curl -G \
-    #     -d "fields=name" \
-    #     -d "access_token=<ACCESS_TOKEN>" \
-    #     "https://graph.facebook.com/<API_VERSION>/act_<AD_ACCOUNT_ID>/ads"
-
-    # Ad IDs
-    # "data": [{"id": "23843561338620058"},
-    #          {"id": "23847656838300058"},
-    #          {"id": "23847292383430058"}],
-    # creative = {'asset_feed_spec': {'audios': [{'type': 'random'}]},
-    #             'contextual_multi_ads': {'eligibility': ['POST_AD_ENGAGEMENT_FEED',
-    #                                                      'POST_AD_ENGAGEMENT_SEED_AD',
-    #                                                      'STANDALONE_FEED'],
-    #                                      'enroll_status': 'OPT_IN'},
-    #             'degrees_of_freedom_spec': {'degrees_of_freedom_type': 'USER_ENROLLED_NON_DCO',
-    #                                         'text_transformation_types': ['TEXT_LIQUIDITY']},
-    #             'object_story_spec': {'instagram_actor_id': '2476947555701417',
-    #                                   'link_data': {'call_to_action': {'type': 'SIGN_UP'},
-    #                                                 'link': 'http://fb.me',
-    #                                                 'picture': 'https://foo.x.y.net/v/dir/1.png'},
-    #                                   'page_id': '453760455405317'},
-    #             'object_type': 'SHARE'}
-
     # Ad Insights TODO
-    # Empty data list for all 3 AdSet Ids
+    # endpoint is "GET" only.  We cannot post fake insights data for test. As of Oct 27, 2023
+    # data lists for original 3 AdSet Ids, and Ads account as a whole are empty.
+    #   1 - Can we run enough ads to get enough data to paginate?
+    #   2 - Can we interact with our own ads?
+    # if 1 or 2 == True then use setUp to conditionally test ads_insights if there is enough data
 
-    # AdSet Ids
-    # "data": [{"id": "23847656838230058"},
-    #          {"id": "23847292383400058"},
-    #          {"id": "23843561338600058"}],
 
-    # Campaign Ids
-    # "data": [{"id": "23847656838160058"},
-    #          {"id": "23847292383380058"},
-    #          {"id": "23843561338580058"},
-    #          {"id": "120203241386960059"}]  # API added campaign, returned on API get, verified
-    # cam_post_params = {'access_token': token,
-    #                    'name': 'BHT test campaign',
-    #                    'objective': 'OUTCOME_TRAFFIC',
-    #                    'special_ad_categories': ['NONE']}
-
-    # Creative Ids
-    # "data": [{"id": "23850233534140058"},
-    #          {"id": "23850233532300058"},
-    #          {"id": "23850233210620058"},
-    #          {"id": "23850232986710058"},
-    #          {"id": "23849554079380058"},
-    #          {"id": "23849066774220058"},
-    #          {"id": "23849066252410058"},
-    #          {"id": "23849063425570058"},
-    #          {"id": "23847674484290058"},
-    #          {"id": "23847292410940058"},
-    #          {"id": "23843561378450058"}],
-
-    # Users
-    # "data": [{"name": "Stitch IntegrationDev",
-    #           "tasks": ["DRAFT", "ANALYZE", "ADVERTISE", "MANAGE"],
-    #           "id": "113504146635004"}]
-
-    # TODO refactor below this line from jira test client to facebook
+    # TODO refactor or remove below this line from jira test client to facebook
     # def url(self, path):
     #     if self.is_cloud:
     #         return self.base_url.format(self.cloud_id, path)
