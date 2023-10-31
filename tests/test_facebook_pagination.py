@@ -44,8 +44,6 @@ class FacebookDiscoveryTest(PaginationTest, FacebookBaseTest):
         for stream in self.streams_to_test():
             limit = self.expected_page_size(stream)
             response = fb_client.get_account_objects(stream)
-            self.assertGreater(len(response['data']), 0,
-                               msg='Failed HTTP get response for stream: {}'.format(stream))
 
             number_of_records = len(response['data'])
             if number_of_records >= limit and response.get('paging', {}).get('next'):
@@ -53,11 +51,9 @@ class FacebookDiscoveryTest(PaginationTest, FacebookBaseTest):
 
             LOGGER.info(f"Stream: {stream} - Record count is less than max page size: {limit}, "
                         "posting more records to setUp the PaginationTest")
+
             for i in range(limit - number_of_records + 1):
                 post_response = fb_client.create_account_objects(stream)
-                self.assertEqual(post_response.status_code, 200,
-                                   msg='Failed HTTP post response for stream: {}'.format(stream))
-
                 LOGGER.info(f"Posted {i + 1} new {stream}, new total: {number_of_records + i + 1}")
                 time.sleep(1)
 

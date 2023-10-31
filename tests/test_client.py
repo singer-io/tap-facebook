@@ -1,22 +1,13 @@
-# import backoff
 import os
 import random
 import requests
 import string
 
-# from requests.exceptions import HTTPError
-# from requests.auth import HTTPBasicAuth
-
-# TODO try below syncronous interaction or go all http?
-# from facebookads.objects import Ad, AdAccount, AdSet, Campaign
-
 from tap_tester.logger import LOGGER
 
 
 class TestClient():
-    # def __init__(self, config):  # TODO move to dynamic config model?
     def __init__(self):
-        # pass in config above and get() from it or hard code?
         self.base_url  = 'https://graph.facebook.com'
         self.api_version = 'v18.0'
         self.account_id = os.getenv('TAP_FACEBOOK_ACCOUNT_ID')
@@ -76,14 +67,7 @@ class TestClient():
                                          'SUBSCRIBERS',
                                          'REMINDERS_SET']
 
-        # list of campaign objective values from fb docs below give "Invalid" error via api 18.0
-        # 'APP_INSTALLS', 'BRAND_AWARENESS', 'CONVERSIONS', 'EVENT_RESPONSES', 'LEAD_GENERATION',
-        # 'LINK_CLICKS', 'MESSAGES', 'OFFER_CLAIMS', 'PAGE_LIKES', 'POST_ENGAGEMENT',
-        # 'PRODUCT_CATALOG_SALES', 'REACH', 'STORE_VISITS', 'VIDEO_VIEWS'
-
-        # LOCAL_AWARENESS gives deprecated error, use REACH (reach is invalid from above)
-
-        # valid and verified objectives listed below, objectives above should be re-mapped to these
+        # valid and verified objectives listed below, other objectives should be re-mapped to these
         self.campaign_objectives = ['OUTCOME_APP_PROMOTION',
                                     'OUTCOME_AWARENESS',
                                     'OUTCOME_ENGAGEMENT',
@@ -133,7 +117,7 @@ class TestClient():
                 #   as certain objectives have different requirements. 50 ads per adset max
                 #   adset below can be found under campaign: 120203395323750059
                 'adset_id': 120203403135680059,
-                'creative': str({'creative_id': 23843561378450058}),  # TODO pick rand creative_id?
+                'creative': str({'creative_id': 23843561378450058}),
                 'status': "PAUSED"}
             return params
 
@@ -148,7 +132,7 @@ class TestClient():
                 'billing_event': 'IMPRESSIONS',
                 'bid_amount': 2,  # TODO random?
                 'daily_budget': 1000, # TODO random? tie to parent campaign?
-                'campaign_id': 120203241386960059,  # TODO pull from campaigns dynamically?
+                'campaign_id': 120203241386960059,
                 'targeting': str({'geo_locations': {'countries': ["US"]},
                                   'facebook_positions': ["feed"]}),
                 'status': "PAUSED",
@@ -173,92 +157,3 @@ class TestClient():
     #   1 - Can we run enough ads to get enough data to paginate?
     #   2 - Can we interact with our own ads?
     # if 1 or 2 == True then use setUp to conditionally test ads_insights if there is enough data
-
-
-    # TODO refactor or remove below this line from jira test client to facebook
-    # def url(self, path):
-    #     if self.is_cloud:
-    #         return self.base_url.format(self.cloud_id, path)
-
-    #     # defend against if the base_url does or does not provide https://
-    #     base_url = self.base_url
-    #     base_url = re.sub('^http[s]?://', '', base_url)
-    #     base_url = 'https://' + base_url
-    #     return base_url.rstrip("/") + "/" + path.lstrip("/")
-
-    # def _headers(self, headers):
-    #     headers = headers.copy()
-    #     if self.user_agent:
-    #         headers["User-Agent"] = self.user_agent
-
-    #     if self.is_cloud:
-    #         # Add OAuth Headers
-    #         headers['Accept'] = 'application/json'
-    #         headers['Authorization'] = 'Bearer {}'.format(self.access_token)
-
-    #     return headers
-
-    # @backoff.on_exception(backoff.expo,
-    #                       (requests.exceptions.ConnectionError, HTTPError),
-    #                       jitter=None,
-    #                       max_tries=6,
-    #                       giveup=lambda e: not should_retry_httperror(e))
-    # def send(self, method, path, headers={}, **kwargs):
-    #     if self.is_cloud:
-    #         # OAuth Path
-    #         request = requests.Request(method,
-    #                                    self.url(path),
-    #                                    headers=self._headers(headers),
-    #                                    **kwargs)
-    #     else:
-    #         # Basic Auth Path
-    #         request = requests.Request(method,
-    #                                    self.url(path),
-    #                                    auth=self.auth,
-    #                                    headers=self._headers(headers),
-    #                                    **kwargs)
-    #     return self.session.send(request.prepare())
-
-    # @backoff.on_exception(backoff.constant,
-    #                       RateLimitException,
-    #                       max_tries=10,
-    #                       interval=60)
-    # def request(self, tap_stream_id, *args, **kwargs):
-    #     response = self.send(*args, **kwargs)
-    #     if response.status_code == 429:
-    #         raise RateLimitException()
-
-    #     try:
-    #         response.raise_for_status()
-    #     except requests.exceptions.HTTPError as http_error:
-    #         LOGGER.error("Received HTTPError with status code %s, error message response text %s",
-    #                      http_error.response.status_code,
-    #                      http_error.response.text)
-    #         raise
-
-    #     return response.json()
-
-    # def refresh_credentials(self):
-    #     body = {"grant_type": "refresh_token",
-    #             "client_id": self.oauth_client_id,
-    #             "client_secret": self.oauth_client_secret,
-    #             "refresh_token": self.refresh_token}
-    #     try:
-    #         resp = self.session.post("https://auth.atlassian.com/oauth/token", data=body)
-    #         resp.raise_for_status()
-    #         self.access_token = resp.json()['access_token']
-    #     except Exception as ex:
-    #         error_message = str(ex)
-    #         if resp:
-    #             error_message = error_message + ", Response from Jira: {}".format(resp.text)
-    #         raise Exception(error_message) from ex
-    #     finally:
-    #         LOGGER.info("Starting new login timer")
-    #         self.login_timer = threading.Timer(REFRESH_TOKEN_EXPIRATION_PERIOD,
-    #                                            self.refresh_credentials)
-    #         self.login_timer.start()
-
-    # def test_credentials_are_authorized(self):
-    #     # Assume that everyone has issues, so we try and hit that endpoint
-    #     self.request("issues", "GET", "/rest/api/2/search",
-    #                  params={"maxResults": 1})
