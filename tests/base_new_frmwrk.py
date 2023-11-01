@@ -1,4 +1,3 @@
-
 import os
 from datetime import timedelta
 from tap_tester import connections, menagerie, runner, LOGGER
@@ -61,7 +60,7 @@ class FacebookBaseTest(BaseCase):
             'end_date': '2021-04-09T00:00:00Z',
             'insights_buffer_days': '1',
         }
-        
+
     @staticmethod
     def get_credentials():
         """Authentication information for the test account"""
