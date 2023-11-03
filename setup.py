@@ -15,7 +15,7 @@ setup(name='tap-facebook',
           'pendulum==1.2.0',
           'facebook_business==17.0.2',
           'requests==2.20.0',
-          'singer-python==5.10.0',
+          'singer-python @ git+https://github.com/peliqan-io/singer-python@master',
       ],
       extras_require={
           'dev': [
