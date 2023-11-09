@@ -2,6 +2,8 @@ import test_client as tc
 import time
 import unittest
 
+from datetime import datetime as dt
+
 from tap_tester.base_suite_tests.pagination_test import PaginationTest
 from tap_tester import connections, runner, menagerie, LOGGER
 
@@ -41,9 +43,13 @@ class FacebookDiscoveryTest(PaginationTest, FacebookBaseTest):
         self.perform_and_verify_table_and_field_selection(conn_id, test_catalogs)
 
         # ensure there is enough data to paginate
+        start_date_dt = self.parse_date(self.get_properties()['start_date'])
+        date_range = {'since': dt.strftime(start_date_dt, "%Y-%m-%d"),
+                      'until': dt.strftime(dt.now(), "%Y-%m-%d")}
+
         for stream in self.streams_to_test():
             limit = self.expected_page_size(stream)
-            response = fb_client.get_account_objects(stream)
+            response = fb_client.get_account_objects(stream, limit, date_range)
 
             number_of_records = len(response['data'])
             if number_of_records >= limit and response.get('paging', {}).get('next'):

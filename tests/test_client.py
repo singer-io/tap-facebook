@@ -75,13 +75,15 @@ class TestClient():
                                     'OUTCOME_SALES',
                                     'OUTCOME_TRAFFIC']
 
-    def get_account_objects(self, stream):
+    def get_account_objects(self, stream, limit, time_range):
+        # time_range defines query start and end dates and should match tap config
         assert stream in  self.stream_endpoint_map.keys(), \
             f'Endpoint undefined for specified stream: {stream}'
         endpoint = self.stream_endpoint_map[stream]
         url = self.account_url + endpoint
         params = {'access_token': self.access_token,
-                  'limit': 100}
+                  'limit': limit,
+                  'time_range': str({'since': time_range['since'], 'until': time_range['until']})}
         LOGGER.info(f"Getting url: {url}")
         response = requests.get(url, params)
         response.raise_for_status()
