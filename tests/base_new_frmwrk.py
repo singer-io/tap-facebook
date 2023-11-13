@@ -168,45 +168,6 @@ class FacebookBaseTest(BaseCase):
         if len(missing_envs) != 0:
             raise Exception("set environment variables")
 
-    @staticmethod
-    def parse_date(date_value):
-        """
-        Pass in string-formatted-datetime, parse the value, and return it as an unformatted
-        datetime object that is time zone naive.
-        """
-        date_formats = {
-            "%Y-%m-%dT%H:%M:%S.%fZ",
-            "%Y-%m-%dT%H:%M:%SZ",
-            "%Y-%m-%dT%H:%M:%S%z",
-            "%Y-%m-%dT%H:%M:%S.%f+00:00",
-            "%Y-%m-%dT%H:%M:%S+00:00",
-            "%Y-%m-%d"
-        }
-        for date_format in date_formats:
-            try:
-                date = dt.strptime(date_value, date_format)
-                if date_format in ["%Y-%m-%dT%H:%M:%S%z",
-                                   "%Y-%m-%dT%H:%M:%S.%f+00:00",
-                                   "%Y-%m-%dT%H:%M:%S+00:00"]:
-                    # convert a datetime with timezone information to utc
-                    utc = dt(date.year, date.month, date.day, date.hour, date.minute, date.second,
-                             tzinfo=tz.utc)
-
-                    if date.tzinfo and hasattr(date.tzinfo, "_offset"):
-                        utc += date.tzinfo._offset
-
-                    utc = utc.replace(tzinfo=None)
-
-                    return utc
-
-                return date
-
-            except ValueError:
-                continue
-
-        raise NotImplementedError("Tests do not account for dates of this format: {}".format(
-            date_value))
-
 
     ##########################################################################
     ### Tap Specific Methods
