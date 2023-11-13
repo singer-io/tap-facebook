@@ -1,6 +1,6 @@
 import os
 from datetime import datetime as dt
-from datetime import timedelta
+from datetime import timezone as tz
 from tap_tester import connections, menagerie, runner, LOGGER
 from tap_tester.base_suite_tests.base_case import BaseCase
 
@@ -107,15 +107,15 @@ class FacebookBaseTest(BaseCase):
                 BaseCase.REPLICATION_KEYS: {"date_start"}
             },
             "ads_insights_country": {
-                BaseCase.PRIMARY_KEYS: {"campaign_id", "adset_id", "ad_id", "date_start", "country"},
+                BaseCase.PRIMARY_KEYS: {"campaign_id", "adset_id", "ad_id", "date_start",
+                                        "country"},
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
                 BaseCase.REPLICATION_KEYS: {"date_start"}
             },
             "ads_insights_platform_and_device": {
-                BaseCase.PRIMARY_KEYS: {
-                    "campaign_id", "adset_id", "ad_id", "date_start",
-                    "publisher_platform", "platform_position", "impression_device"
-                },
+                BaseCase.PRIMARY_KEYS: {"campaign_id", "adset_id", "ad_id", "date_start",
+                                        "publisher_platform", "platform_position",
+                                        "impression_device"},
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
                 BaseCase.REPLICATION_KEYS: {"date_start"}
             },
@@ -130,7 +130,8 @@ class FacebookBaseTest(BaseCase):
                 BaseCase.REPLICATION_KEYS: {"date_start"}
             },
             "ads_insights_hourly_advertiser": {
-                BaseCase.PRIMARY_KEYS: {"hourly_stats_aggregated_by_advertiser_time_zone", "campaign_id", "adset_id", "ad_id", "date_start"},
+                BaseCase.PRIMARY_KEYS: {"hourly_stats_aggregated_by_advertiser_time_zone",
+                                        "campaign_id", "adset_id", "ad_id", "date_start"},
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
                 BaseCase.REPLICATION_KEYS: {"date_start"}
             },
@@ -152,8 +153,12 @@ class FacebookBaseTest(BaseCase):
                 replication_md = [{ "breadcrumb": [], "metadata":{ "selected" : True}}]
             else:
                 replication_md = [{ "breadcrumb": [], "metadata": { "selected": None}}]
-            connections.set_non_discoverable_metadata(
-                conn_id, catalog, menagerie.get_annotated_schema(conn_id, catalog['stream_id']), replication_md)
+            connections.set_non_discoverable_metadata(conn_id,
+                                                      catalog,
+                                                      menagerie.get_annotated_schema(
+                                                          conn_id,
+                                                          catalog['stream_id']),
+                                                      replication_md)
 
     @classmethod
     def setUpClass(cls,logging="Ensuring environment variables are sourced."):
@@ -166,23 +171,41 @@ class FacebookBaseTest(BaseCase):
     @staticmethod
     def parse_date(date_value):
         """
-        Pass in string-formatted-datetime, parse the value, and return it as an unformatted datetime object.
+        Pass in string-formatted-datetime, parse the value, and return it as an unformatted
+        datetime object that is time zone naive.
         """
         date_formats = {
             "%Y-%m-%dT%H:%M:%S.%fZ",
             "%Y-%m-%dT%H:%M:%SZ",
+            "%Y-%m-%dT%H:%M:%S%z",
             "%Y-%m-%dT%H:%M:%S.%f+00:00",
             "%Y-%m-%dT%H:%M:%S+00:00",
             "%Y-%m-%d"
         }
         for date_format in date_formats:
             try:
-                date_stripped = dt.strptime(date_value, date_format)
-                return date_stripped
+                date = dt.strptime(date_value, date_format)
+                if date_format in ["%Y-%m-%dT%H:%M:%S%z",
+                                   "%Y-%m-%dT%H:%M:%S.%f+00:00",
+                                   "%Y-%m-%dT%H:%M:%S+00:00"]:
+                    # convert a datetime with timezone information to utc
+                    utc = dt(date.year, date.month, date.day, date.hour, date.minute, date.second,
+                             tzinfo=tz.utc)
+
+                    if date.tzinfo and hasattr(date.tzinfo, "_offset"):
+                        utc += date.tzinfo._offset
+
+                    utc = utc.replace(tzinfo=None)
+
+                    return utc
+
+                return date
+
             except ValueError:
                 continue
 
-        raise NotImplementedError("Tests do not account for dates of this format: {}".format(date_value))
+        raise NotImplementedError("Tests do not account for dates of this format: {}".format(
+            date_value))
 
 
     ##########################################################################
@@ -201,7 +224,7 @@ class FacebookBaseTest(BaseCase):
         page_size = {
             table: properties[BaseCase.API_LIMIT]
             for table, properties in self.expected_metadata().items()
-            if properties.get(BaseCase.API_LIMIT)}  # TODO only define API_LIMIT for core streams?
+            if properties.get(BaseCase.API_LIMIT)}
         if not stream:
             return page_size
         return page_size[stream]
