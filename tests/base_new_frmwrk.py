@@ -40,7 +40,7 @@ class FacebookBaseTest(BaseCase):
     FULL_TABLE = "FULL_TABLE"
     BOOKMARK_COMPARISON_FORMAT = "%Y-%m-%dT00:00:00+00:00"
 
-    start_date = ""
+    start_date = "2021-04-07T00:00:00Z"
     end_date = ""
 
     @staticmethod
@@ -57,7 +57,7 @@ class FacebookBaseTest(BaseCase):
         """Configuration properties required for the tap."""
         return {
             'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
-            'start_date' : '2021-04-07T00:00:00Z',
+            'start_date' : self.start_date,
             'end_date': '2021-04-09T00:00:00Z',
             'insights_buffer_days': '1',
         }
@@ -176,16 +176,3 @@ class FacebookBaseTest(BaseCase):
     @staticmethod
     def is_insight(stream):
         return stream.startswith('ads_insights')
-
-    def expected_page_size(self, stream=None):
-        """
-        return a dictionary with key of table name
-        and value as an integer for the page size of the API requests for that stream.
-        """
-        page_size = {
-            table: properties[BaseCase.API_LIMIT]
-            for table, properties in self.expected_metadata().items()
-            if properties.get(BaseCase.API_LIMIT)}
-        if not stream:
-            return page_size
-        return page_size[stream]

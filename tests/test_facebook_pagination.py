@@ -43,7 +43,7 @@ class FacebookDiscoveryTest(PaginationTest, FacebookBaseTest):
         self.perform_and_verify_table_and_field_selection(conn_id, test_catalogs)
 
         # ensure there is enough data to paginate
-        start_date_dt = self.parse_date(self.get_properties()['start_date'])
+        start_date_dt = self.parse_date(self.start_date)
         date_range = {'since': dt.strftime(start_date_dt, "%Y-%m-%d"),
                       'until': dt.strftime(dt.now(), "%Y-%m-%d")}
 
@@ -52,6 +52,7 @@ class FacebookDiscoveryTest(PaginationTest, FacebookBaseTest):
             response = fb_client.get_account_objects(stream, limit, date_range)
 
             number_of_records = len(response['data'])
+            # TODO move "if" logic below to client method get_account_objects()
             if number_of_records >= limit and response.get('paging', {}).get('next'):
                 continue  # stream is ready for test, no need for futher action
 
@@ -61,7 +62,6 @@ class FacebookDiscoveryTest(PaginationTest, FacebookBaseTest):
             for i in range(limit - number_of_records + 1):
                 post_response = fb_client.create_account_objects(stream)
                 LOGGER.info(f"Posted {i + 1} new {stream}, new total: {number_of_records + i + 1}")
-                time.sleep(1)
 
         # run initial sync
         PaginationTest.record_count_by_stream = self.run_and_verify_sync_mode(conn_id)
