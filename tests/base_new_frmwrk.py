@@ -1,5 +1,6 @@
 import os
-from datetime import timedelta
+from datetime import datetime as dt
+from datetime import timezone as tz
 from tap_tester import connections, menagerie, runner, LOGGER
 from tap_tester.base_suite_tests.base_case import BaseCase
 
@@ -39,7 +40,7 @@ class FacebookBaseTest(BaseCase):
     FULL_TABLE = "FULL_TABLE"
     BOOKMARK_COMPARISON_FORMAT = "%Y-%m-%dT00:00:00+00:00"
 
-    start_date = ""
+    start_date = "2021-04-07T00:00:00Z"
     end_date = ""
 
     @staticmethod
@@ -56,7 +57,7 @@ class FacebookBaseTest(BaseCase):
         """Configuration properties required for the tap."""
         return {
             'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
-            'start_date' : '2021-04-07T00:00:00Z',
+            'start_date' : self.start_date,
             'end_date': '2021-04-09T00:00:00Z',
             'insights_buffer_days': '1',
         }
@@ -72,26 +73,31 @@ class FacebookBaseTest(BaseCase):
             "ads": {
                 BaseCase.PRIMARY_KEYS: {"id", "updated_time"},
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
-                BaseCase.REPLICATION_KEYS: {"updated_time"}
+                BaseCase.REPLICATION_KEYS: {"updated_time"},
+                BaseCase.API_LIMIT: 100
             },
             "adcreative": {
                 BaseCase.PRIMARY_KEYS: {"id"},
                 BaseCase.REPLICATION_METHOD: BaseCase.FULL_TABLE,
+                BaseCase.API_LIMIT: 100
             },
             "adsets": {
                 BaseCase.PRIMARY_KEYS: {"id", "updated_time"},
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
-                BaseCase.REPLICATION_KEYS: {"updated_time"}
+                BaseCase.REPLICATION_KEYS: {"updated_time"},
+                BaseCase.API_LIMIT: 100
             },
             "campaigns": {
                 BaseCase.PRIMARY_KEYS: {"id", },
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
-                BaseCase.REPLICATION_KEYS: {"updated_time"}
+                BaseCase.REPLICATION_KEYS: {"updated_time"},
+                BaseCase.API_LIMIT: 100
             },
             "ads_insights": {
                 BaseCase.PRIMARY_KEYS: {"campaign_id", "adset_id", "ad_id", "date_start"},
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
-                BaseCase.REPLICATION_KEYS: {"date_start"}
+                BaseCase.REPLICATION_KEYS: {"date_start"},
+                BaseCase.API_LIMIT: 100
             },
             "ads_insights_age_and_gender": {
                 BaseCase.PRIMARY_KEYS: {
@@ -101,15 +107,15 @@ class FacebookBaseTest(BaseCase):
                 BaseCase.REPLICATION_KEYS: {"date_start"}
             },
             "ads_insights_country": {
-                BaseCase.PRIMARY_KEYS: {"campaign_id", "adset_id", "ad_id", "date_start", "country"},
+                BaseCase.PRIMARY_KEYS: {"campaign_id", "adset_id", "ad_id", "date_start",
+                                        "country"},
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
                 BaseCase.REPLICATION_KEYS: {"date_start"}
             },
             "ads_insights_platform_and_device": {
-                BaseCase.PRIMARY_KEYS: {
-                    "campaign_id", "adset_id", "ad_id", "date_start",
-                    "publisher_platform", "platform_position", "impression_device"
-                },
+                BaseCase.PRIMARY_KEYS: {"campaign_id", "adset_id", "ad_id", "date_start",
+                                        "publisher_platform", "platform_position",
+                                        "impression_device"},
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
                 BaseCase.REPLICATION_KEYS: {"date_start"}
             },
@@ -124,7 +130,8 @@ class FacebookBaseTest(BaseCase):
                 BaseCase.REPLICATION_KEYS: {"date_start"}
             },
             "ads_insights_hourly_advertiser": {
-                BaseCase.PRIMARY_KEYS: {"hourly_stats_aggregated_by_advertiser_time_zone", "campaign_id", "adset_id", "ad_id", "date_start"},
+                BaseCase.PRIMARY_KEYS: {"hourly_stats_aggregated_by_advertiser_time_zone",
+                                        "campaign_id", "adset_id", "ad_id", "date_start"},
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
                 BaseCase.REPLICATION_KEYS: {"date_start"}
             },
@@ -146,8 +153,12 @@ class FacebookBaseTest(BaseCase):
                 replication_md = [{ "breadcrumb": [], "metadata":{ "selected" : True}}]
             else:
                 replication_md = [{ "breadcrumb": [], "metadata": { "selected": None}}]
-            connections.set_non_discoverable_metadata(
-                conn_id, catalog, menagerie.get_annotated_schema(conn_id, catalog['stream_id']), replication_md)
+            connections.set_non_discoverable_metadata(conn_id,
+                                                      catalog,
+                                                      menagerie.get_annotated_schema(
+                                                          conn_id,
+                                                          catalog['stream_id']),
+                                                      replication_md)
 
     @classmethod
     def setUpClass(cls,logging="Ensuring environment variables are sourced."):
