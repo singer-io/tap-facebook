@@ -55,7 +55,7 @@ jobs:
           name: 'Run Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-            pip install nose2 coverage
+            pip install nose2
             nose2 -v -s tests/unittests
       - store_test_results:
           path: test_output/report.xml
