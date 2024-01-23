@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.20.0
+  * Run on python 3.11.7 [#237](https://github.com/singer-io/tap-facebook/pull/237)
+
 ## 1.19.1
   * Add retry logic for status code - 503 [#226](https://github.com/singer-io/tap-facebook/pull/226)
 
