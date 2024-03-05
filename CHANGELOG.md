@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.20.1
+  * Bump facebook_business SDK to v19.0.0 [#238](https://github.com/singer-io/tap-facebook/pull/238)
+
 ## 1.20.0
   * Run on python 3.11.7 [#237](https://github.com/singer-io/tap-facebook/pull/237)
 
