@@ -98,7 +98,9 @@ def retry_on_summary_param_error(backoff_type, exception, **wait_gen_kwargs):
     """
     def log_retry_attempt(details):
         _, exception, _ = sys.exc_info()
-        LOGGER.info("Retrying the API call to fix Summary param error")
+        LOGGER.info('Caught Summary param error after %s tries. Waiting %s more seconds then retrying...',
+                    details["tries"],
+                    details["wait"])
 
     def should_retry_api_error(exception):
 
