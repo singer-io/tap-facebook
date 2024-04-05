@@ -14,6 +14,9 @@ import pendulum
 import requests
 import backoff
 
+import sys
+sys.path.append('/opt/code/tap-facebook/tap_facebook/')
+
 import singer
 import singer.metrics as metrics
 from singer import utils, metadata
