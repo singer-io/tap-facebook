@@ -15,8 +15,8 @@ import requests
 import backoff
 
 import sys
-sys.path.append('/opt/code/tap-facebook/tap_facebook/')
 
+import re
 import singer
 import singer.metrics as metrics
 from singer import utils, metadata
@@ -89,6 +89,53 @@ BOOKMARK_KEYS = {
 LOGGER = singer.get_logger()
 
 CONFIG = {}
+
+def retry_on_summary_param_error(backoff_type, exception, **wait_gen_kwargs):
+    """
+    At times, the Facebook Graph API exhibits erratic behavior, 
+    triggering errors related to the Summary parameter with a status code of 400. 
+    However, upon retrying, the API functions as expected.
+    """
+    def log_retry_attempt(details):
+        _, exception, _ = sys.exc_info()
+        LOGGER.info("Retrying the API call to fix Summary param error")
+
+    def should_retry_api_error(exception):
+
+        # Define the regular expression pattern
+        pattern = r'\(#100\) Cannot include [\w, ]+ in summary param because they weren\'t there while creating the report run(?:\. All available values are: )?'
+        if isinstance(exception, FacebookRequestError):
+            return (exception.http_status()==400 and re.match(pattern, exception._error['message']))
+        return False
+
+    return backoff.on_exception(
+        backoff_type,
+        exception,
+        jitter=None,
+        on_backoff=log_retry_attempt,
+        giveup=lambda exc: not should_retry_api_error(exc),
+        **wait_gen_kwargs
+    )
+
+original_call = FacebookAdsApi.call
+
+@retry_on_summary_param_error(backoff.expo, (FacebookRequestError), max_tries=5, factor=5)
+def call_with_retry(self, method, path, params=None, headers=None, files=None, url_override=None, api_version=None,):
+    """
+    Adding the retry decorator on the original function call
+    """
+    return original_call(
+        self,
+        method,
+        path,
+        params,
+        headers,
+        files,
+        url_override,
+        api_version,)
+
+FacebookAdsApi.call = call_with_retry
+
 
 class TapFacebookException(Exception):
     pass
