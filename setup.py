@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='tap-facebook',
-      version='1.20.1',
+      version='1.20.2',
       description='Singer.io tap for extracting data from the Facebook Ads API',
       author='Stitch',
       url='https://singer.io',
@@ -12,8 +12,8 @@ setup(name='tap-facebook',
       install_requires=[
           'attrs==17.3.0',
           'backoff==2.2.1',
+          'facebook_business==19.0.2',
           'pendulum==1.2.0',
-          'facebook_business==19.0.0',
           'requests==2.20.0',
           'singer-python==6.0.0',
       ],
