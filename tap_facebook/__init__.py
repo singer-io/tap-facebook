@@ -319,7 +319,7 @@ class AdCreative(Stream):
         # This loop syncs minimal fb objects
         for obj in stream_objects:
             # Execute and create a new batch for every 50 added
-            if batch_count % 50 == 0:
+            if batch_count % 1 == 0:
                 api_batch.execute()
                 api_batch = API.new_batch()
 
