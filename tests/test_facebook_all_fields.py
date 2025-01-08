@@ -208,6 +208,7 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
         }
     }
 
+    # TODO: https://jira.talendforge.org/browse/TDL-26640
     EXCLUDE_STREAMS = {
         'ads_insights_hourly_advertiser',
         'ads_insights_platform_and_device',
