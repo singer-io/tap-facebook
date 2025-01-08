@@ -210,13 +210,13 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
 
     # TODO: https://jira.talendforge.org/browse/TDL-26640
     EXCLUDE_STREAMS = {
-        'ads_insights_hourly_advertiser',
-        'ads_insights_platform_and_device',
-        'ads_insights',
-        'ads_insights_age_and_gender',
-        'ads_insights_country',
-        'ads_insights_dma',
-        'ads_insights_region'
+        'ads_insights_hourly_advertiser',   # TDL-24312, TDL-26640
+        'ads_insights_platform_and_device', # TDL-26640
+        'ads_insights',                     # TDL-26640
+        'ads_insights_age_and_gender',      # TDL-26640
+        'ads_insights_country',             # TDL-26640
+        'ads_insights_dma',                 # TDL-26640
+        'ads_insights_region'               # TDL-26640
     }
 
     @staticmethod
@@ -224,12 +224,15 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
         return "tt_facebook_all_fields_test"
 
     def streams_to_test(self):
-        #return set(self.expected_metadata().keys())
+        # return set(self.expected_metadata().keys())
         # Fail the test when the JIRA card is done to allow stream to be re-added and tested
         if self.is_done is None:
             self.is_done = base.JIRA_CLIENT.get_status_category("TDL-24312") == 'done'
             self.assert_message = ("JIRA ticket has moved to done, re-add the "
-                                   "ads_insights_hourly_advertiser stream to the test.")
+                                   "applicable EXCLUDE_STREAMS to the test.")
+            self.is_done_2 = base.JIRA_CLIENT.get_status_category("TDL-26640") == 'done'
+            # if either card is done, fail & update the test to include more streams
+            self.is_done = self.is_done or self.is_done_2
         assert self.is_done != True, self.assert_message
 
         return self.expected_metadata().keys() - self.EXCLUDE_STREAMS
