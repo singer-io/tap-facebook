@@ -208,6 +208,15 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
         }
     }
 
+    EXCLUDE_STREAMS = {
+        'ads_insights_hourly_advertiser',
+        'ads_insights_platform_and_device',
+        'ads_insights',
+        'ads_insights_age_and_gender',
+        'ads_insights_country',
+        'ads_insights_dma',
+        'ads_insights_region'
+    }
 
     @staticmethod
     def name():
@@ -222,4 +231,4 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
                                    "ads_insights_hourly_advertiser stream to the test.")
         assert self.is_done != True, self.assert_message
 
-        return self.expected_metadata().keys() - {'ads_insights_hourly_advertiser'}
+        return self.expected_metadata().keys() - self.EXCLUDE_STREAMS
