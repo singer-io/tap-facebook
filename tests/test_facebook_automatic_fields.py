@@ -4,19 +4,43 @@ Test that with no fields selected for a stream automatic fields are still replic
 import os
 
 from tap_tester import runner, connections
-
+import base
 from base import FacebookBaseTest
 
 
 class FacebookAutomaticFields(FacebookBaseTest):
     """Test that with no fields selected for a stream automatic fields are still replicated"""
 
+    is_done = None
+
+    # TODO: https://jira.talendforge.org/browse/TDL-26640
+    EXCLUDE_STREAMS = {
+        'ads_insights_hourly_advertiser',   # TDL-24312, TDL-26640
+        'ads_insights_platform_and_device', # TDL-26640
+        'ads_insights',                     # TDL-26640
+        'ads_insights_age_and_gender',      # TDL-26640
+        'ads_insights_country',             # TDL-26640
+        'ads_insights_dma',                 # TDL-26640
+        'ads_insights_region'               # TDL-26640
+    }
+
     @staticmethod
     def name():
         return "tap_tester_facebook_automatic_fields"
 
     def streams_to_test(self):
-        return self.expected_streams()
+        # return set(self.expected_metadata().keys())
+        # Fail the test when the JIRA card is done to allow stream to be re-added and tested
+        if self.is_done is None:
+            self.is_done = base.JIRA_CLIENT.get_status_category("TDL-24312") == 'done'
+            self.assert_message = ("JIRA ticket has moved to done, re-add the "
+                                   "applicable EXCLUDE_STREAMS to the test.")
+            self.is_done_2 = base.JIRA_CLIENT.get_status_category("TDL-26640") == 'done'
+            # if either card is done, fail & update the test to include more streams
+            self.is_done = self.is_done or self.is_done_2
+        assert self.is_done != True, self.assert_message
+
+        return self.expected_metadata().keys() - self.EXCLUDE_STREAMS
 
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""

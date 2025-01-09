@@ -117,7 +117,8 @@ class FacebookBookmarks(FacebookBaseTest):
         # Testing against ads insights objects
         self.start_date = self.get_properties()['start_date']
         self.end_date = self.get_properties()['end_date']
-        self.bookmarks_test(insight_streams)
+        # TODO: https://jira.talendforge.org/browse/TDL-26640
+        # self.bookmarks_test(insight_streams)
 
         # Testing against core objects
         self.end_date = '2021-02-09T00:00:00Z'
