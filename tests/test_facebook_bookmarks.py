@@ -12,7 +12,7 @@ from base import FacebookBaseTest
 class FacebookBookmarks(FacebookBaseTest):
 
     is_done = None
-    
+
     # TODO: https://jira.talendforge.org/browse/TDL-26640
     EXCLUDE_STREAMS = {
         'ads_insights_hourly_advertiser',   # TDL-24312, TDL-26640
@@ -39,7 +39,7 @@ class FacebookBookmarks(FacebookBaseTest):
             self.is_done = self.is_done or self.is_done_2
         assert self.is_done != True, self.assert_message
 
-        return self.expected_streams() - {'ads_insights_hourly_advertiser'}
+        return self.expected_streams() - self.EXCLUDE_STREAMS
 
     @staticmethod
     def convert_state_to_utc(date_str):

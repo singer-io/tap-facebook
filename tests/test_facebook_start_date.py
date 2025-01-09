@@ -38,7 +38,7 @@ class FacebookStartDateTest(FacebookBaseTest):
             self.is_done = self.is_done or self.is_done_2
         assert self.is_done != True, self.assert_message
 
-        return self.expected_streams() - {'ads_insights_hourly_advertiser'}
+        return self.expected_streams() - self.EXCLUDE_STREAMS
 
     def test_run(self):
         """Instantiate start date according to the desired data set and run the test"""
