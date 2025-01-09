@@ -2,7 +2,7 @@ import base
 import os
 
 from tap_tester import runner, connections
-
+from tap_tester.base_case import BaseCase as base_case
 from base import FacebookBaseTest, LOGGER
 
 
@@ -44,7 +44,7 @@ class FacebookAttributionWindow(FacebookBaseTest):
         return return_value
 
     # TODO: https://jira.talendforge.org/browse/TDL-26640
-    @base.skipUnless(base.JIRA_CLIENT.get_status_category("TDL-26640") == "done", "TDL-26640")
+    @base_case.skipUnless(base.JIRA_CLIENT.get_status_category("TDL-26640") == "done", "TDL-26640")
     def test_run(self):
         """
         For the test ad set up in facebook ads manager we see data
