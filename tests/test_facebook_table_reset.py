@@ -18,9 +18,9 @@ class FacebookTableResetTest(TableResetTest, FacebookBaseTest):
 
     @property
     def reset_stream(self):
-        return ('ads_insights_dma')
+        return ('ads')
 
-    
+
     def calculated_states_by_stream(self, current_state):
 
         """        The following streams barely make the cut:
