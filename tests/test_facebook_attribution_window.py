@@ -43,16 +43,13 @@ class FacebookAttributionWindow(FacebookBaseTest):
         return_value["start_date"] = self.start_date
         return return_value
 
+    # TODO: https://jira.talendforge.org/browse/TDL-26640
+    @base.skipUnless(base.JIRA_CLIENT.get_status_category("TDL-26640") == "done", "TDL-26640")
     def test_run(self):
         """
         For the test ad set up in facebook ads manager we see data
         on April 7th, start date is based on this data
         """
-        # TODO: https://jira.talendforge.org/browse/TDL-26640
-        if base.JIRA_CLIENT.get_status_category("TDL-26640") != 'done':
-            LOGGER.warning("Skipping TEST! See BUG[TDL-26640]")
-            self.skipTest("Skipping TEST! See BUG[TDL-26640]")
-        
         # attrribution window = 7
         self.ATTRIBUTION_WINDOW = 7
         self.start_date = '2021-04-14T00:00:00Z'
