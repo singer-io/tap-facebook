@@ -29,20 +29,20 @@ class FacebookAutomaticFields(FacebookBaseTest):
         return "tap_tester_facebook_automatic_fields"
 
     def streams_to_test(self):
-        exprected_streams = self.expected_metadata().keys()
+        expected_streams = self.expected_metadata().keys()
         self.assert_message = f"JIRA ticket has moved to done, \
                                 re-add the applicable stream to the test: {0}"
         assert base.JIRA_CLIENT.get_status_category("TDL-24312") != 'done',\
             self.assert_message.format('ads_insights_hourly_advertiser')
-        exprected_streams = self.expected_metadata().keys() - {'ads_insights_hourly_advertiser'}
+        expected_streams = self.expected_metadata().keys() - {'ads_insights_hourly_advertiser'}
         LOGGER.warn(f"Skipped streams: {'ads_insights_hourly_advertiser'}")
 
         assert base.JIRA_CLIENT.get_status_category("TDL-26640") != 'done',\
             self.assert_message.format(self.EXCLUDE_STREAMS)
-        exprected_streams = self.expected_metadata().keys() - self.EXCLUDE_STREAMS
+        expected_streams = self.expected_metadata().keys() - self.EXCLUDE_STREAMS
         LOGGER.warn(f"Skipped streams: {self.EXCLUDE_STREAMS}")
 
-        return exprected_streams
+        return expected_streams
 
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
