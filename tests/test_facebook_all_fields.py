@@ -2,6 +2,7 @@
 Test that with no fields selected for a stream all fields are still replicated
 """
 
+from tap_tester import LOGGER
 from tap_tester.base_suite_tests.all_fields_test import AllFieldsTest
 from base_new_frmwrk import FacebookBaseTest
 import base
@@ -208,18 +209,33 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
         }
     }
 
+    # TODO: https://jira.talendforge.org/browse/TDL-26640
+    EXCLUDE_STREAMS = {
+        'ads_insights_hourly_advertiser',   # TDL-24312, TDL-26640
+        'ads_insights_platform_and_device', # TDL-26640
+        'ads_insights',                     # TDL-26640
+        'ads_insights_age_and_gender',      # TDL-26640
+        'ads_insights_country',             # TDL-26640
+        'ads_insights_dma',                 # TDL-26640
+        'ads_insights_region'               # TDL-26640
+    }
 
     @staticmethod
     def name():
         return "tt_facebook_all_fields_test"
 
     def streams_to_test(self):
-        #return set(self.expected_metadata().keys())
-        # Fail the test when the JIRA card is done to allow stream to be re-added and tested
-        if self.is_done is None:
-            self.is_done = base.JIRA_CLIENT.get_status_category("TDL-24312") == 'done'
-            self.assert_message = ("JIRA ticket has moved to done, re-add the "
-                                   "ads_insights_hourly_advertiser stream to the test.")
-        assert self.is_done != True, self.assert_message
+        expected_streams = self.expected_metadata().keys()
+        self.assert_message = f"JIRA ticket has moved to done, \
+                                re-add the applicable stream to the test: {0}"
+        assert base.JIRA_CLIENT.get_status_category("TDL-24312") != 'done',\
+            self.assert_message.format('ads_insights_hourly_advertiser')
+        expected_streams = self.expected_metadata().keys() - {'ads_insights_hourly_advertiser'}
+        LOGGER.warn(f"Skipped streams: {'ads_insights_hourly_advertiser'}")
 
-        return self.expected_metadata().keys() - {'ads_insights_hourly_advertiser'}
+        assert base.JIRA_CLIENT.get_status_category("TDL-26640") != 'done',\
+            self.assert_message.format(self.EXCLUDE_STREAMS)
+        expected_streams = self.expected_metadata().keys() - self.EXCLUDE_STREAMS
+        LOGGER.warn(f"Skipped streams: {self.EXCLUDE_STREAMS}")
+
+        return expected_streams

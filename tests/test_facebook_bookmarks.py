@@ -4,7 +4,7 @@ import dateutil.parser
 import os
 import pytz
 
-from tap_tester import runner, menagerie, connections
+from tap_tester import runner, menagerie, connections, LOGGER
 
 from base import FacebookBaseTest
 
@@ -13,19 +13,36 @@ class FacebookBookmarks(FacebookBaseTest):
 
     is_done = None
 
+    # TODO: https://jira.talendforge.org/browse/TDL-26640
+    EXCLUDE_STREAMS = {
+        'ads_insights_hourly_advertiser',   # TDL-24312, TDL-26640
+        'ads_insights_platform_and_device', # TDL-26640
+        'ads_insights',                     # TDL-26640
+        'ads_insights_age_and_gender',      # TDL-26640
+        'ads_insights_country',             # TDL-26640
+        'ads_insights_dma',                 # TDL-26640
+        'ads_insights_region'               # TDL-26640
+    }
+
     @staticmethod
     def name():
         return "tap_tester_facebook_bookmarks"
 
     def streams_to_test(self):
-        # Fail the test when the JIRA card is done to allow stream to be re-added and tested
-        if self.is_done is None:
-            self.is_done = base.JIRA_CLIENT.get_status_category("TDL-24312") == 'done'
-            self.assert_message = ("JIRA ticket has moved to done, re-add the "
-                                   "ads_insights_hourly_advertiser stream to the test.")
-        assert self.is_done != True, self.assert_message
+        expected_streams = self.expected_metadata().keys()
+        self.assert_message = f"JIRA ticket has moved to done, \
+                                re-add the applicable stream to the test: {0}"
+        assert base.JIRA_CLIENT.get_status_category("TDL-24312") != 'done',\
+            self.assert_message.format('ads_insights_hourly_advertiser')
+        expected_streams = self.expected_metadata().keys() - {'ads_insights_hourly_advertiser'}
+        LOGGER.warn(f"Skipped streams: {'ads_insights_hourly_advertiser'}")
 
-        return self.expected_streams() - {'ads_insights_hourly_advertiser'}
+        assert base.JIRA_CLIENT.get_status_category("TDL-26640") != 'done',\
+            self.assert_message.format(self.EXCLUDE_STREAMS)
+        expected_streams = self.expected_metadata().keys() - self.EXCLUDE_STREAMS
+        LOGGER.warn(f"Skipped streams: {self.EXCLUDE_STREAMS}")
+
+        return expected_streams
 
     @staticmethod
     def convert_state_to_utc(date_str):
@@ -103,7 +120,13 @@ class FacebookBookmarks(FacebookBaseTest):
         # Testing against ads insights objects
         self.start_date = self.get_properties()['start_date']
         self.end_date = self.get_properties()['end_date']
-        self.bookmarks_test(insight_streams)
+
+        # TODO: https://jira.talendforge.org/browse/TDL-26640
+        status_category = base.JIRA_CLIENT.get_status_category("TDL-26640")
+        assert status_category != 'done',\
+            "TDL-26640 is fixed, re-enable the test for insights streams"
+        # Uncomment the following line when ready to run the test for insights streams
+        # self.bookmarks_test(insight_streams)
 
         # Testing against core objects
         self.end_date = '2021-02-09T00:00:00Z'
