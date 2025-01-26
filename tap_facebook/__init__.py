@@ -951,16 +951,18 @@ def main_impl():
         global API
         API = FacebookAdsApi.init(access_token=access_token, timeout=request_timeout)
         user = fb_user.User(fbid='me')
-
-        accounts = user.get_ad_accounts()
         account = None
-        for acc in accounts:
-            if acc['account_id'] == account_id:
-                account = acc
-                report_user_type_usages(
-                    value=1,
-                    dimensions={"provider": 'facebook', "type": "user"},
-                )
+        try:
+            accounts = user.get_ad_accounts()
+            for acc in accounts:
+                if acc['account_id'] == account_id:
+                    account = acc
+                    report_user_type_usages(
+                        value=1,
+                        dimensions={"provider": 'facebook', "type": "user"},
+                    )
+        except FacebookError as fb_error:
+            LOGGER.info(f"Error while fetching ad accounts: {fb_error} using user token")
         if not account:
             LOGGER.info(f"Could not find {account_id} for the user credentials of {user.get('name')}.")
             if system_user_token:
