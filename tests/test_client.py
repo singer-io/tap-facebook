@@ -9,7 +9,7 @@ from tap_tester.logger import LOGGER
 class TestClient():
     def __init__(self):
         self.base_url  = 'https://graph.facebook.com'
-        self.api_version = 'v19.0'
+        self.api_version = 'v21.0'
         self.account_id = os.getenv('TAP_FACEBOOK_ACCOUNT_ID')
         self.access_token  = os.getenv('TAP_FACEBOOK_ACCESS_TOKEN')
         self.account_url = f"{self.base_url}/{self.api_version}/act_{self.account_id}"
