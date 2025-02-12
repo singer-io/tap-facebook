@@ -948,11 +948,11 @@ def main_impl():
         else:
             request_timeout = REQUEST_TIMEOUT  # If value is 0,"0","" or not passed then set default to 300 seconds.
 
-        global API
-        API = FacebookAdsApi.init(access_token=access_token, timeout=request_timeout)
-        user = fb_user.User(fbid='me')
         account = None
         try:
+            global API
+            API = FacebookAdsApi.init(access_token=access_token, timeout=request_timeout)
+            user = fb_user.User(fbid='me')
             accounts = user.get_ad_accounts()
             for acc in accounts:
                 if acc['account_id'] == account_id:
@@ -969,6 +969,13 @@ def main_impl():
                 # Assuming the system user has access to the account, as it should have been given only in that scenario
                 LOGGER.info(f"Setting credentials to system user token")
                 API = FacebookAdsApi.init(access_token=system_user_token, timeout=request_timeout)
+                user = fb_user.User(fbid='me')
+                accounts = user.get_ad_accounts()
+                for acc in accounts:
+                    if acc['account_id'] == account_id:
+                        account = acc
+                if not account:
+                    raise SingerConfigurationError(f"Could not find {account_id} for the system user credentials.")
                 report_user_type_usages(
                     value=1,
                     dimensions={"provider": 'facebook', "type": "system"},
