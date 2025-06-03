@@ -687,6 +687,13 @@ class AdsInsights(Stream):
                         min_start_date.to_date_string())
             buffered_start_date = min_start_date
 
+        thirteen_months_ago = pendulum.today().subtract(months=13)
+        is_old_data = buffered_start_date < thirteen_months_ago
+        if is_old_data and "reach" in self.fields() and self.breakdowns:
+            LOGGER.warning("Skipping reach field for %s with breakdowns older than 13 months (%s).",
+                        self.catalog_entry.tap_stream_id,
+                        buffered_start_date.to_date_string())
+
         end_date = pendulum.now()
         if CONFIG.get('end_date'):
             end_date = pendulum.parse(CONFIG.get('end_date'))

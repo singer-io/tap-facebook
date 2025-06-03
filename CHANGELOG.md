@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.22.0
+  * Adds warning when 'reach' is requested for breakdown queries older than 13 months due to Meta API changes  [#244](https://github.com/singer-io/tap-facebook/pull/244)
+
 ## 1.21.0
   * Bump facebook_business SDK to v21.0.5 [#242](https://github.com/singer-io/tap-facebook/pull/242)
 
