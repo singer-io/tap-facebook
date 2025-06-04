@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.22.1
+  * Bumping requests to the latest version i.e. 2.32.3 [#246](https://github.com/singer-io/tap-facebook/pull/246)
+
 ## 1.22.0
   * Adds warning when 'reach' is requested for breakdown queries older than 13 months due to Meta API changes  [#245](https://github.com/singer-io/tap-facebook/pull/245)
 
