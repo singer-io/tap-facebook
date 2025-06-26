@@ -51,6 +51,7 @@ INSIGHTS_MAX_ASYNC_SLEEP_SECONDS = 5 * 60
 RESULT_RETURN_LIMIT = 100
 
 REQUEST_TIMEOUT = 300
+DEFAULT_PK_VALUE = "00:00:00 - 00:59:59"
 
 STREAMS = [
     'adcreative',
@@ -779,7 +780,7 @@ class AdsInsights(Stream):
                 # the API does not return hourly_stats_aggregated_by_advertiser_time_zone in the response.
                 # As it is one of the primary keys, we need to ensure it is present.
                 if self.name == "ads_insights_hourly_advertiser" and "hourly_stats_aggregated_by_advertiser_time_zone" not in rec:
-                    rec["hourly_stats_aggregated_by_advertiser_time_zone"] = None
+                    rec["hourly_stats_aggregated_by_advertiser_time_zone"] = DEFAULT_PK_VALUE
 
                 yield {'record': rec}
             LOGGER.info('Got %d results for insights job', count)
