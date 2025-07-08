@@ -110,6 +110,12 @@
         "object"
       ]
     },
+    "special_ad_categories": {
+      "type": ["null", "array"],
+      "items": {
+        "type": ["null", "string"]
+      }
+    },
     "adlabels": {
       "type": ["null", "array"],
       "items": {
