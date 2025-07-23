@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.23.0
+  * Add default value of missing pk for ads_insights_hourly_advertiser [#250](https://github.com/singer-io/tap-facebook/pull/250)
+
 ## 1.22.1
   * Bump dependency versions for twistlock compliance [#247](https://github.com/singer-io/tap-facebook/pull/247)
 
