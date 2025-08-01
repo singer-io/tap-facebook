@@ -73,6 +73,10 @@ UPDATED_TIME_KEY = 'updated_time'
 CREATED_TIME_KEY = 'created_time'
 START_DATE_KEY = 'date_start'
 
+MAP_SHORTEN_FIELD_TO_API_FIELD = {
+    "hourly_stats_aggregated_by_time_zone": "hourly_stats_aggregated_by_advertiser_time_zone"
+}
+
 BOOKMARK_KEYS = {
     'ads': UPDATED_TIME_KEY,
     'adsets': UPDATED_TIME_KEY,
@@ -257,7 +261,7 @@ class Stream(object):
                     continue # Skip root and nested metadata
 
                 if data.get('selected') or data.get('inclusion') == 'automatic':
-                    fields.add(breadcrumb[1])
+                    fields.add(MAP_SHORTEN_FIELD_TO_API_FIELD.get(breadcrumb[1], breadcrumb[1]))
         return fields
 
 @attr.s
@@ -779,8 +783,11 @@ class AdsInsights(Stream):
                 # When the impressions count remains 0 for the specific campaign throughout the day, 
                 # the API does not return hourly_stats_aggregated_by_advertiser_time_zone in the response.
                 # As it is one of the primary keys, we need to ensure it is present.
-                if self.name == "ads_insights_hourly_advertiser" and "hourly_stats_aggregated_by_advertiser_time_zone" not in rec:
-                    rec["hourly_stats_aggregated_by_advertiser_time_zone"] = DEFAULT_PK_VALUE
+                if self.name == "ads_insights_hourly_advertiser":
+                    if "hourly_stats_aggregated_by_advertiser_time_zone" not in rec:
+                        rec["hourly_stats_aggregated_by_advertiser_time_zone"] = DEFAULT_PK_VALUE
+                    
+                    rec["hourly_stats_aggregated_by_time_zone"] = rec["hourly_stats_aggregated_by_advertiser_time_zone"]
 
                 yield {'record': rec}
             LOGGER.info('Got %d results for insights job', count)
@@ -810,7 +817,7 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
     'ads_insights_dma': {"breakdowns": ['dma'],
                          "primary-keys": ['dma']},
     'ads_insights_hourly_advertiser': {'breakdowns': ['hourly_stats_aggregated_by_advertiser_time_zone'],
-                                       "primary-keys": ['hourly_stats_aggregated_by_advertiser_time_zone']},
+                                       "primary-keys": ['hourly_stats_aggregated_by_time_zone']},
 }
 
 
