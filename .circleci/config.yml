@@ -53,6 +53,7 @@ jobs:
             source dev_env.sh
             mkdir /tmp/${CIRCLE_PROJECT_REPONAME}
             export STITCH_CONFIG_DIR=/tmp/${CIRCLE_PROJECT_REPONAME}
+            export TZ='Etc/UTC'
             circleci tests glob "tests/*.py" | circleci tests split > ./tests-to-run
             if [ -s ./tests-to-run ]; then
               for test_file in $(cat ./tests-to-run)
