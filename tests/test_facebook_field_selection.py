@@ -55,7 +55,8 @@ class FacebookFieldSelection(FacebookBaseTest):  # TODO use base.py, determine i
         return {'start_date' : '2015-03-15T00:00:00Z',
                 'account_id': os.getenv('TAP_FACEBOOK_ACCOUNT_ID'),
                 'end_date': '2015-03-16T00:00:00+00:00',
-                'insights_buffer_days': '1'
+                'insights_buffer_days': '1',
+                'timezone': 'UTC'
         }
 
     def test_run(self):
