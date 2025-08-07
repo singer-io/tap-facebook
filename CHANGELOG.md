@@ -1,8 +1,5 @@
 # Changelog
 
-## 1.23.1
-  * Add UTC to pendulum.today and pendulum.now calls in init [#251](https://github.com/singer-io/tap-facebook/pull/251)
-
 ## 1.23.0
   * Add default value of missing pk for ads_insights_hourly_advertiser [#250](https://github.com/singer-io/tap-facebook/pull/250)
 
