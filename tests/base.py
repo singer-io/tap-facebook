@@ -150,7 +150,7 @@ class FacebookBaseTest(BaseCase):
                 self.REPLICATION_KEYS: {"date_start"}
             },
             "ads_insights_hourly_advertiser": {
-                self.PRIMARY_KEYS: {"hourly_stats_aggregated_by_time_zone", "campaign_id", "adset_id", "ad_id", "date_start"},
+                self.PRIMARY_KEYS: {"hourly_stats_aggregated_by_adv_time_zone", "campaign_id", "adset_id", "ad_id", "date_start"},
                 self.REPLICATION_METHOD: self.INCREMENTAL,
                 self.REPLICATION_KEYS: {"date_start"}
             },

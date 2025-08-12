@@ -205,7 +205,7 @@
         "string"
       ]
     },
-    "hourly_stats_aggregated_by_time_zone": {
+    "hourly_stats_aggregated_by_adv_time_zone": {
       "type": [
         "null",
         "string"

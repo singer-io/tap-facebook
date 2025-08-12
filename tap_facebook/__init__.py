@@ -74,7 +74,7 @@ CREATED_TIME_KEY = 'created_time'
 START_DATE_KEY = 'date_start'
 
 MAP_SHORTEN_FIELD_TO_API_FIELD = {
-    "hourly_stats_aggregated_by_time_zone": "hourly_stats_aggregated_by_advertiser_time_zone"
+    "hourly_stats_aggregated_by_adv_time_zone": "hourly_stats_aggregated_by_advertiser_time_zone"
 }
 
 BOOKMARK_KEYS = {
@@ -787,7 +787,7 @@ class AdsInsights(Stream):
                     if "hourly_stats_aggregated_by_advertiser_time_zone" not in rec:
                         rec["hourly_stats_aggregated_by_advertiser_time_zone"] = DEFAULT_PK_VALUE
                     
-                    rec["hourly_stats_aggregated_by_time_zone"] = rec["hourly_stats_aggregated_by_advertiser_time_zone"]
+                    rec["hourly_stats_aggregated_by_adv_time_zone"] = rec["hourly_stats_aggregated_by_advertiser_time_zone"]
 
                 yield {'record': rec}
             LOGGER.info('Got %d results for insights job', count)
@@ -817,7 +817,7 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
     'ads_insights_dma': {"breakdowns": ['dma'],
                          "primary-keys": ['dma']},
     'ads_insights_hourly_advertiser': {'breakdowns': ['hourly_stats_aggregated_by_advertiser_time_zone'],
-                                       "primary-keys": ['hourly_stats_aggregated_by_time_zone']},
+                                       "primary-keys": ['hourly_stats_aggregated_by_adv_time_zone']},
 }
 
 
