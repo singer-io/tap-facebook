@@ -695,7 +695,7 @@ class AdsInsights(Stream):
                         self.catalog_entry.tap_stream_id,
                         buffered_start_date.to_date_string())
 
-        end_date = pendulum.now('UTC')
+        end_date = pendulum.now()
         if CONFIG.get('end_date'):
             end_date = pendulum.parse(CONFIG.get('end_date'))
 
