@@ -679,7 +679,7 @@ class AdsInsights(Stream):
         start_date = get_start(self, self.bookmark_key)
 
         buffered_start_date = start_date.subtract(days=self.buffer_days)
-        min_start_date = pendulum.today().subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
+        min_start_date = pendulum.today('UTC').subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
         if buffered_start_date < min_start_date:
             LOGGER.warning("%s: Start date is earlier than %s months ago, using %s instead. "
                            "For more information, see https://www.facebook.com/business/help/1695754927158071?id=354406972049255",
@@ -688,7 +688,7 @@ class AdsInsights(Stream):
                         min_start_date.to_date_string())
             buffered_start_date = min_start_date
 
-        thirteen_months_ago = pendulum.today().subtract(months=13)
+        thirteen_months_ago = pendulum.today('UTC').subtract(months=13)
         is_old_data = buffered_start_date < thirteen_months_ago
         if is_old_data and "reach" in self.fields() and self.breakdowns:
             LOGGER.warning("Skipping reach field for %s with breakdowns older than 13 months (%s).",
