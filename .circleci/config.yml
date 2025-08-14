@@ -21,7 +21,6 @@ jobs:
             uv pip install 'pip==23.3.2'
             uv pip install 'setuptools==56.0.0'
             uv pip install .[dev]
-            uv pip install ipdb
       - slack/notify-on-failure:
           only_for_branches: master
       - run:
