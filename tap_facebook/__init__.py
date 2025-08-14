@@ -680,10 +680,10 @@ class AdsInsights(Stream):
 
         buffered_start_date = start_date.subtract(days=self.buffer_days)
 
-        print('pendulum %s'.format(pendulum), file=sys.stderr)
-        print('pendulum.today() $s'.format(pendulum.today()), file=sys.stderr)
-        print('self.FACEBOOK_INSIGHTS_RETENTION_PERIOD) %s'.format(self.FACEBOOK_INSIGHTS_RETENTION_PERIOD), file=sys.stderr)
-        print('whole shebang %s'.format(pendulum.today().subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)), file=sys.stderr)
+        print('pendulum %s'.format(pendulum))
+        print('pendulum.today() $s'.format(pendulum.today()))
+        print('self.FACEBOOK_INSIGHTS_RETENTION_PERIOD) %s'.format(self.FACEBOOK_INSIGHTS_RETENTION_PERIOD))
+        print('whole shebang %s'.format(pendulum.today().subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)))
 
 
         min_start_date = pendulum.today().subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
