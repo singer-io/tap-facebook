@@ -58,7 +58,7 @@ jobs:
             if [ -s ./tests-to-run ]; then
               for test_file in test_facebook_field_selection.py # $(cat ./tests-to-run)
               do
-                run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/$test_file
+                run-test --tap=${CIRCLE_PROJECT_REPONAME} $test_file
               done
             fi
       - slack/notify-on-failure:
