@@ -679,13 +679,6 @@ class AdsInsights(Stream):
         start_date = get_start(self, self.bookmark_key)
 
         buffered_start_date = start_date.subtract(days=self.buffer_days)
-
-        print('pendulum %s'.format(pendulum))
-        print('pendulum.today() $s'.format(pendulum.today()))
-        print('self.FACEBOOK_INSIGHTS_RETENTION_PERIOD) %s'.format(self.FACEBOOK_INSIGHTS_RETENTION_PERIOD))
-        print('whole shebang %s'.format(pendulum.today().subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)))
-
-
         min_start_date = pendulum.today().subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
         if buffered_start_date < min_start_date:
             LOGGER.warning("%s: Start date is earlier than %s months ago, using %s instead. "
