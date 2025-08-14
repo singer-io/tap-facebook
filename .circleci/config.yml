@@ -79,8 +79,6 @@ jobs:
             uv pip install --upgrade awscli
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
             source dev_env.sh
-            export TZ='Etc/UTC'
-            cp /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
             mkdir /tmp/${CIRCLE_PROJECT_REPONAME}
             export STITCH_CONFIG_DIR=/tmp/${CIRCLE_PROJECT_REPONAME}
             circleci tests glob "tests/*.py" | circleci tests split > ./tests-to-run
