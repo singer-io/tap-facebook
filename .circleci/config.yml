@@ -31,19 +31,19 @@ jobs:
             pylint tap_facebook -d C,R,W
       - slack/notify-on-failure:
           only_for_branches: master
-      # - run:
-      #     name: 'Run Unit Tests'
-      #     command: |
-      #       source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-      #       pip install pytest coverage
-      #       coverage run -m pytest tests/unittests
-      #       coverage html
-      # - store_test_results:
-      #     path: test_output/report.xml
-      # - store_artifacts:
-      #     path: htmlcov
-      # - slack/notify-on-failure:
-      #     only_for_branches: master
+      - run:
+          name: 'Run Unit Tests'
+          command: |
+            source /usr/local/share/virtualenvs/tap-facebook/bin/activate
+            pip install pytest coverage
+            coverage run -m pytest tests/unittests
+            coverage html
+      - store_test_results:
+          path: test_output/report.xml
+      - store_artifacts:
+          path: htmlcov
+      - slack/notify-on-failure:
+          only_for_branches: master
       - run:
           name: 'Run Integration Tests'
           command: |
@@ -56,7 +56,7 @@ jobs:
             export TZ='Etc/UTC'
             circleci tests glob "tests/*.py" | circleci tests split > ./tests-to-run
             if [ -s ./tests-to-run ]; then
-              for test_file in test_facebook_field_selection.py # $(cat ./tests-to-run)
+              for test_file in $(cat ./tests-to-run)
               do
                 run-test --tap=${CIRCLE_PROJECT_REPONAME} $test_file
               done
