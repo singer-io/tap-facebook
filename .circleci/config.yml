@@ -76,7 +76,7 @@ jobs:
           name: 'Run Integration Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            uv pip install --upgrade awscli
+            uv pip install --upgrade awscli tzdata
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
             source dev_env.sh
             mkdir /tmp/${CIRCLE_PROJECT_REPONAME}
