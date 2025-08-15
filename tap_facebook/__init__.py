@@ -576,7 +576,7 @@ class Leads(Stream):
             yield from ad.get_leads(params=params)
 
     def sync(self):
-        start_time = pendulum.utcnow()
+        start_time = pendulum.datetime.utcnow()
         previous_start_time = self.state.get("bookmarks", {}).get("leads", {}).get(self.replication_key, CONFIG.get('start_date'))
 
         previous_start_time = pendulum.parse(previous_start_time)
