@@ -7,10 +7,10 @@ import time
 
 import datetime
 from datetime import timezone
+from datetime import timedelta
 import dateutil
 
 import attr
-import pendulum
 import requests
 import backoff
 
@@ -273,7 +273,7 @@ class IncrementalStream(Stream):
         max_bookmark = None
         for recordset in generator:
             for record in recordset:
-                updated_at = pendulum.parse(record[UPDATED_TIME_KEY])
+                updated_at = utils.strptime_to_utc(record[UPDATED_TIME_KEY])
 
                 if self.current_bookmark and self.current_bookmark >= updated_at:
                     continue
@@ -511,8 +511,8 @@ class Leads(Stream):
     def compare_lead_created_times(self, leadA, leadB):
         if leadA is None:
             return leadB
-        timestampA = pendulum.parse(leadA[self.replication_key])
-        timestampB = pendulum.parse(leadB[self.replication_key])
+        timestampA = utils.strptime_to_utc(leadA[self.replication_key])
+        timestampB = utils.strptime_to_utc(leadB[self.replication_key])
         if timestampB > timestampA:
             return leadB
         else:
@@ -551,7 +551,7 @@ class Leads(Stream):
 
         # Ensure the final batch is executed
         api_batch.execute()
-        return str(pendulum.parse(latest_lead[self.replication_key]))
+        return str(utils.strptime_to_utc(latest_lead[self.replication_key]))
 
     @retry_pattern(backoff.expo, (Timeout, ConnectionError), max_tries=5, factor=2)
     # Added retry_pattern to handle AttributeError raised from account.get_ads() below
@@ -576,10 +576,10 @@ class Leads(Stream):
             yield from ad.get_leads(params=params)
 
     def sync(self):
-        start_time = pendulum.utcnow()
+        start_time = utils.now()
         previous_start_time = self.state.get("bookmarks", {}).get("leads", {}).get(self.replication_key, CONFIG.get('start_date'))
 
-        previous_start_time = pendulum.parse(previous_start_time)
+        previous_start_time = utils.strptime_to_utc(previous_start_time)
         ads = self.get_ads()
         leads = self.get_leads(ads, start_time, int(previous_start_time.timestamp()))
         latest_lead_time = self.sync_batches(leads)
@@ -613,15 +613,15 @@ def get_start(stream, bookmark_key):
             return None
         else:
             LOGGER.info("no bookmark found for %s, using start_date instead...%s", tap_stream_id, CONFIG['start_date'])
-            return pendulum.parse(CONFIG['start_date'])
+            return utils.strptime_to_utc(CONFIG['start_date'])
     LOGGER.info("found current bookmark for %s:  %s", tap_stream_id, current_bookmark)
-    return pendulum.parse(current_bookmark)
+    return utils.strptime_to_utc(current_bookmark)
 
 def advance_bookmark(stream, bookmark_key, date):
     tap_stream_id = stream.name
     state = stream.state or {}
     LOGGER.info('advance(%s, %s)', tap_stream_id, date)
-    date = pendulum.parse(date) if date else None
+    date = utils.strptime_to_utc(date) if date else None
     current_bookmark = get_start(stream, bookmark_key)
 
     if date is None:
@@ -678,8 +678,9 @@ class AdsInsights(Stream):
     def job_params(self):
         start_date = get_start(self, self.bookmark_key)
 
-        buffered_start_date = start_date.subtract(days=self.buffer_days)
-        min_start_date = pendulum.today().subtract(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
+        buffered_start_date = start_date - timedelta(days=self.buffer_days)
+        today = utils.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        min_start_date = today - timedelta(months=self.FACEBOOK_INSIGHTS_RETENTION_PERIOD)
         if buffered_start_date < min_start_date:
             LOGGER.warning("%s: Start date is earlier than %s months ago, using %s instead. "
                            "For more information, see https://www.facebook.com/business/help/1695754927158071?id=354406972049255",
@@ -688,16 +689,16 @@ class AdsInsights(Stream):
                         min_start_date.to_date_string())
             buffered_start_date = min_start_date
 
-        thirteen_months_ago = pendulum.today().subtract(months=13)
+        thirteen_months_ago = today - timedelta(months=13)
         is_old_data = buffered_start_date < thirteen_months_ago
         if is_old_data and "reach" in self.fields() and self.breakdowns:
             LOGGER.warning("Skipping reach field for %s with breakdowns older than 13 months (%s).",
                         self.catalog_entry.tap_stream_id,
                         buffered_start_date.to_date_string())
 
-        end_date = pendulum.now()
+        end_date = utils.now()
         if CONFIG.get('end_date'):
-            end_date = pendulum.parse(CONFIG.get('end_date'))
+            end_date = utils.strptime_to_utc(CONFIG.get('end_date'))
 
         # Some automatic fields (primary-keys) cannot be used as 'fields' query params.
         while buffered_start_date <= end_date:
