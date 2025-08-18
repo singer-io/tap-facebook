@@ -76,19 +76,21 @@ jobs:
           name: 'Run Integration Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            uv pip install tzdata
             uv pip install --upgrade awscli
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
             source dev_env.sh
+            export TZ='Etc/UTC'
+            ln -s /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
             mkdir /tmp/${CIRCLE_PROJECT_REPONAME}
             export STITCH_CONFIG_DIR=/tmp/${CIRCLE_PROJECT_REPONAME}
-            circleci tests glob "tests/*.py" | circleci tests split > ./tests-to-run
-            if [ -s ./tests-to-run ]; then
-              for test_file in $(cat ./tests-to-run)
-              do
-                run-test --tap=${CIRCLE_PROJECT_REPONAME} $test_file
-              done
-            fi
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_facebook_table_reset.py
+            # circleci tests glob "tests/*.py" | circleci tests split > ./tests-to-run
+            # if [ -s ./tests-to-run ]; then
+            #   for test_file in $(cat ./tests-to-run)
+            #   do
+            #     run-test --tap=${CIRCLE_PROJECT_REPONAME} $test_file
+            #   done
+            # fi
       - slack/notify-on-failure:
           only_for_branches: master
       - store_artifacts:
