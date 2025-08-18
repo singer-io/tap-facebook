@@ -81,8 +81,8 @@ jobs:
             source dev_env.sh
             export DEBIAN_FRONTEND=noninteractive
             apt install -y tzdata
-            # export TZ='Etc/UTC'
-            # ln -s /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+            export TZ='Etc/UTC'
+            ln -s /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
             mkdir /tmp/${CIRCLE_PROJECT_REPONAME}
             export STITCH_CONFIG_DIR=/tmp/${CIRCLE_PROJECT_REPONAME}
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_facebook_table_reset.py
