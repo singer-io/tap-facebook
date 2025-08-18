@@ -79,6 +79,7 @@ jobs:
             uv pip install --upgrade awscli
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
             source dev_env.sh
+            export DEBIAN_FRONTEND=noninteractive
             apt install -y tzdata
             # export TZ='Etc/UTC'
             # ln -s /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
