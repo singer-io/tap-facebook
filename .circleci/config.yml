@@ -12,6 +12,10 @@ jobs:
   build:
     executor: docker-executor
     steps:
+      - run: echo 'CI done'
+  ensure_env:
+    executor: docker-executor
+    steps:
       - checkout
       - run:
           name: 'Setup Virtual Env'
@@ -23,19 +27,36 @@ jobs:
             uv pip install .[dev]
       - slack/notify-on-failure:
           only_for_branches: master
+      - persist_to_workspace:
+          root: /
+          paths:
+            - root/.local/share/uv/python
+            - usr/local/share/virtualenvs/tap-facebook
+  # Regression Job Definitions
+  run_pylint:
+    executor: docker-executor
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /
       - run:
           name: 'Run pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-            uv pip install pylint
             pylint tap_facebook -d C,R,W
       - slack/notify-on-failure:
           only_for_branches: master
+  run_unit_tests:
+    executor: docker-executor
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /
       - run:
           name: 'Run Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
-            pip install pytest coverage
+            uv pip install pytest coverage
             coverage run -m pytest tests/unittests
             coverage html
       - store_test_results:
@@ -44,6 +65,13 @@ jobs:
           path: htmlcov
       - slack/notify-on-failure:
           only_for_branches: master
+  run_integration_tests:
+    executor: docker-executor
+    parallelism: 9
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /
       - run:
           name: 'Run Integration Tests'
           command: |
@@ -51,9 +79,11 @@ jobs:
             uv pip install --upgrade awscli
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
             source dev_env.sh
+            export DEBIAN_FRONTEND=noninteractive
+            apt install -y tzdata
+            export TZ='Etc/UTC'
             mkdir /tmp/${CIRCLE_PROJECT_REPONAME}
             export STITCH_CONFIG_DIR=/tmp/${CIRCLE_PROJECT_REPONAME}
-            export TZ='Etc/UTC'
             circleci tests glob "tests/*.py" | circleci tests split > ./tests-to-run
             if [ -s ./tests-to-run ]; then
               for test_file in $(cat ./tests-to-run)
@@ -70,17 +100,69 @@ workflows:
   version: 2
   commit:
     jobs:
+      - ensure_env:
+          context:
+            - circleci-user
+            - tier-1-tap-user
+      - run_pylint:
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          requires:
+            - ensure_env
+      - run_unit_tests:
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          requires:
+            - ensure_env
       - build:
           context:
             - circleci-user
             - tier-1-tap-user
+          requires:
+            - run_pylint
+            - run_unit_tests
+            - run_integration_tests
 
   build_daily:
     jobs:
+      - ensure_env:
+          context:
+            - circleci-user
+            - tier-1-tap-user
+      - run_pylint:
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          requires:
+            - ensure_env
+      - run_unit_tests:
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          requires:
+            - ensure_env
+      - run_integration_tests:
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          requires:
+            - ensure_env
       - build:
           context:
             - circleci-user
             - tier-1-tap-user
+          requires:
+            - run_pylint
+            - run_unit_tests
+            - run_integration_tests
     triggers:
       - schedule:
           cron: "0 1 * * *"
