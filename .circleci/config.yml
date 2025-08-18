@@ -67,7 +67,7 @@ jobs:
           only_for_branches: master
   run_integration_tests:
     executor: docker-executor
-    parallelism: 9
+    # parallelism: 9
     steps:
       - checkout
       - attach_workspace:
