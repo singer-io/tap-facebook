@@ -73,7 +73,7 @@
         "string"
       ]
     },
-    "effective_instagram_story_id": {
+    "effective_instagram_media_id": {
       "type": [
         "null",
         "string"
@@ -98,7 +98,7 @@
       ]
     },
     "image_crops": {"$ref": "ads_image_crops.json"},
-    "instagram_actor_id": {
+    "instagram_user_id": {
       "type": [
         "null",
         "string"
@@ -110,7 +110,7 @@
         "string"
       ]
     },
-    "instagram_story_id": {
+    "source_instagram_media_id": {
       "type": [
         "null",
         "string"
@@ -142,7 +142,7 @@
             "string"
           ]
         },
-        "instagram_actor_id": {
+        "instagram_user_id": {
           "type": [
             "null",
             "string"
