@@ -915,9 +915,6 @@ def discover_schemas():
                                                replication_method=stream.replication_method,
                                                valid_replication_keys=[bookmark_key] if bookmark_key else None))
 
-        if bookmark_key == UPDATED_TIME_KEY or bookmark_key == CREATED_TIME_KEY :
-            mdata = metadata.write(mdata, ('properties', bookmark_key), 'inclusion', 'automatic')
-
         # Add forced-replication-method metadata
         mdata = metadata.write(mdata, (), 'forced-replication-method', stream.replication_method)
 
@@ -934,6 +931,9 @@ def discover_schemas():
 
         if parent_stream_id:
             mdata = metadata.write(mdata, (), 'parent-tap-stream-id', parent_stream_id)
+
+        if bookmark_key == UPDATED_TIME_KEY or bookmark_key == CREATED_TIME_KEY :
+            mdata = metadata.write(mdata, ('properties', bookmark_key), 'inclusion', 'automatic')
 
         result['streams'].append({'stream': stream.name,
                                   'tap_stream_id': stream.name,
