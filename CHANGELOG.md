@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.25.0
+  * Adds `forced-replication-method` and `parent-tap-stream-id` as discoverable metadata [SAC-28831]
+
 ## 1.24.0
   * Bump facebook_business SDK to v23.0.1 [#255](https://github.com/singer-io/tap-facebook/pull/255)
   * Remove Deprecated Fields from adcreative [#255](https://github.com/singer-io/tap-facebook/pull/255)
