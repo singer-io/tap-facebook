@@ -27,6 +27,12 @@
           "number"
         ]
       },
+      "skan_click": {
+        "type": [
+          "null",
+          "number"
+        ]
+      },
       "1d_view": {
         "type": [
           "null",
@@ -40,6 +46,12 @@
         ]
       },
       "28d_view": {
+        "type": [
+          "null",
+          "number"
+        ]
+      },
+      "skan_view": {
         "type": [
           "null",
           "number"
