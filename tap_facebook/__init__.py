@@ -764,35 +764,43 @@ class AdsInsights(Stream):
         return job
 
     def __iter__(self):
-        for params in self.job_params():
-            with metrics.job_timer('insights'):
-                job = self.run_job(params)
+        for i in range(5000):
+            yield {'record': {
+                "campaign_id": f"cmp_{i}",
+                "adset_id": f"adset_{i}",
+                "ad_id": f"ad_id_{i}",
+                "date_start": "2025-08-01",
+                "hourly_stats_aggregated_by_advertiser_time_zone": "00:00:00 - 00:59:59",
+            }}
+        # for params in self.job_params():
+        #     with metrics.job_timer('insights'):
+        #         job = self.run_job(params)
 
-            min_date_start_for_job = None
-            count = 0
-            for obj in job.get_result():
-                count += 1
-                rec = obj.export_all_data()
-                if not min_date_start_for_job or rec['date_stop'] < min_date_start_for_job:
-                    min_date_start_for_job = rec['date_stop']
+        #     min_date_start_for_job = None
+        #     count = 0
+        #     for obj in job.get_result():
+        #         count += 1
+        #         rec = obj.export_all_data()
+        #         if not min_date_start_for_job or rec['date_stop'] < min_date_start_for_job:
+        #             min_date_start_for_job = rec['date_stop']
 
-                # When the impressions count remains 0 for the specific campaign throughout the day, 
-                # the API does not return hourly_stats_aggregated_by_advertiser_time_zone in the response.
-                # As it is one of the primary keys, we need to ensure it is present.
-                if self.name == "ads_insights_hourly_advertiser" and "hourly_stats_aggregated_by_advertiser_time_zone" not in rec:
-                    rec["hourly_stats_aggregated_by_advertiser_time_zone"] = DEFAULT_PK_VALUE
+        #         # When the impressions count remains 0 for the specific campaign throughout the day, 
+        #         # the API does not return hourly_stats_aggregated_by_advertiser_time_zone in the response.
+        #         # As it is one of the primary keys, we need to ensure it is present.
+        #         if self.name == "ads_insights_hourly_advertiser" and "hourly_stats_aggregated_by_advertiser_time_zone" not in rec:
+        #             rec["hourly_stats_aggregated_by_advertiser_time_zone"] = DEFAULT_PK_VALUE
 
-                yield {'record': rec}
-            LOGGER.info('Got %d results for insights job', count)
+        #         yield {'record': rec}
+        #     LOGGER.info('Got %d results for insights job', count)
 
-            # when min_date_start_for_job stays None, we should
-            # still update the bookmark using 'until' in time_ranges
-            if min_date_start_for_job is None:
-                for time_range in params['time_ranges']:
-                    if time_range['until']:
-                        min_date_start_for_job = time_range['until']
-            yield {'state': advance_bookmark(self, self.bookmark_key,
-                                             min_date_start_for_job)} # pylint: disable=no-member
+        #     # when min_date_start_for_job stays None, we should
+        #     # still update the bookmark using 'until' in time_ranges
+        #     if min_date_start_for_job is None:
+        #         for time_range in params['time_ranges']:
+        #             if time_range['until']:
+        #                 min_date_start_for_job = time_range['until']
+        #     yield {'state': advance_bookmark(self, self.bookmark_key,
+        #                                      min_date_start_for_job)} # pylint: disable=no-member
 
 
 INSIGHTS_BREAKDOWNS_OPTIONS = {
