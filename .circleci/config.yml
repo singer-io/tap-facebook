@@ -20,7 +20,7 @@ jobs:
       - run:
           name: 'Setup Virtual Env'
           command: |
-            uv venv --python 3.11 /usr/local/share/virtualenvs/tap-facebook
+            uv venv --python 3.12 /usr/local/share/virtualenvs/tap-facebook
             source /usr/local/share/virtualenvs/tap-facebook/bin/activate
             uv pip install 'pip==23.3.2'
             uv pip install 'setuptools==56.0.0'
