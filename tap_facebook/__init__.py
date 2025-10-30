@@ -598,9 +598,7 @@ ALL_ACTION_ATTRIBUTION_WINDOWS = [
     '28d_view'
 ]
 
-ALL_ACTION_BREAKDOWNS = [
-    'action_type',
-]
+ALL_ACTION_BREAKDOWNS = ['action_type','action_target_id','action_destination']
 
 def get_start(stream, bookmark_key):
     tap_stream_id = stream.name
@@ -701,7 +699,7 @@ class AdsInsights(Stream):
         while buffered_start_date <= end_date:
             yield {
                 'level': self.level,
-                'action_breakdowns': list(self.action_breakdowns),
+                'summary_action_breakdowns': list(self.action_breakdowns),
                 'breakdowns': list(self.breakdowns),
                 'limit': self.limit,
                 'fields': list(self.fields().difference(self.invalid_insights_fields)),
