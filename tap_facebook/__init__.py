@@ -699,7 +699,7 @@ class AdsInsights(Stream):
         while buffered_start_date <= end_date:
             yield {
                 'level': self.level,
-                'summary_action_breakdowns': list(self.action_breakdowns),
+                'action_breakdowns': list(self.action_breakdowns),
                 'breakdowns': list(self.breakdowns),
                 'limit': self.limit,
                 'fields': list(self.fields().difference(self.invalid_insights_fields)),
