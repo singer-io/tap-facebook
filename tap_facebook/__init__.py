@@ -812,7 +812,7 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
 def parse_action_breakdowns(breakdown_str):
     valid_breakdowns = []
     if breakdown_str:
-        act_breakdowns = [b.strip() for b in str(breakdown_str).split(',')]
+        act_breakdowns = [b.strip().lower() for b in str(breakdown_str).split(',')]
         for breakdown in act_breakdowns:
             if not breakdown:  # Skip empty strings
                 continue
@@ -826,14 +826,10 @@ def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many
 
     name = catalog_entry.stream
     stream_alias = catalog_entry.stream_alias
-    if not CONFIG.get("action_breakdowns", None):
-        CONFIG["action_breakdowns"] = "action_type"
-    valid_breakdowns = parse_action_breakdowns(CONFIG.get("action_breakdowns", None))
-    LOGGER.info("Using Breakdowns %s", valid_breakdowns)
 
     if name in INSIGHTS_BREAKDOWNS_OPTIONS:
         return AdsInsights(name, account, stream_alias, catalog_entry, state=state,
-                           options=INSIGHTS_BREAKDOWNS_OPTIONS[name], action_breakdowns=valid_breakdowns)
+                           options=INSIGHTS_BREAKDOWNS_OPTIONS[name], action_breakdowns=CONFIG["action_breakdowns"])
     elif name == 'campaigns':
         return Campaigns(name, account, stream_alias, catalog_entry, state=state)
     elif name == 'adsets':
@@ -971,6 +967,12 @@ def main_impl():
             request_timeout = float(config_request_timeout)
         else:
             request_timeout = REQUEST_TIMEOUT # If value is 0,"0","" or not passed then set default to 300 seconds.
+        
+        ab_params = CONFIG.get("action_breakdowns")
+
+        CONFIG["action_breakdowns"] =  ALL_ACTION_BREAKDOWNS if not ab_params else parse_action_breakdowns(ab_params)
+
+        LOGGER.info("Using Breakdowns %s", CONFIG["action_breakdowns"])
 
         global API
         API = FacebookAdsApi.init(access_token=access_token, timeout=request_timeout)
