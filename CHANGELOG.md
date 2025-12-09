@@ -1,6 +1,9 @@
 # Changelog
 
 ## 1.24.0
+  * Make action_breakdowns configurable [#260](https://github.com/singer-io/tap-facebook/pull/260)
+
+## 1.24.0
   * Bump facebook_business SDK to v23.0.1 [#255](https://github.com/singer-io/tap-facebook/pull/255)
   * Remove Deprecated Fields from adcreative [#255](https://github.com/singer-io/tap-facebook/pull/255)
 
