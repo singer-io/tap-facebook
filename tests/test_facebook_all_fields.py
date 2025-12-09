@@ -41,7 +41,6 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
             'image_crops',
             'product_set_id',
             'url_tags',
-            "video_id",
             'applink_treatment',
             'object_id',
             'link_og_id',
@@ -51,7 +50,6 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
             'link_url',
             'adlabels',
             'source_instagram_media_id',
-            'video_id'
         },
         "ads_insights_country": {
             'video_p75_watched_actions',
