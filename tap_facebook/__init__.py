@@ -820,16 +820,16 @@ def parse_action_breakdowns(breakdown_str):
         LOGGER.warning("action_breakdowns must be a string, got %s", type(breakdown_str))
         return ALL_ACTION_BREAKDOWNS
 
-    valid_breakdowns = []
+    selected_breakdowns = []
     act_breakdowns = [b.strip().lower() for b in breakdown_str.split(',')]
     for breakdown in act_breakdowns:
         if not breakdown:  # Skip empty strings
             continue
-        if breakdown in ALL_ACTION_BREAKDOWNS:
-            valid_breakdowns.append(breakdown)
+        if breakdown in ALL_ACTION_BREAKDOWNS and breakdown not in selected_breakdowns:
+                selected_breakdowns.append(breakdown)
         else:
             LOGGER.warning("Invalid action breakdown %s", breakdown)
-    return valid_breakdowns if valid_breakdowns else ALL_ACTION_BREAKDOWNS
+    return selected_breakdowns if selected_breakdowns else ALL_ACTION_BREAKDOWNS
 
 def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many-return-statements
 
