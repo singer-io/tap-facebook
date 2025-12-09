@@ -598,7 +598,11 @@ ALL_ACTION_ATTRIBUTION_WINDOWS = [
     '28d_view'
 ]
 
-ALL_ACTION_BREAKDOWNS = ['action_type','action_target_id','action_destination']
+ALL_ACTION_BREAKDOWNS = [
+    'action_type',
+    'action_target_id',
+    'action_destination'
+]
 
 def get_start(stream, bookmark_key):
     tap_stream_id = stream.name
@@ -810,16 +814,21 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
 }
 
 def parse_action_breakdowns(breakdown_str):
+    if not breakdown_str:
+        return ALL_ACTION_BREAKDOWNS
+    if not isinstance(breakdown_str, str):
+        LOGGER.warning("action_breakdowns must be a string, got %s", type(breakdown_str))
+        return ALL_ACTION_BREAKDOWNS
+
     valid_breakdowns = []
-    if breakdown_str:
-        act_breakdowns = [b.strip().lower() for b in str(breakdown_str).split(',')]
-        for breakdown in act_breakdowns:
-            if not breakdown:  # Skip empty strings
-                continue
-            if breakdown in ALL_ACTION_BREAKDOWNS:
-                valid_breakdowns.append(breakdown)
-            else:
-                LOGGER.warning("Invalid action breakdown %s", breakdown)
+    act_breakdowns = [b.strip().lower() for b in breakdown_str.split(',')]
+    for breakdown in act_breakdowns:
+        if not breakdown:  # Skip empty strings
+            continue
+        if breakdown in ALL_ACTION_BREAKDOWNS:
+            valid_breakdowns.append(breakdown)
+        else:
+            LOGGER.warning("Invalid action breakdown %s", breakdown)
     return valid_breakdowns if valid_breakdowns else ALL_ACTION_BREAKDOWNS
 
 def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many-return-statements
@@ -969,10 +978,10 @@ def main_impl():
             request_timeout = REQUEST_TIMEOUT # If value is 0,"0","" or not passed then set default to 300 seconds.
         
         ab_params = CONFIG.get("action_breakdowns")
+        parsed_breakdowns = parse_action_breakdowns(ab_params) if ab_params else ALL_ACTION_BREAKDOWNS
+        CONFIG["action_breakdowns"] = parsed_breakdowns
 
-        CONFIG["action_breakdowns"] =  ALL_ACTION_BREAKDOWNS if not ab_params else parse_action_breakdowns(ab_params)
-
-        LOGGER.info("Using Breakdowns %s", CONFIG["action_breakdowns"])
+        LOGGER.info("Using %d action breakdown(s): %s", len(parsed_breakdowns), parsed_breakdowns)
 
         global API
         API = FacebookAdsApi.init(access_token=access_token, timeout=request_timeout)

@@ -41,6 +41,7 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
             'image_crops',
             'product_set_id',
             'url_tags',
+            "video_id",
             'applink_treatment',
             'object_id',
             'link_og_id',
