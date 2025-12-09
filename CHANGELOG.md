@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.24.0
+## 1.25.0
   * Make action_breakdowns configurable [#260](https://github.com/singer-io/tap-facebook/pull/260)
 
 ## 1.24.0
