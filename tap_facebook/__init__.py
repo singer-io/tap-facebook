@@ -980,7 +980,7 @@ def main_impl():
         ab_params = CONFIG.get("action_breakdowns")
         CONFIG["action_breakdowns"] = parse_action_breakdowns(ab_params)
 
-        LOGGER.info("Using %d action breakdown(s): %s", len( CONFIG["action_breakdowns"]),  CONFIG["action_breakdowns"])
+        LOGGER.info("Using %d action breakdown(s): %s", len(CONFIG["action_breakdowns"]), CONFIG["action_breakdowns"])
 
         global API
         API = FacebookAdsApi.init(access_token=access_token, timeout=request_timeout)
