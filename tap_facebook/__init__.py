@@ -915,6 +915,9 @@ def discover_schemas():
                                                replication_method=stream.replication_method,
                                                valid_replication_keys=[bookmark_key] if bookmark_key else None))
 
+        # Add forced-replication-method metadata
+        mdata = metadata.write(mdata, (), 'forced-replication-method', stream.replication_method)
+
         if bookmark_key == UPDATED_TIME_KEY or bookmark_key == CREATED_TIME_KEY :
             mdata = metadata.write(mdata, ('properties', bookmark_key), 'inclusion', 'automatic')
 
