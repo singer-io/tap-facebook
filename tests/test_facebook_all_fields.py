@@ -50,7 +50,6 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
             'link_url',
             'adlabels',
             'source_instagram_media_id',
-            'video_id'
         },
         "ads_insights_country": {
             'video_p75_watched_actions',

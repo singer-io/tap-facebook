@@ -813,6 +813,23 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
                                        "primary-keys": ['hourly_stats_aggregated_by_advertiser_time_zone']},
 }
 
+def parse_action_breakdowns(breakdown_str):
+    if not breakdown_str:
+        return ALL_ACTION_BREAKDOWNS
+    if not isinstance(breakdown_str, str):
+        LOGGER.warning("action_breakdowns must be a string, got %s", type(breakdown_str))
+        return ALL_ACTION_BREAKDOWNS
+
+    selected_breakdowns = []
+    act_breakdowns = [b.strip().lower() for b in breakdown_str.split(',')]
+    for breakdown in act_breakdowns:
+        if not breakdown:  # Skip empty strings
+            continue
+        if breakdown in ALL_ACTION_BREAKDOWNS and breakdown not in selected_breakdowns:
+            selected_breakdowns.append(breakdown)
+        else:
+            LOGGER.warning("Invalid action breakdown %s", breakdown)
+    return selected_breakdowns if selected_breakdowns else ALL_ACTION_BREAKDOWNS
 
 def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many-return-statements
 
@@ -821,7 +838,7 @@ def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many
 
     if name in INSIGHTS_BREAKDOWNS_OPTIONS:
         return AdsInsights(name, account, stream_alias, catalog_entry, state=state,
-                           options=INSIGHTS_BREAKDOWNS_OPTIONS[name])
+                           options=INSIGHTS_BREAKDOWNS_OPTIONS[name], action_breakdowns=CONFIG["action_breakdowns"])
     elif name == 'campaigns':
         return Campaigns(name, account, stream_alias, catalog_entry, state=state)
     elif name == 'adsets':
@@ -959,6 +976,11 @@ def main_impl():
             request_timeout = float(config_request_timeout)
         else:
             request_timeout = REQUEST_TIMEOUT # If value is 0,"0","" or not passed then set default to 300 seconds.
+        
+        ab_params = CONFIG.get("action_breakdowns")
+        CONFIG["action_breakdowns"] = parse_action_breakdowns(ab_params)
+
+        LOGGER.info("Using %d action breakdown(s): %s", len(CONFIG["action_breakdowns"]), CONFIG["action_breakdowns"])
 
         global API
         API = FacebookAdsApi.init(access_token=access_token, timeout=request_timeout)
