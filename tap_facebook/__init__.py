@@ -599,9 +599,7 @@ ALL_ACTION_ATTRIBUTION_WINDOWS = [
 ]
 
 ALL_ACTION_BREAKDOWNS = [
-    'action_type',
-    'action_target_id',
-    'action_destination'
+    'action_type'
 ]
 
 def get_start(stream, bookmark_key):
