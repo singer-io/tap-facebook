@@ -220,6 +220,12 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
         'ads_insights_region'               # TDL-26640
     }
 
+    FICKLE_FIELDS = {
+        "adcreative": {
+            'video_id',
+        }
+    }
+
     @staticmethod
     def name():
         return "tt_facebook_all_fields_test"
@@ -239,3 +245,39 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
         LOGGER.warn(f"Skipped streams: {self.EXCLUDE_STREAMS}")
 
         return expected_streams
+
+    def test_all_fields_for_streams_are_replicated(self):
+        for stream in self.test_streams:
+            with self.subTest(stream=stream):
+
+                # gather expectations
+                self.expected_all_keys = (
+                    self.selected_fields.get(stream, set())
+                    - set(self.MISSING_FIELDS.get(stream, {})) \
+                    - set(self.KEYS_WITH_NO_DATA.get(stream,{})) \
+                    | set(self.EXTRA_FIELDS.get(stream, {}))
+                )
+
+                # gather results
+                self.fields_replicated = self.actual_fields.get(stream, set())
+                self.remove_bad_keys(stream)
+
+                fickle_fields = self.FICKLE_FIELDS.get(stream, set())
+
+                # Top level check for fickle fields, strict assertion is maintained
+                top_level_fickle = fickle_fields & self.fields_replicated
+
+                # Nested check for fickle field, skipping strict assertion
+                excluded_fickle = fickle_fields - top_level_fickle
+
+                self.assertSetEqual(
+                    self.fields_replicated - excluded_fickle,
+                    self.expected_all_keys - excluded_fickle,
+                    logging=f"verify all fields are replicated for stream {stream}"
+                )
+
+                if excluded_fickle:
+                    LOGGER.warning(
+                        f"Fickle fields missing for stream {stream} at top level,"
+                        f"likely nested: {excluded_fickle}"
+                    )
