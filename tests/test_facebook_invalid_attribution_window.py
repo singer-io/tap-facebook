@@ -57,9 +57,9 @@ class FacebookInvalidAttributionWindowStr(FacebookInvalidAttributionWindowInt):
     def name():
         return "tt_facebook_invalid_window_str"
     
-    @unittest.skip("BUG: TDL-18569")
+    @unittest.skip("BUG: SAC-18569")
     def test_run(self):
         self.ATTRIBUTION_WINDOW = 'something'
         self.run_test()
 
-    # BUG : TDL-18569 created to standarize the error message for sting values for attribution window
+    # BUG : SAC-18569 created to standarize the error message for sting values for attribution window

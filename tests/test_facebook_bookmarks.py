@@ -14,7 +14,7 @@ class FacebookBookmarks(FacebookBaseTest):
     is_done = None
 
     EXCLUDE_STREAMS = {
-        'ads_insights_hourly_advertiser',    # TDL-24312
+        'ads_insights_hourly_advertiser',    # SAC-24312
         'ads_insights_platform_and_device',  # SAC-30725
         'ads_insights',                      # SAC-30725
         'ads_insights_age_and_gender',       # SAC-30725
@@ -31,7 +31,7 @@ class FacebookBookmarks(FacebookBaseTest):
         expected_streams = self.expected_metadata().keys()
         self.assert_message = f"JIRA ticket has moved to done, \
                                 re-add the applicable stream to the test: {0}"
-        assert base.JIRA_CLIENT.get_status_category("TDL-24312") != 'done',\
+        assert base.JIRA_CLIENT.get_status_category("SAC-24312") != 'done',\
             self.assert_message.format('ads_insights_hourly_advertiser')
         expected_streams = self.expected_metadata().keys() - {'ads_insights_hourly_advertiser'}
         LOGGER.warn(f"Skipped streams: {'ads_insights_hourly_advertiser'}")
