@@ -44,7 +44,7 @@ class FacebookAttributionWindow(FacebookBaseTest):
         return return_value
 
     # TODO: https://jira.talendforge.org/browse/TDL-26640
-    @base_case.skipUnless(base.JIRA_CLIENT.get_status_category("SAC-30725") == "done", "AC-30725")
+    @base_case.skipUnless(base.JIRA_CLIENT.get_status_category("SAC-30725") == "done", "SAC-30725")
     def test_run(self):
         """
         For the test ad set up in facebook ads manager we see data
