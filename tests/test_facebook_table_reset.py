@@ -17,15 +17,14 @@ class FacebookTableResetTest(TableResetTest, FacebookBaseTest):
     def name():
         return "tt_facebook_table_reset"
 
-    # TODO: https://jira.talendforge.org/browse/TDL-26640
     EXCLUDE_STREAMS = {
-        'ads_insights_hourly_advertiser',   # TDL-24312, TDL-26640
-        'ads_insights_platform_and_device', # TDL-26640
-        'ads_insights',                     # TDL-26640
-        'ads_insights_age_and_gender',      # TDL-26640
-        'ads_insights_country',             # TDL-26640
-        'ads_insights_dma',                 # TDL-26640
-        'ads_insights_region'               # TDL-26640
+        'ads_insights_hourly_advertiser',    # TDL-24312
+        'ads_insights_platform_and_device',  # SAC-30725
+        'ads_insights',                      # SAC-30725
+        'ads_insights_age_and_gender',       # SAC-30725
+        'ads_insights_country',              # SAC-30725
+        'ads_insights_dma',                  # SAC-30725
+        'ads_insights_region'                # SAC-30725
     }
 
     def streams_to_test(self):
@@ -36,9 +35,6 @@ class FacebookTableResetTest(TableResetTest, FacebookBaseTest):
             self.assert_message.format('ads_insights_hourly_advertiser')
         expected_streams = self.expected_metadata().keys() - {'ads_insights_hourly_advertiser'}
         LOGGER.warn(f"Skipped streams: {'ads_insights_hourly_advertiser'}")
-
-        assert base.JIRA_CLIENT.get_status_category("TDL-26640") != 'done',\
-            self.assert_message.format(self.EXCLUDE_STREAMS)
         expected_streams = self.expected_metadata().keys() - self.EXCLUDE_STREAMS
         LOGGER.warn(f"Skipped streams: {self.EXCLUDE_STREAMS}")
 
