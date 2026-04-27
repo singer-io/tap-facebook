@@ -19,7 +19,7 @@ class FacebookAttributionWindow(FacebookBaseTest):
 
         # Fail the test when the JIRA card is done to allow stream to be re-added and tested
         if self.is_done is None:
-            self.is_done = base.JIRA_CLIENT.get_status_category("TDL-24312") == 'done'
+            self.is_done = base.JIRA_CLIENT.get_status_category("SAC-24312") == 'done'
             self.assert_message = ("JIRA ticket has moved to done, re-add the "
                                    "ads_insights_hourly_advertiser stream to the test.")
         assert self.is_done != True, self.assert_message
@@ -43,8 +43,8 @@ class FacebookAttributionWindow(FacebookBaseTest):
         return_value["start_date"] = self.start_date
         return return_value
 
-    # TODO: https://jira.talendforge.org/browse/TDL-26640
-    @base_case.skipUnless(base.JIRA_CLIENT.get_status_category("TDL-26640") == "done", "TDL-26640")
+    # TODO: https://qlik-dev.atlassian.net/browse/SAC-30725
+    @base_case.skipUnless(base.JIRA_CLIENT.get_status_category("SAC-30725") == "done", "SAC-30725")
     def test_run(self):
         """
         For the test ad set up in facebook ads manager we see data
