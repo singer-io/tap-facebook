@@ -117,10 +117,10 @@ class FacebookBookmarks(FacebookBaseTest):
         self.start_date = self.get_properties()['start_date']
         self.end_date = self.get_properties()['end_date']
 
-        # TODO: https://jira.talendforge.org/browse/TDL-26640
-        status_category = base.JIRA_CLIENT.get_status_category("TDL-26640")
+        # TODO: https://qlik-dev.atlassian.net/browse/SAC-30725
+        status_category = base.JIRA_CLIENT.get_status_category("SAC-30725")
         assert status_category != 'done',\
-            "TDL-26640 is fixed, re-enable the test for insights streams"
+            "SAC-30725 is fixed, re-enable the test for insights streams"
         # Uncomment the following line when ready to run the test for insights streams
         # self.bookmarks_test(insight_streams)
 

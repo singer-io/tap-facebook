@@ -13,7 +13,7 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
 
     is_done = None
 
-    # https://jira.talendforge.org/browse/TDL-24424
+    # https://qlik-dev.atlassian.net/browse/SAC-24424
     MISSING_FIELDS = {
         "ads_insights" : {
             'outbound_clicks',
