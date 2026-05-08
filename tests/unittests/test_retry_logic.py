@@ -1,7 +1,7 @@
 import json
 import unittest
 from unittest.mock import Mock, patch
-from tap_facebook import FacebookRequestError
+from tap_facebook import FacebookRequestError, TapFacebookException
 from tap_facebook import facebook_business
 from facebook_business.exceptions import FacebookBadObjectError
 from facebook_business import FacebookAdsApi
@@ -11,10 +11,11 @@ from facebook_business.adobjects.adaccount import AdAccount
 import requests
 from requests.models import Response
 
+@patch("time.sleep")
 class TestAdCreative(unittest.TestCase):
     """A set of unit tests to ensure that requests to get AdCreatives behave
     as expected"""
-    def test_retries_on_500(self):
+    def test_retries_on_500(self, mocked_sleep):
         """`AdCreative.sync.do_request()` calls a `facebook_business` method,
         `get_ad_creatives()`, to make a request to the API. We mock this
         method to raise a `FacebookRequestError` with an `http_status` of
@@ -42,7 +43,7 @@ class TestAdCreative(unittest.TestCase):
         # 5 is the max tries specified in the tap
         self.assertEqual(5, mocked_account.get_ad_creatives.call_count )
 
-    def test_retries_on_503(self):
+    def test_retries_on_503(self, mocked_sleep):
         """`AdCreative.sync.do_request()` calls a `facebook_business` method,
         `get_ad_creatives()`, to make a request to the API. We mock this
         method to raise a `FacebookRequestError` with an `http_status` of
@@ -70,7 +71,7 @@ class TestAdCreative(unittest.TestCase):
         # 5 is the max tries specified in the tap
         self.assertEqual(5, mocked_account.get_ad_creatives.call_count )
 
-    def test_catch_a_type_error(self):
+    def test_catch_a_type_error(self, mocked_sleep):
         """`AdCreative.sync.do_request()` calls a `facebook_business` method `get_ad_creatives()`.
         We want to mock this to throw a `TypeError("string indices must be integers")` and assert
         that we retry this specific error.
@@ -87,7 +88,7 @@ class TestAdCreative(unittest.TestCase):
         # 5 is the max tries specified in the tap
         self.assertEqual(5, mocked_account.get_ad_creatives.call_count )
 
-    def test_retries_and_good_response(self):
+    def test_retries_and_good_response(self, mocked_sleep):
         """Facebook has a class called `FacebookResponse` and it is created from a `requests.Response`. Some
         `facebook_business` functions depend on calling `FacebookResponse.json()`, which sometimes returns a
         string instead of a dictionary. This leads to a `TypeError("string indices must be integers")` and
@@ -132,10 +133,11 @@ class TestAdCreative(unittest.TestCase):
 
 
 
+@patch("time.sleep")
 class TestInsightJobs(unittest.TestCase):
     """A set of unit tests to ensure that requests to get AdsInsights behave
     as expected"""
-    def test_retries_on_bad_data(self):
+    def test_retries_on_bad_data(self, mocked_sleep):
         """`AdInsights.run_job()` calls a `facebook_business` method,
         `get_insights()`, to make a request to the API. We mock this
         method to raise a `FacebookBadObjectError`
@@ -156,7 +158,7 @@ class TestInsightJobs(unittest.TestCase):
         # 5 is the max tries specified in the tap
         self.assertEqual(5, mocked_account.get_insights.call_count )
 
-    def test_retries_on_type_error(self):
+    def test_retries_on_type_error(self, mocked_sleep):
         """`AdInsights.run_job()` calls a `facebook_business` method, `get_insights()`, to make a request to
         the API. We want to mock this to throw a `TypeError("string indices must be integers")` and
         assert that we retry this specific error.
@@ -174,7 +176,7 @@ class TestInsightJobs(unittest.TestCase):
         # 5 is the max tries specified in the tap
         self.assertEqual(5, mocked_account.get_insights.call_count )
 
-    def test_retries_and_good_response(self):
+    def test_retries_and_good_response(self, mocked_sleep):
         """Facebook has a class called `FacebookResponse` and it is created from a `requests.Response`. Some
         `facebook_business` functions depend on calling `FacebookResponse.json()`, which sometimes returns a
         string instead of a dictionary. This leads to a `TypeError("string indices must be integers")` and
@@ -216,7 +218,7 @@ class TestInsightJobs(unittest.TestCase):
         patcher.stop()
 
 
-    def test_job_polling_retry(self):
+    def test_job_polling_retry(self, mocked_sleep):
         """AdInsights.api_get() polls the job status of an insights job we've requested
         that Facebook generate. This test makes a request with a mock response to
         raise a 400 status error that should be retried.
@@ -248,7 +250,7 @@ class TestInsightJobs(unittest.TestCase):
 
 
 
-    def test_job_polling_retry_succeeds_eventually(self):
+    def test_job_polling_retry_succeeds_eventually(self, mocked_sleep):
         """AdInsights.api_get() polls the job status of an insights job we've requested
         that Facebook generate. This test makes a request with a mock response to
         raise a 400 status error that should be retried.
@@ -287,3 +289,41 @@ class TestInsightJobs(unittest.TestCase):
         ad_insights_object.run_job({})
         self.assertEqual(3, mocked_account.get_insights.return_value.api_get.call_count)
         self.assertEqual(1, mocked_account.get_insights.call_count)
+
+    def test_job_failed_raises_tap_exception(self, mocked_sleep):
+        """AdsInsights.run_job() polls the async job status. When api_get() returns
+        async_status == "Job Failed", the tap should immediately raise a
+        TapFacebookException containing all v25.0 error fields, without retrying.
+        """
+        failed_job_response = {
+            "async_status": "Job Failed",
+            "async_percent_completion": 0,
+            "id": "9999",
+            "error_code": 2601,
+            "error_message": "There was an error running your report.",
+            "error_subcode": 1487742,
+            "error_user_title": "Report Unavailable",
+            "error_user_msg": "Your report could not be run due to a temporary issue.",
+        }
+
+        mocked_api_get = Mock()
+        mocked_api_get.return_value = failed_job_response
+
+        mocked_account = Mock()
+        mocked_account.get_insights = Mock()
+        mocked_account.get_insights.return_value.api_get = mocked_api_get
+
+        ad_insights_object = AdsInsights('', mocked_account, '', '', {}, {})
+
+        with self.assertRaises(TapFacebookException) as ctx:
+            ad_insights_object.run_job({})
+
+        error_str = str(ctx.exception)
+        self.assertIn("9999", error_str)
+        self.assertIn("2601", error_str)
+        self.assertIn("1487742", error_str)
+        self.assertIn("Report Unavailable", error_str)
+        self.assertIn("Your report could not be run due to a temporary issue.", error_str)
+        self.assertIn("There was an error running your report.", error_str)
+        # Should fail immediately — no retries on job failure
+        self.assertEqual(1, mocked_api_get.call_count)
