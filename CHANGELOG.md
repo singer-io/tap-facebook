@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.25.1
+  * Bump requests dependency from 2.32.4 to 2.34.0
+
 ## 1.25.0
   * Bump facebook_business SDK from v23.0.1 to v25.0.1 to stay ahead of v23.0 deprecation (June 9, 2026)
   * Confirmed no schema changes required: `smart_promotion_type` was never present in campaigns schema
