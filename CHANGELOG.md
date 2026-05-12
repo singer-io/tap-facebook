@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.25.0
+  * Bump facebook_business SDK from v23.0.1 to v25.0.1 to stay ahead of v23.0 deprecation (June 9, 2026)
+  * Confirmed no schema changes required: `smart_promotion_type` was never present in campaigns schema
+  * Add explicit "Job Failed" status handling in async Insights job polling; surface v25.0 error fields (`error_code`, `error_message`, `error_subcode`, `error_user_title`, `error_user_msg`)
+
 ## 1.24.0
   * Bump facebook_business SDK to v23.0.1 [#255](https://github.com/singer-io/tap-facebook/pull/255)
   * Remove Deprecated Fields from adcreative [#255](https://github.com/singer-io/tap-facebook/pull/255)

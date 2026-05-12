@@ -743,6 +743,18 @@ class AdsInsights(Stream):
             if status == "Job Completed":
                 return job
 
+            if status == "Job Failed":
+                error_code = job.get('error_code')
+                error_message = job.get('error_message')
+                error_subcode = job.get('error_subcode')
+                error_user_title = job.get('error_user_title')
+                error_user_msg = job.get('error_user_msg')
+                raise TapFacebookException(
+                    'Insights job {} failed. error_code={}, error_subcode={}, '
+                    'error_user_title={}, error_user_msg={}, error_message={}'.format(
+                        job_id, error_code, error_subcode,
+                        error_user_title, error_user_msg, error_message))
+
             if duration > INSIGHTS_MAX_WAIT_TO_START_SECONDS and percent_complete == 0:
                 pretty_error_message = ('Insights job {} did not start after {} seconds. ' +
                                         'This is an intermittent error and may resolve itself on subsequent queries to the Facebook API. ' +
