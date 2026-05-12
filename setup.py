@@ -14,7 +14,7 @@ setup(name='tap-facebook',
           'backoff==2.2.1',
           'facebook_business==25.0.1',
           'pendulum==1.2.0',
-          'requests==2.32.4',
+          'requests==2.34.0',
           'singer-python==6.8.0',
       ],
       extras_require={
