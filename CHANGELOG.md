@@ -1,10 +1,10 @@
 # Changelog
 
 ## 1.25.1
-  * Bump requests dependency from 2.32.4 to 2.34.0
+  * Bump requests dependency from 2.32.4 to 2.34.0 [#266](https://github.com/singer-io/tap-facebook/pull/266)
 
 ## 1.25.0
-  * Bump facebook_business SDK from v23.0.1 to v25.0.1 to stay ahead of v23.0 deprecation (June 9, 2026)
+  * Bump facebook_business SDK from v23.0.1 to v25.0.1 to stay ahead of v23.0 deprecation (June 9, 2026) [#265](https://github.com/singer-io/tap-facebook/pull/265)
   * Confirmed no schema changes required: `smart_promotion_type` was never present in campaigns schema
   * Add explicit "Job Failed" status handling in async Insights job polling; surface v25.0 error fields (`error_code`, `error_message`, `error_subcode`, `error_user_title`, `error_user_msg`)
 
