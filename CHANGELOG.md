@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.25.2
+  * Bump pendulum dependency from 1.2.0 to 3.2.0 [#269](https://github.com/singer-io/tap-facebook/pull/269)
+
 ## 1.25.1
   * Bump requests dependency from 2.32.4 to 2.34.0 [#266](https://github.com/singer-io/tap-facebook/pull/266)
 
