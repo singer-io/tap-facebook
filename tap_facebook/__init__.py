@@ -284,7 +284,7 @@ class IncrementalStream(Stream):
                 yield {'record': record}
 
             if max_bookmark:
-                yield {'state': advance_bookmark(self, UPDATED_TIME_KEY, str(max_bookmark))}
+                yield {'state': advance_bookmark(self, UPDATED_TIME_KEY, max_bookmark.isoformat())}
 
 
 def batch_record_success(response, stream=None, transformer=None, schema=None):
@@ -551,7 +551,7 @@ class Leads(Stream):
 
         # Ensure the final batch is executed
         api_batch.execute()
-        return str(pendulum.parse(latest_lead[self.replication_key]))
+        return pendulum.parse(latest_lead[self.replication_key]).isoformat()
 
     @retry_pattern(backoff.expo, (Timeout, ConnectionError), max_tries=5, factor=2)
     # Added retry_pattern to handle AttributeError raised from account.get_ads() below
@@ -632,7 +632,7 @@ def advance_bookmark(stream, bookmark_key, date):
         LOGGER.info('Bookmark for stream %s is currently %s, ' +
                     'advancing to %s',
                     tap_stream_id, current_bookmark, date)
-        state = singer.write_bookmark(state, tap_stream_id, bookmark_key, str(date))
+        state = singer.write_bookmark(state, tap_stream_id, bookmark_key, date.isoformat())
     else:
         LOGGER.info('Bookmark for stream %s is currently %s ' +
                     'not changing to %s',
