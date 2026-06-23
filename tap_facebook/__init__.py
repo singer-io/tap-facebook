@@ -923,8 +923,10 @@ def load_schema(stream):
 
 
 def initialize_streams_for_discovery(): # pylint: disable=invalid-name
-    return [initialize_stream(None, CatalogEntry(stream=name), None)
-            for name in STREAMS]
+    streams = [initialize_stream(None, CatalogEntry(stream=name), None)
+               for name in STREAMS]
+    # Filter out None values (e.g., deprecated streams that are skipped)
+    return [s for s in streams if s is not None]
 
 def discover_schemas():
     # Load Facebook's shared schemas
@@ -933,6 +935,8 @@ def discover_schemas():
     result = {'streams': []}
     streams = initialize_streams_for_discovery()
     for stream in streams:
+        if stream is None:
+            continue
         LOGGER.info('Loading schema for %s', stream.name)
         schema = singer.resolve_schema_references(load_schema(stream), refs)
 
