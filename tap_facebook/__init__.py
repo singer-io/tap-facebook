@@ -835,14 +835,15 @@ def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many
     name = catalog_entry.stream
     stream_alias = catalog_entry.stream_alias
 
-    # Deprecation warning for DMA stream
+    # Deprecation warning for DMA stream - skip sync to prevent API errors
     if name == 'ads_insights_dma':
         LOGGER.warning(
             "DEPRECATION WARNING: The 'ads_insights_dma' stream is deprecated as of June 22, 2026. "
             "Meta has removed DMA breakdown support. Please migrate to 'ads_insights_comscore_market' instead. "
             "See https://www.facebook.com/business/help/709868688063859 for DMA to Comscore Market mapping. "
-            "This stream will be removed in a future version and will fail with API errors."
+            "Skipping sync for this stream to prevent API errors."
         )
+        return None
 
     if name in INSIGHTS_BREAKDOWNS_OPTIONS:
         return AdsInsights(name, account, stream_alias, catalog_entry, state=state,
@@ -869,7 +870,9 @@ def get_streams_to_sync(account, catalog, state):
             # TODO: Don't need name and stream_alias since it's on catalog_entry
             name = catalog_entry.stream
             stream_alias = catalog_entry.stream_alias
-            streams.append(initialize_stream(account, catalog_entry, state))
+            initialized_stream = initialize_stream(account, catalog_entry, state)
+            if initialized_stream is not None:
+                streams.append(initialized_stream)
     return streams
 
 def transform_date_hook(data, typ, schema):
