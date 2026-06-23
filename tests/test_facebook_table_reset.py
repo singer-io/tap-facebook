@@ -23,7 +23,6 @@ class FacebookTableResetTest(TableResetTest, FacebookBaseTest):
         'ads_insights',                      # SAC-30725
         'ads_insights_age_and_gender',       # SAC-30725
         'ads_insights_country',              # SAC-30725
-        'ads_insights_dma',                  # SAC-30725
         'ads_insights_comscore_market',      # SAC-30725
         'ads_insights_region'                # SAC-30725
     }

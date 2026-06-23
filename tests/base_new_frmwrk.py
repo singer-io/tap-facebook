@@ -29,9 +29,6 @@ class FacebookBaseTest(BaseCase):
         "ads_insights_region":
           "2019-08-03T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
           "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
-        "ads_insights_dma":
-          "2019-08-03T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
-          "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
         "ads_insights_comscore_market":
           "2019-08-03T00:00:00.000000Z" -> "2019-10-30T00:00:00.000000Z"
           "2021-04-07T00:00:00.000000Z" -> "2021-04-08T00:00:00.000000Z"
@@ -124,11 +121,6 @@ class FacebookBaseTest(BaseCase):
             },
             "ads_insights_region": {
                 BaseCase.PRIMARY_KEYS: {"region", "campaign_id", "adset_id", "ad_id", "date_start"},
-                BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
-                BaseCase.REPLICATION_KEYS: {"date_start"}
-            },
-            "ads_insights_dma": {
-                BaseCase.PRIMARY_KEYS: {"dma", "campaign_id", "adset_id", "ad_id", "date_start"},
                 BaseCase.REPLICATION_METHOD: BaseCase.INCREMENTAL,
                 BaseCase.REPLICATION_KEYS: {"date_start"}
             },
