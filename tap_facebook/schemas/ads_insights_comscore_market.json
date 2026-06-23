@@ -169,9 +169,6 @@
     "ctr": {
       "type": ["null", "number"]
     },
-    "reach": {
-      "type": ["null", "integer"]
-    },
     "comscore_market": {
       "type": ["null", "string"]
     },
