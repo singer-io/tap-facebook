@@ -1,8 +1,8 @@
 # Changelog
 
 ## 1.26.0
-  * Add `ads_insights_comscore_market` stream to replace deprecated DMA breakdown [#XXX](https://github.com/singer-io/tap-facebook/pull/XXX)
-  * Deprecate `ads_insights_dma` stream (Meta removed DMA support on June 22, 2026) [#XXX](https://github.com/singer-io/tap-facebook/pull/XXX)
+  * Add `ads_insights_comscore_market` stream to replace deprecated DMA breakdown
+  * Deprecate `ads_insights_dma` stream (Meta removed DMA support on June 22, 2026) [#270](https://github.com/singer-io/tap-facebook/pull/270)
   * Add deprecation warning when `ads_insights_dma` stream is selected
   * Reference: https://developers.facebook.com/blog/post/2026/03/13/transitioning-to-comscore-markets-for-automotive-model-ads
   * For DMA to Comscore Market mapping: https://www.facebook.com/business/help/709868688063859
