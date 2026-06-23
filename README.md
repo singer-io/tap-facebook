@@ -14,6 +14,8 @@ This tap:
     - Breakdown by country
     - Breakdown by placement and device
     - Breakdown by region
+    - Breakdown by DMA (deprecated - use Comscore Market instead)
+    - Breakdown by Comscore Market
     - Breakdown by the hour for advertisers
 - Outputs the schema for each resource
 - Incrementally pulls data based on the input state
