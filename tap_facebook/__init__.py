@@ -64,6 +64,7 @@ STREAMS = [
     'ads_insights_platform_and_device',
     'ads_insights_region',
     'ads_insights_dma',
+    'ads_insights_comscore_market',
     'ads_insights_hourly_advertiser',
     #'leads',
 ]
@@ -83,6 +84,7 @@ BOOKMARK_KEYS = {
     'ads_insights_platform_and_device': START_DATE_KEY,
     'ads_insights_region': START_DATE_KEY,
     'ads_insights_dma': START_DATE_KEY,
+    'ads_insights_comscore_market': START_DATE_KEY,
     'ads_insights_hourly_advertiser': START_DATE_KEY,
     'leads': CREATED_TIME_KEY,
 }
@@ -658,7 +660,7 @@ class AdsInsights(Stream):
     # these fields are not defined in the facebook_business library
     # Sending these fields is not allowed, but they are returned by the api
     invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
-                               'age', 'gender', 'country', 'placement', 'region', 'dma', 'hourly_stats_aggregated_by_advertiser_time_zone']
+                               'age', 'gender', 'country', 'placement', 'region', 'dma', 'comscore_market', 'hourly_stats_aggregated_by_advertiser_time_zone']
     FACEBOOK_INSIGHTS_RETENTION_PERIOD = 37 # months
 
     # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
@@ -821,6 +823,8 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
                             'primary-keys': ['region']},
     'ads_insights_dma': {"breakdowns": ['dma'],
                          "primary-keys": ['dma']},
+    'ads_insights_comscore_market': {"breakdowns": ['comscore_market'],
+                                      "primary-keys": ['comscore_market']},
     'ads_insights_hourly_advertiser': {'breakdowns': ['hourly_stats_aggregated_by_advertiser_time_zone'],
                                        "primary-keys": ['hourly_stats_aggregated_by_advertiser_time_zone']},
 }
@@ -830,6 +834,15 @@ def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many
 
     name = catalog_entry.stream
     stream_alias = catalog_entry.stream_alias
+
+    # Deprecation warning for DMA stream
+    if name == 'ads_insights_dma':
+        LOGGER.warning(
+            "DEPRECATION WARNING: The 'ads_insights_dma' stream is deprecated as of June 22, 2026. "
+            "Meta has removed DMA breakdown support. Please migrate to 'ads_insights_comscore_market' instead. "
+            "See https://www.facebook.com/business/help/709868688063859 for DMA to Comscore Market mapping. "
+            "This stream will be removed in a future version and will fail with API errors."
+        )
 
     if name in INSIGHTS_BREAKDOWNS_OPTIONS:
         return AdsInsights(name, account, stream_alias, catalog_entry, state=state,
