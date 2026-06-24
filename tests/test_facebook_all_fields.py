@@ -93,7 +93,7 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
             'video_p100_watched_actions',
             'conversion_rate_ranking'
         },
-        "ads_insights_dma": {
+        "ads_insights_comscore_market": {
             'video_p75_watched_actions',
             'conversions',
             'cost_per_unique_click',
@@ -215,7 +215,7 @@ class FacebookAllFieldsTest(AllFieldsTest, FacebookBaseTest):
         'ads_insights',                      # SAC-30725
         'ads_insights_age_and_gender',       # SAC-30725
         'ads_insights_country',              # SAC-30725
-        'ads_insights_dma',                  # SAC-30725
+        'ads_insights_comscore_market',      # SAC-30725
         'ads_insights_region'                # SAC-30725
     }
 

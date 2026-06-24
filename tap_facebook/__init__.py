@@ -64,6 +64,7 @@ STREAMS = [
     'ads_insights_platform_and_device',
     'ads_insights_region',
     'ads_insights_dma',
+    'ads_insights_comscore_market',
     'ads_insights_hourly_advertiser',
     #'leads',
 ]
@@ -83,6 +84,7 @@ BOOKMARK_KEYS = {
     'ads_insights_platform_and_device': START_DATE_KEY,
     'ads_insights_region': START_DATE_KEY,
     'ads_insights_dma': START_DATE_KEY,
+    'ads_insights_comscore_market': START_DATE_KEY,
     'ads_insights_hourly_advertiser': START_DATE_KEY,
     'leads': CREATED_TIME_KEY,
 }
@@ -658,7 +660,7 @@ class AdsInsights(Stream):
     # these fields are not defined in the facebook_business library
     # Sending these fields is not allowed, but they are returned by the api
     invalid_insights_fields = ['impression_device', 'publisher_platform', 'platform_position',
-                               'age', 'gender', 'country', 'placement', 'region', 'dma', 'hourly_stats_aggregated_by_advertiser_time_zone']
+                               'age', 'gender', 'country', 'placement', 'region', 'dma', 'comscore_market', 'hourly_stats_aggregated_by_advertiser_time_zone']
     FACEBOOK_INSIGHTS_RETENTION_PERIOD = 37 # months
 
     # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
@@ -821,6 +823,8 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
                             'primary-keys': ['region']},
     'ads_insights_dma': {"breakdowns": ['dma'],
                          "primary-keys": ['dma']},
+    'ads_insights_comscore_market': {"breakdowns": ['comscore_market'],
+                                      "primary-keys": ['comscore_market']},
     'ads_insights_hourly_advertiser': {'breakdowns': ['hourly_stats_aggregated_by_advertiser_time_zone'],
                                        "primary-keys": ['hourly_stats_aggregated_by_advertiser_time_zone']},
 }
@@ -830,6 +834,16 @@ def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many
 
     name = catalog_entry.stream
     stream_alias = catalog_entry.stream_alias
+
+    # Deprecation warning for DMA stream - skip sync to prevent API errors
+    if name == 'ads_insights_dma':
+        LOGGER.warning(
+            "DEPRECATION WARNING: The 'ads_insights_dma' stream is deprecated as of June 22, 2026. "
+            "Meta has removed DMA breakdown support. Please migrate to 'ads_insights_comscore_market' instead. "
+            "See https://www.facebook.com/business/help/709868688063859 for DMA to Comscore Market mapping. "
+            "Skipping sync for this stream to prevent API errors."
+        )
+        return None
 
     if name in INSIGHTS_BREAKDOWNS_OPTIONS:
         return AdsInsights(name, account, stream_alias, catalog_entry, state=state,
@@ -850,14 +864,19 @@ def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many
 
 def get_streams_to_sync(account, catalog, state):
     streams = []
+    dma_selected = False
     for stream in STREAMS:
         catalog_entry = next((s for s in catalog.streams if s.tap_stream_id == stream), None)
         if catalog_entry and catalog_entry.is_selected():
             # TODO: Don't need name and stream_alias since it's on catalog_entry
             name = catalog_entry.stream
             stream_alias = catalog_entry.stream_alias
-            streams.append(initialize_stream(account, catalog_entry, state))
-    return streams
+            initialized_stream = initialize_stream(account, catalog_entry, state)
+            if initialized_stream is None and name == 'ads_insights_dma':
+                dma_selected = True
+            elif initialized_stream is not None:
+                streams.append(initialized_stream)
+    return streams, dma_selected
 
 def transform_date_hook(data, typ, schema):
     if typ == 'string' and schema.get('format') == 'date-time' and isinstance(data, str):
@@ -866,7 +885,7 @@ def transform_date_hook(data, typ, schema):
     return data
 
 def do_sync(account, catalog, state):
-    streams_to_sync = get_streams_to_sync(account, catalog, state)
+    streams_to_sync, dma_selected = get_streams_to_sync(account, catalog, state)
     refs = load_shared_schema_refs()
     for stream in streams_to_sync:
         LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields())
@@ -894,6 +913,14 @@ def do_sync(account, catalog, state):
                     else:
                         raise TapFacebookException('Unrecognized message {}'.format(message))
 
+    if dma_selected:
+        raise TapFacebookException(
+            "The 'ads_insights_dma' stream is no longer supported. "
+            "Meta removed DMA breakdown support on June 22, 2026. "
+            "Please deselect 'ads_insights_dma' and use 'ads_insights_comscore_market' instead. "
+            "See https://www.facebook.com/business/help/709868688063859 for DMA to Comscore Market mapping."
+        )
+
 
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
@@ -907,8 +934,10 @@ def load_schema(stream):
 
 
 def initialize_streams_for_discovery(): # pylint: disable=invalid-name
-    return [initialize_stream(None, CatalogEntry(stream=name), None)
-            for name in STREAMS]
+    streams = [initialize_stream(None, CatalogEntry(stream=name), None)
+               for name in STREAMS]
+    # Filter out None values (e.g., deprecated streams that are skipped)
+    return [s for s in streams if s is not None]
 
 def discover_schemas():
     # Load Facebook's shared schemas
@@ -917,6 +946,8 @@ def discover_schemas():
     result = {'streams': []}
     streams = initialize_streams_for_discovery()
     for stream in streams:
+        if stream is None:
+            continue
         LOGGER.info('Loading schema for %s', stream.name)
         schema = singer.resolve_schema_references(load_schema(stream), refs)
 
