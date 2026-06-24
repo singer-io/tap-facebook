@@ -864,6 +864,7 @@ def initialize_stream(account, catalog_entry, state): # pylint: disable=too-many
 
 def get_streams_to_sync(account, catalog, state):
     streams = []
+    dma_selected = False
     for stream in STREAMS:
         catalog_entry = next((s for s in catalog.streams if s.tap_stream_id == stream), None)
         if catalog_entry and catalog_entry.is_selected():
@@ -871,9 +872,11 @@ def get_streams_to_sync(account, catalog, state):
             name = catalog_entry.stream
             stream_alias = catalog_entry.stream_alias
             initialized_stream = initialize_stream(account, catalog_entry, state)
-            if initialized_stream is not None:
+            if initialized_stream is None and name == 'ads_insights_dma':
+                dma_selected = True
+            elif initialized_stream is not None:
                 streams.append(initialized_stream)
-    return streams
+    return streams, dma_selected
 
 def transform_date_hook(data, typ, schema):
     if typ == 'string' and schema.get('format') == 'date-time' and isinstance(data, str):
@@ -882,7 +885,7 @@ def transform_date_hook(data, typ, schema):
     return data
 
 def do_sync(account, catalog, state):
-    streams_to_sync = get_streams_to_sync(account, catalog, state)
+    streams_to_sync, dma_selected = get_streams_to_sync(account, catalog, state)
     refs = load_shared_schema_refs()
     for stream in streams_to_sync:
         LOGGER.info('Syncing %s, fields %s', stream.name, stream.fields())
@@ -909,6 +912,14 @@ def do_sync(account, catalog, state):
                         singer.write_state(message['state'])
                     else:
                         raise TapFacebookException('Unrecognized message {}'.format(message))
+
+    if dma_selected:
+        raise TapFacebookException(
+            "The 'ads_insights_dma' stream is no longer supported. "
+            "Meta removed DMA breakdown support on June 22, 2026. "
+            "Please deselect 'ads_insights_dma' and use 'ads_insights_comscore_market' instead. "
+            "See https://www.facebook.com/business/help/709868688063859 for DMA to Comscore Market mapping."
+        )
 
 
 def get_abs_path(path):

@@ -105,7 +105,7 @@ class TestGetStreamsToSync(unittest.TestCase):
 
         catalog = Catalog.from_dict(catalog_entry)
 
-        streams_to_sync = tap_facebook.get_streams_to_sync(None, catalog, None)
+        streams_to_sync, _ = tap_facebook.get_streams_to_sync(None, catalog, None)
         names_to_sync = [stream.name for stream in streams_to_sync]
         self.assertEqual(['adcreative'], names_to_sync)
 
