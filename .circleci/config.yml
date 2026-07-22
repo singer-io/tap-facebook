@@ -80,7 +80,7 @@ jobs:
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
             source dev_env.sh
             export DEBIAN_FRONTEND=noninteractive
-            apt install -y tzdata
+            apt-get update && apt-get install -y tzdata
             export TZ='Etc/UTC'
             mkdir /tmp/${CIRCLE_PROJECT_REPONAME}
             export STITCH_CONFIG_DIR=/tmp/${CIRCLE_PROJECT_REPONAME}
