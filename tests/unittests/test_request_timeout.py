@@ -416,8 +416,8 @@ class TestRequestTimeoutValue(unittest.TestCase):
         # Call main_impl function which initialize FacebookAdsApi with timeout
         tap_facebook.main_impl()
 
-        # verify that FacebookAdsApi.init() called with default timeout
-        mocked_facebook_api.assert_called_with(access_token='test', timeout=300)
+        # verify that FacebookAdsApi.init() called with default timeout and crash_log disabled
+        mocked_facebook_api.assert_called_with(access_token='test', timeout=300, crash_log=False)
 
     def test_config_provided_int_request_timeout(self, mocked_user, mocked_facebook_api, mocked_args):
         """ 
@@ -437,8 +437,8 @@ class TestRequestTimeoutValue(unittest.TestCase):
         # Call main_impl function which initialize FacebookAdsApi with timeout
         tap_facebook.main_impl()
 
-        # verify that FacebookAdsApi.init() called with timeout provided in config
-        mocked_facebook_api.assert_called_with(access_token='test', timeout=100)
+        # verify that FacebookAdsApi.init() called with timeout provided in config and crash_log disabled
+        mocked_facebook_api.assert_called_with(access_token='test', timeout=100, crash_log=False)
 
     def test_config_provided_float_request_timeout(self, mocked_user, mocked_facebook_api, mocked_args):
         """ 
@@ -458,8 +458,8 @@ class TestRequestTimeoutValue(unittest.TestCase):
         # Call main_impl function which initialize FacebookAdsApi with timeout
         tap_facebook.main_impl()
 
-        # verify that FacebookAdsApi.init() called with timeout provided in config
-        mocked_facebook_api.assert_called_with(access_token='test', timeout=100.5)
+        # verify that FacebookAdsApi.init() called with timeout provided in config and crash_log disabled
+        mocked_facebook_api.assert_called_with(access_token='test', timeout=100.5, crash_log=False)
 
     def test_config_provided_string_request_timeout(self, mocked_user, mocked_facebook_api, mocked_args):
         """ 
@@ -479,8 +479,8 @@ class TestRequestTimeoutValue(unittest.TestCase):
         # Call main_impl function which initialize FacebookAdsApi with timeout
         tap_facebook.main_impl()
 
-        # verify that FacebookAdsApi.init() called with timeout provided in config
-        mocked_facebook_api.assert_called_with(access_token='test', timeout=100)
+        # verify that FacebookAdsApi.init() called with timeout provided in config and crash_log disabled
+        mocked_facebook_api.assert_called_with(access_token='test', timeout=100, crash_log=False)
 
     def test_config_provided_empty_request_timeout(self, mocked_user, mocked_facebook_api, mocked_args):
         """
@@ -500,5 +500,31 @@ class TestRequestTimeoutValue(unittest.TestCase):
         # Call main_impl function which initialize FacebookAdsApi with timeout
         tap_facebook.main_impl()
 
-        # verify that FacebookAdsApi.init() called with default timeout
-        mocked_facebook_api.assert_called_with(access_token='test', timeout=300)
+        # verify that FacebookAdsApi.init() called with default timeout and crash_log disabled
+        mocked_facebook_api.assert_called_with(access_token='test', timeout=300, crash_log=False)
+
+    def test_crash_reporter_disabled(self, mocked_user, mocked_facebook_api, mocked_args):
+        """`main_impl` must pass `crash_log=False` to `FacebookAdsApi.init()`.
+
+        The SDK's crash-reporter is armed by default (`crash_log=True` in
+        `facebook_business.api.FacebookAdsApi.init`) and patches `sys.excepthook`.
+        On any uncaught non-FacebookError exception it POSTs a crash report to
+        Facebook's `/instruments` endpoint using `node_id=app_id` -- but this tap
+        never passes `app_id`, so that POST always fails with a real Facebook 400
+        and wastes retries (see CHANGELOG 1.26.6). Explicitly disabling it here
+        prevents that whole detour.
+        """
+        tap_facebook.CONFIG = {}
+        config = {'account_id': 'test', 'access_token': 'test'}
+        mocked_args.return_value = Args(config)
+
+        mocked_fb_user = Mock()
+        mocked_fb_user.get_ad_accounts = Mock()
+        mocked_fb_user.get_ad_accounts.return_value = [{'account_id': 'test'}]
+        mocked_user.return_value = mocked_fb_user
+
+        tap_facebook.main_impl()
+
+        _, call_kwargs = mocked_facebook_api.call_args
+        self.assertIn('crash_log', call_kwargs)
+        self.assertFalse(call_kwargs['crash_log'])

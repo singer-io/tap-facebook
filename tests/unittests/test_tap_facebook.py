@@ -67,6 +67,46 @@ class TestAdsInsights(unittest.TestCase):
 
         self.assertEqual(31, len(list(insights.job_params())))
 
+    def test_reach_field_excluded_only_for_days_older_than_13_months_with_breakdowns(self):
+        """Reach is unsupported by Facebook for breakdown queries older than 13
+        months. A range spanning from >13 months ago up to today must exclude
+        reach only for the old days -- the field is still valid, and should
+        still be requested, for the recent days in the same range (previously
+        this was checked once for the whole range, and even then never
+        actually removed the field from what got sent).
+        """
+        catalog_entry_with_reach = CatalogEntry(
+            schema={'properties': {'reach': {'type': 'integer'}}},
+            metadata=[{'breadcrumb': ('properties', 'reach'),
+                       'metadata': {'selected': True}}])
+        start_date = pendulum.today().subtract(months=14)
+        insights = AdsInsights(
+            name='insights',
+            account=None,
+            stream_alias="insights",
+            options={'breakdowns': ['age']},
+            catalog_entry=catalog_entry_with_reach,
+            state={'bookmarks': {'insights': {'date_start': start_date.to_date_string()}}})
+
+        params = list(insights.job_params())
+        thirteen_months_ago = pendulum.today().subtract(months=13)
+
+        old_day_params = [
+            p for p in params
+            if pendulum.parse(p['time_ranges'][0]['since']) < thirteen_months_ago
+        ]
+        recent_day_params = [
+            p for p in params
+            if pendulum.parse(p['time_ranges'][0]['since']) >= thirteen_months_ago
+        ]
+
+        self.assertTrue(old_day_params, "expected at least one day older than 13 months")
+        self.assertTrue(recent_day_params, "expected at least one day within 13 months")
+        for p in old_day_params:
+            self.assertNotIn('reach', p['fields'])
+        for p in recent_day_params:
+            self.assertIn('reach', p['fields'])
+
 
 class TestPrimaryKeyInclusion(unittest.TestCase):
 

@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.26.8
+  * Fix `AdsInsights.job_params()` never actually excluding the `reach` field for breakdown queries older than 13 months, despite logging that it would -- `invalid_insights_fields` (the list actually subtracted from the requested fields) never included `reach`, so old-data requests kept sending it and risked Facebook rejecting them. The check is now also done per-day inside the loop (not once for the whole range), since a range starting >13 months ago still yields many recent days for which `reach` is valid and should still be requested.
+
+## 1.26.7
+  * Extend the proactive rate-limit throttle to also read `X-Business-Use-Case-Usage.*.call_count` (Ads Insights), not just `X-Ad-Account-Usage.acc_id_util_pct` (Ads Management) -- most of this tap's streams are `ads_insights` variants governed by the Business Use Case formula, so they previously had no proactive backoff at all, only reactive retry-after-failure. When both headers are present, the higher of the two utilization signals governs.
+  * Make the proactive pause escalate in two tiers instead of one flat pause: a short pause from 80% utilization (unchanged), and a longer pause from 95% -- so a large first full sync backs off increasingly as it approaches the ceiling instead of cruising at full speed until it hits `code 17`.
+
+## 1.26.6
+  * Disable the Facebook SDK's crash-reporter (`FacebookAdsApi.init(..., crash_log=False)`). The SDK arms a `sys.excepthook` patch by default (`crash_log=True`) that, on any uncaught non-`FacebookError` exception, POSTs a crash report to Facebook's `/instruments` endpoint using `node_id=app_id`. This tap never passes `app_id` to `init()`, so that POST always fails with a real Facebook 400 (`GraphMethodException`, `error_subcode: 33`). That failing request is itself routed through `call_with_retry` (the global `FacebookAdsApi.call` monkeypatch), and the shared subcode-33 transient check (added for an unrelated AdsInsights race condition) treats it as retryable -- wasting ~75s retrying the SDK's own broken self-diagnostic call before the original exception is finally re-raised.
+  * Make `call_with_retry` retry genuine transient network truncations directly: widen its exception tuple to also catch `requests.exceptions.ChunkedEncodingError` and `urllib3.exceptions.ProtocolError` (in addition to the existing `FacebookRequestError` and `requests.exceptions.ConnectionError`), and extend `is_transient_facebook_error()` to recognize both as always-retryable so `giveup` doesn't reject them. Fixes a production incident where an `AdCreative.sync_batches` batch call hit a transient `ChunkedEncodingError` (`IncompleteRead`) that wasn't a `FacebookRequestError`, so `backoff` never caught it at all and it crashed the tap uncaught -- triggering the crash-reporter detour above.
+  * Also add `requests.exceptions.Timeout` to `call_with_retry`'s exception tuple -- it was already treated as transient by `is_transient_facebook_error()` but was never reachable there, the same class of gap as the two fixes above.
+  * Add calculated, bounded rate-limit pacing to `call_with_retry`: when Meta's `X-Ad-Account-Usage` (`reset_time_duration`, seconds) or `X-Business-Use-Case-Usage` (`estimated_time_to_regain_access`, minutes) response headers are present on a `FacebookRequestError`, wait exactly as long as Meta reports instead of guessing with exponential backoff -- capped at 120s per wait and 180s total (`max_time`), falling back to the original exponential sequence when no usable header is found. Also add a small proactive pause (1s) after any successful call once `acc_id_util_pct` crosses 80%, easing off before actually hitting the rate limit rather than only reacting after the fact. `max_tries=5` remains an independent hard stop regardless of header values.
+
+## 1.26.5
+  * Merge the `v1.26.1`-`v1.26.4` fix lineage into `master`:
+    - Support bool `include_deleted` config value (Meltano YAML passes a JSON boolean, which previously crashed with `AttributeError: 'bool' object has no attribute 'lower'`)
+    - Retry on rate limit errors (Facebook error code 17) instead of aborting immediately
+    - Reduce API call batches per stream (`iter_delivery_info_filter` sub-list length raised from 3 to 7), cutting total API volume when `include_deleted` is enabled
+  * Fix rate-limit retry gap during pagination: extract a shared `is_transient_facebook_error()` condition used by both `call_with_retry` (the global `FacebookAdsApi.call` monkeypatch every SDK call passes through, including page 2+ of every paginated stream via `Cursor.load_next_page()`) and `retry_pattern` (applied per-stream to the call that creates the cursor). Previously, a code 17 rate limit error retried fine on page 1 but crashed immediately when hit on a later page, since `call_with_retry` only retried a narrow summary-param regex match
+
 ## 1.26.0
   * Add `ads_insights_comscore_market` stream to replace deprecated DMA breakdown
   * Deprecate `ads_insights_dma` stream (Meta removed DMA support on June 22, 2026) [#270](https://github.com/singer-io/tap-facebook/pull/270)
