@@ -170,7 +170,7 @@
     "reach": {
       "type": ["null", "integer"]
     },
-    "dma": {
+    "comscore_market": {
       "type": ["null", "string"]
     },
     "quality_ranking": {

@@ -115,7 +115,7 @@ class FacebookBaseTest(unittest.TestCase):
                 self.REPLICATION_KEYS: {"date_start"}
             },
             "ads_insights_dma": {
-                self.PRIMARY_KEYS: {"dma", "campaign_id", "adset_id", "ad_id", "date_start"},
+                self.PRIMARY_KEYS: {"comscore_market", "campaign_id", "adset_id", "ad_id", "date_start"},
                 self.REPLICATION_METHOD: self.INCREMENTAL,
                 self.REPLICATION_KEYS: {"date_start"}
             },
