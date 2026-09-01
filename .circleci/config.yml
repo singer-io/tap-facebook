@@ -11,6 +11,9 @@ executors:
 jobs:
   build:
     executor: docker-executor
+    environment:
+      CIRCLE_TRIGGER_SOURCE: << pipeline.trigger_source >>
+      CIRCLE_WORKFLOW_ID: ${CIRCLE_WORKFLOW_ID}
     steps:
       - run: echo 'CI done'
   ensure_env:
