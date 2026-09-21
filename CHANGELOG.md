@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.27.0
+  * Retry Insights jobs that fail with a transient `error_code` (`1` "API Unknown" or `2` "API Service", e.g. "Service temporarily unavailable"). A new `InsightsJobFailed` exception is raised for these cases and picked up by `run_job`'s existing retry decorator, which re-runs `run_job` and schedules a brand new Insights job after the backoff wait. Other (non-transient) job failures still raise `TapFacebookException` immediately, unchanged.
+
 ## 1.26.0
   * Add `ads_insights_comscore_market` stream to replace deprecated DMA breakdown
   * Deprecate `ads_insights_dma` stream (Meta removed DMA support on June 22, 2026) [#270](https://github.com/singer-io/tap-facebook/pull/270)

@@ -1,7 +1,8 @@
 import json
 import unittest
 from unittest.mock import Mock, patch
-from tap_facebook import FacebookRequestError, TapFacebookException
+import tap_facebook
+from tap_facebook import FacebookRequestError, TapFacebookException, InsightsJobFailed
 from tap_facebook import facebook_business
 from facebook_business.exceptions import FacebookBadObjectError
 from facebook_business import FacebookAdsApi
@@ -327,3 +328,83 @@ class TestInsightJobs(unittest.TestCase):
         self.assertIn("There was an error running your report.", error_str)
         # Should fail immediately — no retries on job failure
         self.assertEqual(1, mocked_api_get.call_count)
+
+    def test_job_failed_transient_error_schedules_new_job(self, mocked_sleep):
+        """When async_status == "Job Failed" with a transient error_code
+        (e.g. error_code=2 "Service temporarily unavailable"), the tap should
+        raise InsightsJobFailed which is retried by re-running run_job() from
+        scratch -- i.e. a brand new job is created via get_insights() again --
+        rather than failing immediately.
+        """
+        failed_job_response = {
+            "async_status": "Job Failed",
+            "async_percent_completion": 71,
+            "id": "1606161310951156",
+            "error_code": 2,
+            "error_message": "Service temporarily unavailable",
+            "error_subcode": 1504044,
+            "error_user_title": "Unknown error occurred",
+            "error_user_msg": "An unexpected error occurred. Refresh the page or try again. If it continues, contact support.",
+        }
+
+        completed_job_response = {
+            "async_status": "Job Completed",
+            "async_percent_completion": 100,
+            "id": "1606161310951157",
+        }
+
+        mocked_api_get = Mock()
+        mocked_api_get.side_effect = [failed_job_response, completed_job_response]
+
+        mocked_account = Mock()
+        mocked_account.get_insights = Mock()
+        mocked_account.get_insights.return_value.api_get = mocked_api_get
+
+        ad_insights_object = AdsInsights('', mocked_account, '', '', {}, {})
+        job = ad_insights_object.run_job({})
+
+        self.assertEqual(job, completed_job_response)
+        # run_job (and therefore get_insights, i.e. job creation) was called
+        # twice: once for the failed job, once for the new scheduled job.
+        self.assertEqual(2, mocked_account.get_insights.call_count)
+        self.assertEqual(2, mocked_api_get.call_count)
+
+    def test_job_failed_rate_limited_pauses_then_schedules_new_job(self, mocked_sleep):
+        """When async_status == "Job Failed" with a rate-limit error_code
+        (e.g. error_code=4 "Application request limit reached"), the tap
+        should pause for a long, dedicated cooldown (on top of the normal
+        retry backoff) before scheduling a brand new job.
+        """
+        failed_job_response = {
+            "async_status": "Job Failed",
+            "async_percent_completion": 0,
+            "id": "1219444367070914",
+            "error_code": 4,
+            "error_message": "Application request limit reached",
+            "error_subcode": 1504022,
+            "error_user_title": "Too many API requests",
+            "error_user_msg": "There have been too many calls from this app. Wait a bit and try again.",
+        }
+
+        completed_job_response = {
+            "async_status": "Job Completed",
+            "async_percent_completion": 100,
+            "id": "1219444367070915",
+        }
+
+        mocked_api_get = Mock()
+        mocked_api_get.side_effect = [failed_job_response, completed_job_response]
+
+        mocked_account = Mock()
+        mocked_account.get_insights = Mock()
+        mocked_account.get_insights.return_value.api_get = mocked_api_get
+
+        ad_insights_object = AdsInsights('', mocked_account, '', '', {}, {})
+        job = ad_insights_object.run_job({})
+
+        self.assertEqual(job, completed_job_response)
+        self.assertEqual(2, mocked_account.get_insights.call_count)
+        self.assertEqual(2, mocked_api_get.call_count)
+        # A dedicated long cooldown pause was taken before the new job
+        # was scheduled, separate from the regular backoff `time.sleep`.
+        mocked_time_sleep.assert_any_call(tap_facebook.INSIGHTS_RATE_LIMIT_PAUSE_SECONDS)
