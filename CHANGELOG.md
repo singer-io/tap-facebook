@@ -2,6 +2,7 @@
 
 ## 1.27.0
   * Retry Insights jobs that fail with a transient `error_code` (`1` "API Unknown" or `2` "API Service", e.g. "Service temporarily unavailable"). A new `InsightsJobFailed` exception is raised for these cases and picked up by `run_job`'s existing retry decorator, which re-runs `run_job` and schedules a brand new Insights job after the backoff wait. Other (non-transient) job failures still raise `TapFacebookException` immediately, unchanged.
+  * Additionally retry rate-limited job failures (`error_code` `4`/`17`/`341`, e.g. "Application request limit reached" / "Too many API requests") after a dedicated long cooldown pause (`INSIGHTS_RATE_LIMIT_PAUSE_SECONDS`, 15 minutes) on top of the normal backoff, before scheduling the new job.
 
 ## 1.26.0
   * Add `ads_insights_comscore_market` stream to replace deprecated DMA breakdown

@@ -407,4 +407,4 @@ class TestInsightJobs(unittest.TestCase):
         self.assertEqual(2, mocked_api_get.call_count)
         # A dedicated long cooldown pause was taken before the new job
         # was scheduled, separate from the regular backoff `time.sleep`.
-        mocked_time_sleep.assert_any_call(tap_facebook.INSIGHTS_RATE_LIMIT_PAUSE_SECONDS)
+        mocked_sleep.assert_any_call(tap_facebook.INSIGHTS_RATE_LIMIT_PAUSE_SECONDS)
