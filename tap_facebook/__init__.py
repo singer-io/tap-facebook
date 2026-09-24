@@ -148,6 +148,16 @@ class TapFacebookException(Exception):
 class InsightsJobTimeout(TapFacebookException):
     pass
 
+class InsightsJobFailed(TapFacebookException):
+    """Raised when an async Insights job reports status as Failed """
+    pass
+
+# See https://developers.facebook.com/docs/graph-api/guides/error-handling/
+TRANSIENT_INSIGHTS_JOB_ERROR_CODES = {1, 2}
+
+RATE_LIMITED_INSIGHTS_JOB_ERROR_CODES = {4, 17, 341}
+INSIGHTS_RATE_LIMIT_PAUSE_SECONDS = 5 * 60
+
 def transform_datetime_string(dts):
     parsed_dt = dateutil.parser.parse(dts)
     if parsed_dt.tzinfo is None:
@@ -215,6 +225,8 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
                     or exception.api_error_subcode() == 33
                     )
         elif isinstance(exception, InsightsJobTimeout):
+            return True
+        elif isinstance(exception, InsightsJobFailed):
             return True
         elif isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
             return True
@@ -724,7 +736,7 @@ class AdsInsights(Stream):
 
     @retry_pattern(backoff.expo, (Timeout, ConnectionError), max_tries=5, factor=2)
     # Added retry_pattern to handle AttributeError raised from requests call below
-    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout, FacebookBadObjectError, TypeError, AttributeError), max_tries=5, factor=5)
+    @retry_pattern(backoff.expo, (FacebookRequestError, InsightsJobTimeout, InsightsJobFailed, FacebookBadObjectError, TypeError, AttributeError), max_tries=5, factor=5)
     def run_job(self, params):
         LOGGER.info('Starting adsinsights job with params %s', params)
         job = self.account.get_insights( # pylint: disable=no-member
@@ -751,11 +763,24 @@ class AdsInsights(Stream):
                 error_subcode = job.get('error_subcode')
                 error_user_title = job.get('error_user_title')
                 error_user_msg = job.get('error_user_msg')
-                raise TapFacebookException(
+                pretty_error_message = (
                     'Insights job {} failed. error_code={}, error_subcode={}, '
                     'error_user_title={}, error_user_msg={}, error_message={}'.format(
                         job_id, error_code, error_subcode,
                         error_user_title, error_user_msg, error_message))
+                if error_code in RATE_LIMITED_INSIGHTS_JOB_ERROR_CODES:
+                    # Rate-limited (e.g. "Application request limit reached"):
+                    LOGGER.info(
+                        'Insights job %s was rate limited. Pausing for %d seconds '
+                        'before scheduling a new job.', job_id, INSIGHTS_RATE_LIMIT_PAUSE_SECONDS)
+                    time.sleep(INSIGHTS_RATE_LIMIT_PAUSE_SECONDS)
+                    raise InsightsJobFailed(pretty_error_message)
+
+                if error_code in TRANSIENT_INSIGHTS_JOB_ERROR_CODES:
+                    # Transient/service-level failure (e.g. "Service temporarily unavailable")
+                    raise InsightsJobFailed(pretty_error_message)
+
+                raise TapFacebookException(pretty_error_message)
 
             if duration > INSIGHTS_MAX_WAIT_TO_START_SECONDS and percent_complete == 0:
                 pretty_error_message = ('Insights job {} did not start after {} seconds. ' +

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.26.1
+  * Retry Insights jobs that fail with a transient error_code.
+  * retry rate-limited job failures after a dedicated long cooldown pause (`INSIGHTS_RATE_LIMIT_PAUSE_SECONDS`, 5 minutes) on top of the normal backoff, before scheduling the new job.
+
 ## 1.26.0
   * Add `ads_insights_comscore_market` stream to replace deprecated DMA breakdown
   * Deprecate `ads_insights_dma` stream (Meta removed DMA support on June 22, 2026) [#270](https://github.com/singer-io/tap-facebook/pull/270)
