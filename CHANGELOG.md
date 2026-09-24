@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.27.0
+## 1.26.1
   * Retry Insights jobs that fail with a transient error_code.
   * retry rate-limited job failures after a dedicated long cooldown pause (`INSIGHTS_RATE_LIMIT_PAUSE_SECONDS`, 5 minutes) on top of the normal backoff, before scheduling the new job.
 
