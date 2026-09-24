@@ -777,7 +777,7 @@ class AdsInsights(Stream):
                     raise InsightsJobFailed(pretty_error_message)
 
                 if error_code in TRANSIENT_INSIGHTS_JOB_ERROR_CODES:
-                    # Transient/service-level failure (e.g. "Service temporarily
+                    # Transient/service-level failure (e.g. "Service temporarily unavailable")
                     raise InsightsJobFailed(pretty_error_message)
 
                 raise TapFacebookException(pretty_error_message)
