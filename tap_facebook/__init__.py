@@ -802,6 +802,14 @@ class AdsInsights(Stream):
                 sleep_time = 2 * sleep_time
         return job
 
+    @staticmethod
+    @retry_pattern(backoff.expo, (FacebookRequestError, FacebookBadObjectError), max_tries=5, factor=5)
+    def __next_insights_result(cursor):
+        # Advances the FB SDK's paging cursor one page at a time (via load_next_page)
+        # so a transient 500/"Bad data to set object data" mid-pagination gets retried
+        # instead of aborting the whole insights job.
+        return next(cursor)
+
     def __iter__(self):
         for params in self.job_params():
             with metrics.job_timer('insights'):
@@ -809,7 +817,12 @@ class AdsInsights(Stream):
 
             min_date_start_for_job = None
             count = 0
-            for obj in job.get_result():
+            result_cursor = job.get_result()
+            while True:
+                try:
+                    obj = AdsInsights.__next_insights_result(result_cursor)
+                except StopIteration:
+                    break
                 count += 1
                 rec = obj.export_all_data()
                 if not min_date_start_for_job or rec['date_stop'] < min_date_start_for_job:
