@@ -52,6 +52,11 @@ RESULT_RETURN_LIMIT = 100
 
 REQUEST_TIMEOUT = 300
 DEFAULT_PK_VALUE = "00:00:00 - 00:59:59"
+ADCREATIVE_BATCH_SIZE = 50
+
+DOF_ERROR_CODE = 100
+DOF_ERROR_SUBCODE = 2446211
+OBJECT_STORY_SPEC = 'object_story_spec'
 
 STREAMS = [
     'adcreative',
@@ -314,39 +319,94 @@ def batch_record_failure(response):
     so it fails the sync process.'''
     raise response.error()
 
+def is_dof_object_story_spec_error(error):
+    return (isinstance(error, FacebookRequestError)
+            and error.api_error_code() == DOF_ERROR_CODE
+            and error.api_error_subcode() == DOF_ERROR_SUBCODE)
+
+
+def creative_id_from_response(response):
+    '''A batch response only carries the call that produced it, e.g. relative_url
+    "<creative_id>?fields=..."; the creative id is the last path segment.'''
+    call = getattr(response, '_call', None) or {}
+    path = (call.get('relative_url') or '').split('?', 1)[0].strip('/')
+    return path.split('/')[-1] or None
+
+
+def adcreative_batch_record_failure(response, dof_creative_ids):
+    '''A failure callback for AdCreative batches. A creative whose object_story_spec is rejected is
+    remembered in dof_creative_ids (to be re-read without that field once all batches are done) instead
+    of failing the sync; any other error still raises.'''
+    error = response.error()
+    if is_dof_object_story_spec_error(error):
+        creative_id = creative_id_from_response(response)
+        if creative_id:
+            if creative_id not in dof_creative_ids:
+                dof_creative_ids.append(creative_id)
+            return
+    raise error
+
 # AdCreative is not an iterable stream as it uses the batch endpoint
 class AdCreative(Stream):
     '''
     doc: https://developers.facebook.com/docs/marketing-api/reference/adgroup/adcreatives/
     '''
 
-    # Added retry_pattern to handle AttributeError raised from api_batch.execute() below
-    @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
-    def sync_batches(self, stream_objects):
+    def sync_batches(self, stream_objects, dof_creative_ids=None):
+        if dof_creative_ids is None:
+            dof_creative_ids = []
         refs = load_shared_schema_refs()
         schema = singer.resolve_schema_references(self.catalog_entry.schema.to_dict(), refs)
         transformer = Transformer(pre_hook=transform_date_hook)
 
-        # Create the initial batch
-        api_batch = API.new_batch()
-        batch_count = 0
-
-        # This loop syncs minimal fb objects
+        pending = []
         for obj in stream_objects:
-            # Execute and create a new batch for every 50 added
-            if batch_count % 50 == 0:
-                api_batch.execute()
-                api_batch = API.new_batch()
+            pending.append(obj)
+            if len(pending) == ADCREATIVE_BATCH_SIZE:
+                self.execute_batch(pending, dof_creative_ids, schema, transformer)
+                pending = []
 
-            # Add a call to the batch with the full object
+        # Ensure the final batch is executed
+        if pending:
+            self.execute_batch(pending, dof_creative_ids, schema, transformer)
+
+    # Retries only this batch (not the whole stream); AttributeError can be raised from api_batch.execute()
+    @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
+    def execute_batch(self, objs, dof_creative_ids, schema, transformer):
+        api_batch = API.new_batch()
+        for obj in objs:
+            # Creatives already known to reject object_story_spec are synced separately at the end
+            if obj.get('id') in dof_creative_ids:
+                continue
             obj.api_get(fields=self.fields(),
                         batch=api_batch,
                         success=partial(batch_record_success, stream=self, transformer=transformer, schema=schema),
-                        failure=batch_record_failure)
-            batch_count += 1
-
-        # Ensure the final batch is executed
+                        failure=partial(adcreative_batch_record_failure, dof_creative_ids=dof_creative_ids))
         api_batch.execute()
+
+    @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
+    def sync_dof_creatives(self, dof_creative_ids):
+        '''Re-reads the creatives whose object_story_spec was rejected, without that field.'''
+        if not dof_creative_ids:
+            return
+
+        LOGGER.warning('Graph API rejected %s (error %s/%s) for ad creative(s) %s; syncing them without %s',
+                       OBJECT_STORY_SPEC, DOF_ERROR_CODE, DOF_ERROR_SUBCODE, dof_creative_ids, OBJECT_STORY_SPEC)
+
+        refs = load_shared_schema_refs()
+        schema = singer.resolve_schema_references(self.catalog_entry.schema.to_dict(), refs)
+        transformer = Transformer(pre_hook=transform_date_hook)
+        fields = [field for field in self.fields() if field != OBJECT_STORY_SPEC]
+
+        for start in range(0, len(dof_creative_ids), 50):
+            api_batch = API.new_batch()
+            for creative_id in dof_creative_ids[start:start + 50]:
+                adcreative.AdCreative(creative_id).api_get(
+                    fields=fields,
+                    batch=api_batch,
+                    success=partial(batch_record_success, stream=self, transformer=transformer, schema=schema),
+                    failure=batch_record_failure)
+            api_batch.execute()
 
     key_properties = ['id']
 
@@ -358,7 +418,9 @@ class AdCreative(Stream):
 
     def sync(self):
         adcreatives = self.get_adcreatives()
-        self.sync_batches(adcreatives)
+        dof_creative_ids = []
+        self.sync_batches(adcreatives, dof_creative_ids)
+        self.sync_dof_creatives(dof_creative_ids)
 
 
 class Ads(IncrementalStream):
