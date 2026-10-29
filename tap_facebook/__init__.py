@@ -212,7 +212,10 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
                     details["tries"],
                     details["wait"])
 
-        if isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
+        # Python 3.11+ appends ", not '<type>'" to this TypeError's message
+        # (e.g. "string indices must be integers, not 'str'"), so match on the
+        # stable prefix rather than the exact historical string.
+        if isinstance(exception, TypeError) and str(exception).startswith("string indices must be integers"):
             LOGGER.info('TypeError due to bad JSON response')
     def should_retry_api_error(exception):
         if isinstance(exception, FacebookBadObjectError) or isinstance(exception, Timeout) or isinstance(exception, ConnectionError) or isinstance(exception, AttributeError):
@@ -228,7 +231,7 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
             return True
         elif isinstance(exception, InsightsJobFailed):
             return True
-        elif isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
+        elif isinstance(exception, TypeError) and str(exception).startswith("string indices must be integers"):
             return True
         return False
 
@@ -1010,6 +1013,20 @@ def do_discover():
     json.dump(discover_schemas(), sys.stdout, indent=4)
 
 
+@retry_pattern(backoff.expo, (Timeout, ConnectionError), max_tries=5, factor=2)
+# Added retry_pattern to handle the facebook_business SDK's Cursor-based
+# pagination intermittently raising `TypeError: string indices must be
+# integers(, not 'str')` when a page of the /adaccounts response isn't in
+# the shape its ObjectParser expects. This is the same known, transient SDK
+# bug already worked around below for the other streams (see get_adcreatives,
+# _call_get_ads, etc.); retrying re-issues the request (and its Cursor) from
+# scratch, so a subsequent attempt gets a clean page.
+@retry_pattern(backoff.expo, (FacebookRequestError, TypeError, AttributeError), max_tries=5, factor=5)
+def get_ad_accounts(user):
+    """Returns a fully-realized list of AdAccount objects for `user`."""
+    return list(user.get_ad_accounts())
+
+
 def main_impl():
     try:
         args = utils.parse_args(REQUIRED_CONFIG_KEYS)
@@ -1032,7 +1049,7 @@ def main_impl():
         API = FacebookAdsApi.init(access_token=access_token, timeout=request_timeout)
         user = fb_user.User(fbid='me')
 
-        accounts = user.get_ad_accounts()
+        accounts = get_ad_accounts(user)
         account = None
         for acc in accounts:
             if acc['account_id'] == account_id:
@@ -1041,6 +1058,13 @@ def main_impl():
             raise SingerConfigurationError("Couldn't find account with id {}".format(account_id))
     except FacebookError as fb_error:
         raise_from(SingerConfigurationError, fb_error)
+    except TypeError as type_error:
+        # Safety net: surface a persistent instance of the known
+        # facebook_business SDK malformed-page bug (see get_ad_accounts above)
+        # as a clear configuration error instead of an unhandled crash.
+        if str(type_error).startswith("string indices must be integers"):
+            raise_from(SingerConfigurationError, type_error)
+        raise
 
     if args.discover:
         try:

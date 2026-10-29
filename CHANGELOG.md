@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.26.2
+  * Fix unhandled `TypeError: string indices must be integers(, not 'str')` crash during discovery caused by a known `facebook_business` SDK pagination bug combined with Python 3.11+'s changed `TypeError` message format
+  * Add retry protection (`get_ad_accounts()`) around the account-discovery API call, matching the retry coverage already applied to other API calls
+  * Make `retry_pattern()`'s error-message matching version-agnostic (`str.startswith(...)` instead of exact match) so retries work on Python 3.11+ as well as older versions
+  * Add a safety net in `main_impl()` that surfaces a persistent instance of this known SDK bug as a clear `SingerConfigurationError` instead of an unhandled crash
+
 ## 1.26.1
   * Retry Insights jobs that fail with a transient error_code.
   * retry rate-limited job failures after a dedicated long cooldown pause (`INSIGHTS_RATE_LIMIT_PAUSE_SECONDS`, 5 minutes) on top of the normal backoff, before scheduling the new job.
