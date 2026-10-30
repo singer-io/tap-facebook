@@ -17,7 +17,7 @@ from unittest.mock import Mock
 import tap_facebook
 from facebook_business.exceptions import FacebookRequestError
 from requests.exceptions import ConnectionError, Timeout
-from singer import SingerConfigurationError
+from tap_facebook import TapFacebookSDKPaginationException
 
 
 @mock.patch("time.sleep")
@@ -148,10 +148,12 @@ class Args():
 class TestMainImplAccountDiscoveryTypeErrorSafetyNet(unittest.TestCase):
     """Unit tests for the `TypeError` safety net in `main_impl()`'s account
     discovery, which surfaces a persistent instance of the known
-    facebook_business SDK malformed-page bug as a clear
-    `SingerConfigurationError` instead of an unhandled crash."""
+    facebook_business SDK malformed-page bug as a dedicated
+    `TapFacebookSDKPaginationException` instead of an unhandled crash. This
+    is deliberately NOT a `SingerConfigurationError`: the bug is not caused
+    by (and cannot be fixed via) the user's tap configuration."""
 
-    def test_persistent_type_error_old_format_raises_singer_configuration_error(
+    def test_persistent_type_error_old_format_raises_sdk_pagination_exception(
             self, mocked_user, mocked_facebook_api, mocked_args, mocked_sleep):
         tap_facebook.CONFIG = {}
         config = {'account_id': 'test', 'access_token': 'test'}
@@ -162,17 +164,17 @@ class TestMainImplAccountDiscoveryTypeErrorSafetyNet(unittest.TestCase):
         mocked_fb_user.get_ad_accounts.side_effect = TypeError("string indices must be integers")
         mocked_user.return_value = mocked_fb_user
 
-        with self.assertRaises(SingerConfigurationError):
+        with self.assertRaises(TapFacebookSDKPaginationException):
             tap_facebook.main_impl()
 
         # get_ad_accounts() retries internally up to 5 times before giving up
         self.assertEqual(5, mocked_fb_user.get_ad_accounts.call_count)
 
-    def test_persistent_type_error_python311_format_raises_singer_configuration_error(
+    def test_persistent_type_error_python311_format_raises_sdk_pagination_exception(
             self, mocked_user, mocked_facebook_api, mocked_args, mocked_sleep):
         """This is the exact scenario from the reported crash: discovery
         previously died with an unhandled `TypeError` traceback instead of a
-        clear configuration error."""
+        clear, dedicated exception."""
         tap_facebook.CONFIG = {}
         config = {'account_id': 'test', 'access_token': 'test'}
         mocked_args.return_value = Args(config)
@@ -182,7 +184,7 @@ class TestMainImplAccountDiscoveryTypeErrorSafetyNet(unittest.TestCase):
         mocked_fb_user.get_ad_accounts.side_effect = TypeError("string indices must be integers, not 'str'")
         mocked_user.return_value = mocked_fb_user
 
-        with self.assertRaises(SingerConfigurationError):
+        with self.assertRaises(TapFacebookSDKPaginationException):
             tap_facebook.main_impl()
 
         self.assertEqual(5, mocked_fb_user.get_ad_accounts.call_count)
@@ -190,8 +192,9 @@ class TestMainImplAccountDiscoveryTypeErrorSafetyNet(unittest.TestCase):
     def test_unrelated_type_error_is_not_converted(
             self, mocked_user, mocked_facebook_api, mocked_args, mocked_sleep):
         """A `TypeError` unrelated to the known SDK bug must propagate as-is
-        (not be silently converted to a `SingerConfigurationError`), since the
-        safety net only recognizes this specific, known failure mode."""
+        (not be silently converted to a `TapFacebookSDKPaginationException`),
+        since the safety net only recognizes this specific, known failure
+        mode."""
         tap_facebook.CONFIG = {}
         config = {'account_id': 'test', 'access_token': 'test'}
         mocked_args.return_value = Args(config)
@@ -204,7 +207,7 @@ class TestMainImplAccountDiscoveryTypeErrorSafetyNet(unittest.TestCase):
         with self.assertRaises(TypeError) as ctx:
             tap_facebook.main_impl()
 
-        self.assertNotIsInstance(ctx.exception, SingerConfigurationError)
+        self.assertNotIsInstance(ctx.exception, TapFacebookSDKPaginationException)
         # Unrelated TypeErrors are not retried (not the known SDK bug)
         self.assertEqual(1, mocked_fb_user.get_ad_accounts.call_count)
 

@@ -148,6 +148,13 @@ class TapFacebookException(Exception):
 class InsightsJobTimeout(TapFacebookException):
     pass
 
+class TapFacebookSDKPaginationException(TapFacebookException):
+    """Raised when a known, transient facebook_business SDK pagination bug
+    (facebook/facebook-python-business-sdk#642) persists through retries
+    during account discovery. Not a SingerConfigurationError: it's an
+    upstream SDK/API issue, not something the user's config can fix.
+    """
+
 class InsightsJobFailed(TapFacebookException):
     """Raised when an async Insights job reports status as Failed """
     pass
@@ -212,9 +219,8 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
                     details["tries"],
                     details["wait"])
 
-        # Python 3.11+ appends ", not '<type>'" to this TypeError's message
-        # (e.g. "string indices must be integers, not 'str'"), so match on the
-        # stable prefix rather than the exact historical string.
+        # Python 3.11+ appends ", not '<type>'" to this message; match the
+        # stable prefix instead of the exact historical string.
         if isinstance(exception, TypeError) and str(exception).startswith("string indices must be integers"):
             LOGGER.info('TypeError due to bad JSON response')
     def should_retry_api_error(exception):
@@ -1014,16 +1020,15 @@ def do_discover():
 
 
 @retry_pattern(backoff.expo, (Timeout, ConnectionError), max_tries=5, factor=2)
-# Added retry_pattern to handle the facebook_business SDK's Cursor-based
-# pagination intermittently raising `TypeError: string indices must be
-# integers(, not 'str')` when a page of the /adaccounts response isn't in
-# the shape its ObjectParser expects. This is the same known, transient SDK
-# bug already worked around below for the other streams (see get_adcreatives,
-# _call_get_ads, etc.); retrying re-issues the request (and its Cursor) from
-# scratch, so a subsequent attempt gets a clean page.
+# Retries the facebook_business SDK's known Cursor/ObjectParser pagination
+# bug (TypeError on a malformed page) the same way other streams do below.
 @retry_pattern(backoff.expo, (FacebookRequestError, TypeError, AttributeError), max_tries=5, factor=5)
 def get_ad_accounts(user):
-    """Returns a fully-realized list of AdAccount objects for `user`."""
+    """Returns a fully-realized list of AdAccount objects for `user`.
+
+    If retries are exhausted, the TypeError propagates to main_impl(), which
+    re-raises it as a TapFacebookSDKPaginationException.
+    """
     return list(user.get_ad_accounts())
 
 
@@ -1059,11 +1064,15 @@ def main_impl():
     except FacebookError as fb_error:
         raise_from(SingerConfigurationError, fb_error)
     except TypeError as type_error:
-        # Safety net: surface a persistent instance of the known
-        # facebook_business SDK malformed-page bug (see get_ad_accounts above)
-        # as a clear configuration error instead of an unhandled crash.
+        # Retries exhausted on the known facebook_business SDK pagination bug
+        # (see get_ad_accounts above). Not a config error, so don't wrap it
+        # as one -- raise a dedicated exception instead.
         if str(type_error).startswith("string indices must be integers"):
-            raise_from(SingerConfigurationError, type_error)
+            raise TapFacebookSDKPaginationException(
+                "Known, transient facebook_business SDK pagination bug while "
+                "discovering ad accounts."
+                "Retrying the sync may resolve it. Original error: {}".format(type_error)
+            ) from type_error
         raise
 
     if args.discover:
