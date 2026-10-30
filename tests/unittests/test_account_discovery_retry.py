@@ -130,6 +130,24 @@ class TestGetAdAccountsRetry(unittest.TestCase):
         self.assertEqual(accounts, [{'account_id': '123'}])
         self.assertEqual(3, mocked_user.get_ad_accounts.call_count)
 
+    def test_retries_after_cursor_iteration_failure(self, mocked_sleep):
+        """Retry cursor traversal from scratch without retaining partial results."""
+        def failing_accounts():
+            yield {'account_id': 'partial'}
+            raise TypeError("string indices must be integers, not 'str'")
+
+        expected_accounts = [{'account_id': '123'}, {'account_id': '456'}]
+        mocked_user = Mock()
+        mocked_user.get_ad_accounts.side_effect = [
+            failing_accounts(),
+            iter(expected_accounts),
+        ]
+
+        accounts = tap_facebook.get_ad_accounts(mocked_user)
+
+        self.assertEqual(accounts, expected_accounts)
+        self.assertEqual(2, mocked_user.get_ad_accounts.call_count)
+
 
 # Mock args, mirroring the pattern used in test_request_timeout.py
 class Args():
