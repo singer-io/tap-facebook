@@ -33,7 +33,7 @@ class TestAdCreativeSyncBbatches(unittest.TestCase):
     def test_retries_on_attribute_error_sync_batches(self, mocked_schema, mocked_api, mocked_sleep):
         """ 
             AdCreative.sync_batches calls a `facebook_business` method,`api_batch.execute()`, to get a batch of ad creatives. 
-            We mock this method to raise a `AttributeError` and expect the tap to retry this that function up to 5 times,
+            We mock this method to raise a `AttributeError` and expect the tap to retry that batch up to 5 times,
             which is the current hard coded `max_tries` value.
         """
         # Mock new_batch() function of API
@@ -44,21 +44,22 @@ class TestAdCreativeSyncBbatches(unittest.TestCase):
         mock_catalog_entry = CatalogEntry(schema=Schema())
         ad_creative_object = AdCreative('', '', '', '')
         ad_creative_object.catalog_entry = mock_catalog_entry
+        ad_creative_object.fields = lambda: {'id'}
 
         # Call sync_batches() function of AdCreatives and verify AttributeError is raised
         with self.assertRaises(AttributeError):
-            ad_creative_object.sync_batches([])
+            ad_creative_object.sync_batches([Mock()])
 
         # verify calls inside sync_batches are called 5 times as max 5 retries provided for function
         self.assertEqual(5, mocked_api.new_batch.call_count)
-        self.assertEqual(5, mocked_schema.call_count)
+        self.assertEqual(1, mocked_schema.call_count)
 
     @mock.patch("tap_facebook.API")
     @mock.patch("singer.resolve_schema_references")
     def test_retries_on_facebook_request_error_sync_batches(self, mocked_schema, mocked_api, mocked_sleep):
         """ 
             AdCreative.sync_batches calls a `facebook_business` method,`api_batch.execute()`, to get a batch of ad creatives. 
-            We mock this method to raise a `FacebookRequestError` and expect the tap to retry this that function up to 5 times,
+            We mock this method to raise a `FacebookRequestError` and expect the tap to retry that batch up to 5 times,
             which is the current hard coded `max_tries` value.
         """
         # Mock new_batch() function of API
@@ -69,14 +70,15 @@ class TestAdCreativeSyncBbatches(unittest.TestCase):
         mock_catalog_entry = CatalogEntry(schema=Schema())
         ad_creative_object = AdCreative('', '', '', '')
         ad_creative_object.catalog_entry = mock_catalog_entry
+        ad_creative_object.fields = lambda: {'id'}
 
         # Call sync_batches() function of AdCreatives and verify FacebookRequestError is raised
         with self.assertRaises(FacebookRequestError):
-            ad_creative_object.sync_batches([])
+            ad_creative_object.sync_batches([Mock()])
 
         # verify calls inside sync_batches are called 5 times as max 5 reties provided for function
         self.assertEqual(5, mocked_api.new_batch.call_count)
-        self.assertEqual(5, mocked_schema.call_count)
+        self.assertEqual(1, mocked_schema.call_count)
 
     @mock.patch("tap_facebook.API")
     @mock.patch("singer.resolve_schema_references")
@@ -93,9 +95,10 @@ class TestAdCreativeSyncBbatches(unittest.TestCase):
         mock_catalog_entry = CatalogEntry(schema=Schema())
         ad_creative_object = AdCreative('', '', '', '')
         ad_creative_object.catalog_entry = mock_catalog_entry
+        ad_creative_object.fields = lambda: {'id'}
 
         # Call sync_batches() function of AdCreatives
-        ad_creative_object.sync_batches([])
+        ad_creative_object.sync_batches([Mock()])
 
         # verify calls inside sync_batches are called once as no exception is thrown
         self.assertEqual(1, mocked_api.new_batch.call_count)
