@@ -360,7 +360,12 @@ class AdCreative(Stream):
         transformer = Transformer(pre_hook=transform_date_hook)
 
         pending = []
-        for obj in stream_objects:
+        iterator = iter(stream_objects)
+        while True:
+            try:
+                obj = self.next_creative(iterator)
+            except StopIteration:
+                break
             pending.append(obj)
             if len(pending) == ADCREATIVE_BATCH_SIZE:
                 self.execute_batch(pending, dof_creative_ids, schema, transformer)
@@ -369,6 +374,27 @@ class AdCreative(Stream):
         # Ensure the final batch is executed
         if pending:
             self.execute_batch(pending, dof_creative_ids, schema, transformer)
+
+    # Later pages are fetched lazily while iterating, so advancing the cursor is retried on its own.
+    # Pending objects and already executed batches are untouched by a retry.
+    @retry_pattern(backoff.expo, (Timeout, ConnectionError), max_tries=5, factor=2)
+    @retry_pattern(backoff.expo, (FacebookRequestError, TypeError, AttributeError), max_tries=5, factor=5)
+    def next_creative(self, iterator):
+        params = getattr(iterator, 'params', None)
+        after = params.get('after') if isinstance(params, dict) else None
+        finished = getattr(iterator, '_finished_iteration', None)
+        try:
+            return next(iterator)
+        except (FacebookRequestError, TypeError, AttributeError):
+            # A failure after the cursor advanced would make the retry skip a page
+            if isinstance(params, dict):
+                if after is None:
+                    params.pop('after', None)
+                else:
+                    params['after'] = after
+            if finished is not None:
+                iterator._finished_iteration = finished  # pylint: disable=protected-access
+            raise
 
     # Retries only this batch (not the whole stream); AttributeError can be raised from api_batch.execute()
     @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)

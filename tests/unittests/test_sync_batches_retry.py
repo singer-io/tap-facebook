@@ -157,3 +157,42 @@ class TestLeadsSyncBatches(unittest.TestCase):
         # verify calls inside sync_batches are called 5 times as max 5 reties provided for function
         self.assertEqual(5, mocked_api.new_batch.call_count)
         self.assertEqual(5, mocked_schema.call_count)
+
+
+@mock.patch("time.sleep")
+class TestAdCreativeCursorRetry(unittest.TestCase):
+
+    @mock.patch("tap_facebook.API")
+    @mock.patch("singer.resolve_schema_references")
+    def test_retries_page_fetch_without_losing_pending_objects(self, mocked_schema, mocked_api, mocked_sleep):
+        """A transient error while fetching a later page is retried and keeps the objects read so far."""
+        mocked_api.new_batch.return_value = MockBatch()
+        creative = AdCreative('', '', '', '')
+        creative.catalog_entry = CatalogEntry(schema=Schema())
+        creative.fields = lambda: {'id'}
+
+        class FlakyCursor:
+            def __init__(self):
+                self.params = {}
+                self.items = [Mock(), Mock(), Mock()]
+                self.failed = False
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                if len(self.items) == 1 and not self.failed:
+                    self.failed = True
+                    self.params['after'] = 'advanced'
+                    raise AttributeError("'str' object has no attribute 'get'")
+                if not self.items:
+                    raise StopIteration()
+                return self.items.pop(0)
+
+        cursor = FlakyCursor()
+        creative.sync_batches(cursor)
+
+        self.assertTrue(cursor.failed)
+        self.assertEqual({}, cursor.params)
+        self.assertEqual([], cursor.items)
+        self.assertEqual(1, mocked_api.new_batch.call_count)

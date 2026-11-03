@@ -2,7 +2,7 @@
 
 ## 1.27.0
   * `ad_creatives`: when the Graph API rejects `object_story_spec` for a creative (error 100/2446211), re-read only those creatives without that field instead of failing the sync.
-  * `ad_creatives`: retry only the failed batch (not the whole stream) on `FacebookRequestError`/`AttributeError`.
+  * `ad_creatives`: retry only the failed batch (not the whole stream) on `FacebookRequestError`/`AttributeError`, and retry fetching later pages of the creatives cursor separately so pending objects are kept.
   * Update and add unit tests for the above.
 
 ## 1.26.1
