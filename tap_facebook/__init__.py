@@ -410,7 +410,6 @@ class AdCreative(Stream):
                         failure=partial(adcreative_batch_record_failure, dof_creative_ids=dof_creative_ids))
         api_batch.execute()
 
-    @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
     def sync_dof_creatives(self, dof_creative_ids):
         '''Re-reads the creatives whose object_story_spec was rejected, without that field.'''
         if not dof_creative_ids:
@@ -424,15 +423,20 @@ class AdCreative(Stream):
         transformer = Transformer(pre_hook=transform_date_hook)
         fields = [field for field in self.fields() if field != OBJECT_STORY_SPEC]
 
-        for start in range(0, len(dof_creative_ids), 50):
-            api_batch = API.new_batch()
-            for creative_id in dof_creative_ids[start:start + 50]:
-                adcreative.AdCreative(creative_id).api_get(
-                    fields=fields,
-                    batch=api_batch,
-                    success=partial(batch_record_success, stream=self, transformer=transformer, schema=schema),
-                    failure=batch_record_failure)
-            api_batch.execute()
+        for start in range(0, len(dof_creative_ids), ADCREATIVE_BATCH_SIZE):
+            self.execute_dof_batch(dof_creative_ids[start:start + ADCREATIVE_BATCH_SIZE], fields, schema, transformer)
+
+    # Retries only this fallback batch, so batches already emitted are not fetched again
+    @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
+    def execute_dof_batch(self, creative_ids, fields, schema, transformer):
+        api_batch = API.new_batch()
+        for creative_id in creative_ids:
+            adcreative.AdCreative(creative_id).api_get(
+                fields=fields,
+                batch=api_batch,
+                success=partial(batch_record_success, stream=self, transformer=transformer, schema=schema),
+                failure=batch_record_failure)
+        api_batch.execute()
 
     key_properties = ['id']
 

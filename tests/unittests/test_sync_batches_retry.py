@@ -196,3 +196,28 @@ class TestAdCreativeCursorRetry(unittest.TestCase):
         self.assertEqual({}, cursor.params)
         self.assertEqual([], cursor.items)
         self.assertEqual(1, mocked_api.new_batch.call_count)
+
+
+@mock.patch("time.sleep")
+class TestAdCreativeDofBatchRetry(unittest.TestCase):
+
+    @mock.patch("tap_facebook.adcreative.AdCreative")
+    @mock.patch("tap_facebook.API")
+    @mock.patch("singer.resolve_schema_references")
+    def test_later_batch_failure_does_not_refetch_earlier_batch(self, mocked_schema, mocked_api, mocked_creative, mocked_sleep):
+        """With 51 rejected creatives, a retryable failure in the second batch retries only that batch."""
+        first_batch = MockBatch()
+        failing_batch = MockBatch(exception="FacebookRequestError")
+        retry_batch = MockBatch()
+        mocked_api.new_batch.side_effect = [first_batch, failing_batch, retry_batch]
+
+        creative = AdCreative('', '', '', '')
+        creative.catalog_entry = CatalogEntry(schema=Schema())
+        creative.fields = lambda: {'id', 'object_story_spec'}
+
+        creative.sync_dof_creatives([str(i) for i in range(51)])
+
+        self.assertEqual(3, mocked_api.new_batch.call_count)
+        # 50 creatives once, then 1 creative twice (failed attempt + retry)
+        self.assertEqual(52, mocked_creative.call_count)
+        self.assertEqual(1, mocked_schema.call_count)
