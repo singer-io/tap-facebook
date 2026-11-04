@@ -55,7 +55,7 @@ STREAMS = [
     'ads_insights_country',
     'ads_insights_platform_and_device',
     'ads_insights_region',
-    'ads_insights_dma',
+    # 'ads_insights_dma',
     #'leads',
 ]
 
@@ -73,7 +73,7 @@ BOOKMARK_KEYS = {
     'ads_insights_country': START_DATE_KEY,
     'ads_insights_platform_and_device': START_DATE_KEY,
     'ads_insights_region': START_DATE_KEY,
-    'ads_insights_dma': START_DATE_KEY,
+    #'ads_insights_dma': START_DATE_KEY,
     'leads': CREATED_TIME_KEY,
 }
 
@@ -683,8 +683,8 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
                                                           'platform_position', 'impression_device']},
     'ads_insights_region': {'breakdowns': ['region'],
                             'primary-keys': ['region']},
-    'ads_insights_dma': {"breakdowns": ['comscore_market'],
-                         "primary-keys": ['comscore_market']},
+    # 'ads_insights_dma': {"breakdowns": ['comscore_market'],
+    #                      "primary-keys": ['comscore_market']},
 }
 
 
