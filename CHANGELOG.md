@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.27.1
+  * Fix unhandled `TypeError: string indices must be integers(, not 'str')` crash during discovery caused by a known `facebook_business` SDK pagination bug combined with Python 3.11+'s changed `TypeError` message format
+  * Add retry protection (`get_ad_accounts()`) around the account-discovery API call, matching the retry coverage already applied to other API calls
+  * Make `retry_pattern()`'s error-message matching version-agnostic (`str.startswith(...)` instead of exact match) so retries work on Python 3.11+ as well as older versions
+  * Add a safety net in `main_impl()` that surfaces a persistent instance of this known SDK bug as a dedicated `TapFacebookSDKPaginationException` instead of an unhandled crash (not a `SingerConfigurationError`, since this is not a user configuration problem)
+
 ## 1.27.0
   * `ad_creatives`: when the Graph API rejects `object_story_spec` for a creative (error 100/2446211), re-read only those creatives without that field instead of failing the sync.
   * `ad_creatives`: retry only the failed batch (not the whole stream) on `FacebookRequestError`/`AttributeError`, and retry fetching later pages of the creatives cursor separately so pending objects are kept.

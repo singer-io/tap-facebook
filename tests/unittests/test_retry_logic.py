@@ -89,6 +89,24 @@ class TestAdCreative(unittest.TestCase):
         # 5 is the max tries specified in the tap
         self.assertEqual(5, mocked_account.get_ad_creatives.call_count )
 
+    def test_catch_a_type_error_python311_message_format(self, mocked_sleep):
+        """Same as `test_catch_a_type_error` above, but for the message format Python 3.11+
+        actually raises: `TypeError("string indices must be integers, not 'str'")`. The retry
+        logic must match on the stable prefix, not the exact pre-3.11 string, or this
+        TypeError silently stops being retried on newer Python versions.
+        """
+        # Create the mock and force the function to throw an error
+        mocked_account = Mock()
+        mocked_account.get_ad_creatives = Mock()
+        mocked_account.get_ad_creatives.side_effect = TypeError("string indices must be integers, not 'str'")
+
+        # Initialize the object and call `sync()`
+        ad_creative_object = AdCreative('', mocked_account, '', '')
+        with self.assertRaises(TypeError):
+            ad_creative_object.sync()
+        # 5 is the max tries specified in the tap
+        self.assertEqual(5, mocked_account.get_ad_creatives.call_count )
+
     def test_retries_and_good_response(self, mocked_sleep):
         """Facebook has a class called `FacebookResponse` and it is created from a `requests.Response`. Some
         `facebook_business` functions depend on calling `FacebookResponse.json()`, which sometimes returns a
@@ -169,6 +187,25 @@ class TestInsightJobs(unittest.TestCase):
         mocked_account = Mock()
         mocked_account.get_insights = Mock()
         mocked_account.get_insights.side_effect = TypeError("string indices must be integers")
+
+        # Initialize the object and call `sync()`
+        ad_creative_object = AdsInsights('', mocked_account, '', '', {}, {})
+        with self.assertRaises(TypeError):
+            ad_creative_object.run_job({})
+        # 5 is the max tries specified in the tap
+        self.assertEqual(5, mocked_account.get_insights.call_count )
+
+    def test_retries_on_type_error_python311_message_format(self, mocked_sleep):
+        """Same as `test_retries_on_type_error` above, but for the message format Python 3.11+
+        actually raises: `TypeError("string indices must be integers, not 'str'")`. The retry
+        logic must match on the stable prefix, not the exact pre-3.11 string, or this
+        TypeError silently stops being retried on newer Python versions.
+        """
+
+        # Create the mock and force the function to throw an error
+        mocked_account = Mock()
+        mocked_account.get_insights = Mock()
+        mocked_account.get_insights.side_effect = TypeError("string indices must be integers, not 'str'")
 
         # Initialize the object and call `sync()`
         ad_creative_object = AdsInsights('', mocked_account, '', '', {}, {})
