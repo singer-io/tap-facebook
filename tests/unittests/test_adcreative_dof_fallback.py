@@ -71,6 +71,14 @@ class TestAdCreativeBatchErrorCooldown(unittest.TestCase):
         error = FacebookRequestError('msg', {'relative_url': 'batch'}, 503, {}, '{}')
         self.assertTrue(is_transient_batch_error(error))
 
+    def test_api_flagged_transient_400_error_is_transient(self):
+        """is_transient_batch_error must also honor the API's own is_transient flag, independent
+        of HTTP status - Facebook can mark a 4xx error transient (e.g. a momentary backend hiccup
+        surfaced as a 400), and that must get the same cooldown as a 500/503."""
+        error = FacebookRequestError('msg', {'relative_url': 'batch'}, 400,
+                                      {}, '{"error": {"code": 2, "is_transient": true}}')
+        self.assertTrue(is_transient_batch_error(error))
+
     def test_non_transient_4xx_error_is_not_transient(self):
         error = FacebookRequestError('msg', {'relative_url': 'batch'}, 400,
                                       {}, '{"error": {"code": 190, "error_subcode": 0}}')
@@ -103,6 +111,36 @@ class TestAdCreativeBatchErrorCooldown(unittest.TestCase):
 
         # Exhausted all 5 attempts (as configured on execute_batch), but only the 4 that are
         # followed by a retry pause for the cooldown - not the 5th, which gives up.
+        self.assertEqual(batch.execute.call_count, 5)
+        self.assertEqual(
+            mock_sleep.call_args_list.count(mock.call(ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)), 4)
+
+    @mock.patch('time.sleep')
+    @mock.patch('tap_facebook.singer.resolve_schema_references')
+    @mock.patch('tap_facebook.API')
+    def test_execute_batch_pauses_for_api_flagged_transient_error_regardless_of_http_status(
+            self, mock_api, _, mock_sleep):
+        """The cooldown trigger is separately promised for HTTP 5xx AND for the API's own
+        is_transient flag; this covers the latter with an HTTP 400 so it can't be satisfied by
+        the 500/503 status check alone (removing api_transient_error() from is_transient_batch_error
+        would make this fail while leaving the 500/503-based tests passing)."""
+        stream = AdCreative.__new__(AdCreative)
+        stream.catalog_entry = mock.Mock()
+        stream.fields = lambda: {'id'}
+
+        error = FacebookRequestError('msg', {'relative_url': 'batch'}, 400,
+                                      {}, '{"error": {"code": 2, "is_transient": true}}')
+        self.assertEqual(error.http_status(), 400)
+        self.assertTrue(error.api_transient_error())
+        batch = mock.Mock()
+        batch.execute.side_effect = error
+        mock_api.new_batch.return_value = batch
+
+        obj = mock.Mock()
+        obj.get.return_value = None
+        with self.assertRaises(FacebookRequestError):
+            stream.execute_batch([obj], [], {}, mock.Mock())
+
         self.assertEqual(batch.execute.call_count, 5)
         self.assertEqual(
             mock_sleep.call_args_list.count(mock.call(ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)), 4)
