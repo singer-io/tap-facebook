@@ -1,7 +1,7 @@
 # Changelog
 
 ## 1.27.1
-  * `ads_insights_*` streams: default any missing key property instead of letting the destination reject the record, and disambiguate colliding records (two distinct rows defaulting to the same key) using a content-derived identity so neither is overwritten.
+  * `ads_insights_*` streams: default any missing key property instead of letting the destination reject the record, and disambiguate colliding records (two distinct rows defaulting to the same key) using a content-derived identity so neither is overwritten. When a row omits `campaign_id`/`adset_id` but still has `ad_id`, first try to recover the real value(s) via a direct (cached per `ad_id`) Ad lookup before falling back to the "unknown" sentinel default.
 
 ## 1.27.0
   * `ad_creatives`: when the Graph API rejects `object_story_spec` for a creative (error 100/2446211), re-read only those creatives without that field instead of failing the sync.

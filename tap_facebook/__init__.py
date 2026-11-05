@@ -759,6 +759,59 @@ def advance_bookmark(stream, bookmark_key, date):
     return state
 
 
+# Properties recoverable by looking an ad up directly, keyed by its ad_id, when Insights omits
+# them from a row. Resolved once per distinct ad_id for the life of the sync process and cached
+# here, since the same ad recurs across every day in the sync window (and again across
+# insights_buffer_days reprocessing) - without the cache this would multiply one real gap into
+# many redundant API calls.
+PARENT_ID_PROPERTIES = ('campaign_id', 'adset_id')
+_RESOLVED_AD_PARENT_IDS = {}
+
+
+@retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
+def _fetch_ad_parent_ids(ad_id):
+    '''Looks up an ad's own campaign_id/adset_id directly from the Ad object. Raises
+    FacebookRequestError if the ad itself can no longer be resolved (e.g. genuinely deleted),
+    which the caller treats as an unrecoverable gap and falls back to defaulting.'''
+    return fb_ad.Ad(ad_id).api_get(fields=list(PARENT_ID_PROPERTIES)).export_all_data()
+
+
+def resolve_parent_ids_from_ad(rec, stream_name):
+    '''When an Insights row is missing campaign_id and/or adset_id but still has its ad_id, try to
+    recover the real value(s) with a single lookup (cached per ad_id) against the Ad object
+    itself, instead of immediately falling back to the "unknown" sentinel. Mutates rec in place.
+    Any propert(y/ies) that still can't be resolved this way (ad itself inaccessible, or ad_id
+    also missing) are left as-is for resolve_missing_key_properties to default, same as before.'''
+    ad_id = rec.get('ad_id')
+    missing_parent_ids = [prop for prop in PARENT_ID_PROPERTIES if prop not in rec]
+    if not ad_id or not missing_parent_ids:
+        return
+
+    if ad_id not in _RESOLVED_AD_PARENT_IDS:
+        try:
+            _RESOLVED_AD_PARENT_IDS[ad_id] = _fetch_ad_parent_ids(ad_id)
+        except FacebookRequestError as ex:
+            LOGGER.warning(
+                "%s: ad_id=%s is missing %s in its Insights row; direct ad lookup to recover "
+                "it also failed (%s), so it will be defaulted instead.",
+                stream_name, ad_id, missing_parent_ids, ex,
+            )
+            _RESOLVED_AD_PARENT_IDS[ad_id] = None
+
+    resolved = _RESOLVED_AD_PARENT_IDS[ad_id]
+    if not resolved:
+        return
+
+    for prop in missing_parent_ids:
+        resolved_value = resolved.get(prop)
+        if resolved_value is not None:
+            rec[prop] = resolved_value
+            LOGGER.info(
+                "%s: recovered %s=%s for ad_id=%s via direct ad lookup; Insights had omitted it.",
+                stream_name, prop, resolved_value, ad_id,
+            )
+
+
 def resolve_missing_key_properties(rec, key_properties, params, stream_name):
     '''Defaults any of rec's declared key_properties that Facebook's Insights API omitted instead
     of returning as null, so the record isn't rejected outright by the destination for missing a
@@ -774,9 +827,10 @@ def resolve_missing_key_properties(rec, key_properties, params, stream_name):
             )
             LOGGER.warning(
                 "%s: record (ad_id=%s, date_start=%s) is missing key property '%s'; "
-                "this usually means its owning campaign/ad set/ad has since been "
-                "deleted or archived. Defaulting to '%s' so the record isn't rejected "
-                "by the destination.",
+                "Facebook's Insights API omitted it from the response (root cause is not "
+                "documented by Meta; it may correlate with the owning campaign/ad set/ad "
+                "having since been deleted or archived, but this is unconfirmed). "
+                "Defaulting to '%s' so the record isn't rejected by the destination.",
                 stream_name, rec.get('ad_id'), rec.get('date_start'),
                 key_property, default_value,
             )
@@ -1001,14 +1055,21 @@ class AdsInsights(Stream):
                 #   hourly_stats_aggregated_by_advertiser_time_zone) is dropped
                 #   when impressions stayed at 0 for that bucket all day.
                 # - campaign_id/adset_id (and in rare cases ad_id) can be
-                #   dropped when the owning campaign/ad set/ad has since been
-                #   deleted or archived, so Facebook can no longer resolve the
-                #   parent id to attribute the row to.
+                #   dropped from a row for reasons Facebook does not document.
+                #   The owning campaign/ad set/ad having since been deleted or
+                #   archived is a plausible explanation consistent with observed
+                #   behavior, but it is NOT confirmed by any Meta documentation
+                #   -- treat it as a working hypothesis, not a documented fact.
                 # Since these are declared key properties, a destination will
-                # reject the record outright if any of them are missing.
-                # Default the missing field(s) instead of dropping the record,
-                # so no data is lost; log a warning with context so operators
-                # can see which rows (and likely why) were affected.
+                # reject the record outright if any of them are missing,
+                # regardless of the underlying cause. Default the missing
+                # field(s) instead of dropping the record, so no data is lost;
+                # log a warning with context so operators can see which rows
+                # were affected.
+                # Before defaulting, try to recover a genuinely missing campaign_id/adset_id by
+                # looking the owning ad up directly - cheap, since it's cached per ad_id and only
+                # attempted when needed, and it yields the real value instead of a sentinel.
+                resolve_parent_ids_from_ad(rec, self.name)
                 missing_keys = resolve_missing_key_properties(rec, self.key_properties, params, self.name)
                 # Two (or more) distinct records that are missing the same key propert(y/ies) would
                 # otherwise end up with an identical composite key once each defaults to the same

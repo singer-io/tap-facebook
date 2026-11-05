@@ -8,15 +8,27 @@ campaign_id".
 import unittest
 from unittest.mock import MagicMock, patch
 
+from facebook_business.exceptions import FacebookRequestError
 from singer import Transformer
 from singer.catalog import CatalogEntry
 
+import tap_facebook
 from tap_facebook import (
     AdsInsights,
     DEFAULT_PK_VALUE,
     MISSING_KEY_PROPERTY_DEFAULT,
     transform_date_hook,
 )
+
+
+def _unresolvable_ad_error():
+    """A FacebookRequestError shaped like what _fetch_ad_parent_ids would raise for an ad_id
+    that can no longer be resolved (e.g. genuinely deleted), so the caller falls back to
+    defaulting the missing propert(y/ies) instead."""
+    call = {'method': 'GET', 'relative_url': 'fields=campaign_id,adset_id'}
+    return FacebookRequestError(
+        'msg', call, 400, {}, '{"error": {"code": 100, "error_subcode": 33}}'
+    )
 
 
 class FakeInsightResult:
@@ -44,6 +56,17 @@ class TestMissingKeyPropertyDefault(unittest.TestCase):
         schema={"properties": {"something": {"type": "object"}}},
         metadata=[{"breadcrumb": ("properties", "something"), "metadata": {"selected": True}}],
     )
+
+    def setUp(self):
+        tap_facebook._RESOLVED_AD_PARENT_IDS.clear()
+        self.addCleanup(tap_facebook._RESOLVED_AD_PARENT_IDS.clear)
+        patcher = patch("tap_facebook._fetch_ad_parent_ids")
+        self.mock_fetch_ad_parent_ids = patcher.start()
+        self.addCleanup(patcher.stop)
+        # Default: simulate the ad itself also being unresolvable, so every pre-existing test
+        # below continues to exercise (and verify) the sentinel-defaulting fallback behavior
+        # unless a test explicitly overrides this to exercise the recovery path instead.
+        self.mock_fetch_ad_parent_ids.side_effect = _unresolvable_ad_error()
 
     def _make_stream(self, name, options):
         return AdsInsights(
@@ -303,6 +326,145 @@ class TestMissingKeyPropertyDefault(unittest.TestCase):
         messages = self._iterate(stream, mock_job_params, mock_run_job, [dict(record), dict(record)])
 
         self.assertEqual(messages[0]["record"], messages[1]["record"])
+
+    @patch.object(AdsInsights, "run_job")
+    @patch.object(AdsInsights, "job_params")
+    def test_missing_campaign_id_and_adset_id_recovered_via_ad_lookup(
+        self, mock_job_params, mock_run_job, _mock_sleep
+    ):
+        """When Insights omits campaign_id/adset_id but still returns ad_id, a direct (mocked)
+        Ad lookup that successfully resolves both is used instead of the "unknown" sentinel."""
+        self.mock_fetch_ad_parent_ids.side_effect = None
+        self.mock_fetch_ad_parent_ids.return_value = {"campaign_id": "999", "adset_id": "888"}
+        stream = self._make_stream(
+            "ads_insights_hourly_advertiser",
+            {"primary-keys": ["hourly_stats_aggregated_by_advertiser_time_zone"]},
+        )
+        record = {
+            "ad_id": "123",
+            # campaign_id and adset_id intentionally omitted
+            "date_start": "2026-10-02",
+            "date_stop": "2026-10-02",
+            "hourly_stats_aggregated_by_advertiser_time_zone": "00:00:00 - 00:59:59",
+            "impressions": "10",
+        }
+
+        messages = self._iterate(stream, mock_job_params, mock_run_job, [record])
+
+        written = messages[0]["record"]
+        self.assertEqual("999", written["campaign_id"])
+        self.assertEqual("888", written["adset_id"])
+        self.assertNotEqual(MISSING_KEY_PROPERTY_DEFAULT, written["campaign_id"])
+        self.assertNotEqual(MISSING_KEY_PROPERTY_DEFAULT, written["adset_id"])
+        self.mock_fetch_ad_parent_ids.assert_called_once_with("123")
+
+    @patch.object(AdsInsights, "run_job")
+    @patch.object(AdsInsights, "job_params")
+    def test_ad_lookup_result_is_cached_per_ad_id(
+        self, mock_job_params, mock_run_job, _mock_sleep
+    ):
+        """The same ad_id recurring across multiple rows (as it does across every day in a real
+        sync window) triggers only one ad lookup, not one per row."""
+        self.mock_fetch_ad_parent_ids.side_effect = None
+        self.mock_fetch_ad_parent_ids.return_value = {"campaign_id": "999", "adset_id": "888"}
+        stream = self._make_stream(
+            "ads_insights_hourly_advertiser",
+            {"primary-keys": ["hourly_stats_aggregated_by_advertiser_time_zone"]},
+        )
+        record = {
+            "ad_id": "123",
+            # campaign_id and adset_id intentionally omitted
+            "date_start": "2026-10-02",
+            "date_stop": "2026-10-02",
+            "hourly_stats_aggregated_by_advertiser_time_zone": "00:00:00 - 00:59:59",
+        }
+
+        messages = self._iterate(stream, mock_job_params, mock_run_job, [dict(record), dict(record)])
+
+        for message in messages:
+            self.assertEqual("999", message["record"]["campaign_id"])
+            self.assertEqual("888", message["record"]["adset_id"])
+        self.mock_fetch_ad_parent_ids.assert_called_once_with("123")
+
+    @patch.object(AdsInsights, "run_job")
+    @patch.object(AdsInsights, "job_params")
+    def test_ad_lookup_failure_falls_back_to_default(
+        self, mock_job_params, mock_run_job, _mock_sleep
+    ):
+        """If the owning ad is itself unresolvable (setUp's default mock behavior), the existing
+        sentinel-defaulting fallback still applies - no behavior regression for genuinely gone
+        ads."""
+        stream = self._make_stream(
+            "ads_insights_hourly_advertiser",
+            {"primary-keys": ["hourly_stats_aggregated_by_advertiser_time_zone"]},
+        )
+        record = {
+            "ad_id": "123",
+            # campaign_id and adset_id intentionally omitted
+            "date_start": "2026-10-02",
+            "date_stop": "2026-10-02",
+            "hourly_stats_aggregated_by_advertiser_time_zone": "00:00:00 - 00:59:59",
+        }
+
+        messages = self._iterate(stream, mock_job_params, mock_run_job, [record])
+
+        written = messages[0]["record"]
+        self.assertEqual(MISSING_KEY_PROPERTY_DEFAULT, written["campaign_id"])
+        self.assertEqual(MISSING_KEY_PROPERTY_DEFAULT, written["adset_id"])
+        self.mock_fetch_ad_parent_ids.assert_called_once_with("123")
+
+    @patch.object(AdsInsights, "run_job")
+    @patch.object(AdsInsights, "job_params")
+    def test_ad_lookup_skipped_when_ad_id_also_missing(
+        self, mock_job_params, mock_run_job, _mock_sleep
+    ):
+        """There's nothing to key the ad lookup off of if ad_id is also missing from the row, so
+        it must not be attempted - defaulting applies directly."""
+        stream = self._make_stream(
+            "ads_insights_hourly_advertiser",
+            {"primary-keys": ["hourly_stats_aggregated_by_advertiser_time_zone"]},
+        )
+        record = {
+            # ad_id and campaign_id both intentionally omitted
+            "adset_id": "456",
+            "date_start": "2026-10-02",
+            "date_stop": "2026-10-02",
+            "hourly_stats_aggregated_by_advertiser_time_zone": "00:00:00 - 00:59:59",
+        }
+
+        messages = self._iterate(stream, mock_job_params, mock_run_job, [record])
+
+        written = messages[0]["record"]
+        self.assertEqual(MISSING_KEY_PROPERTY_DEFAULT, written["campaign_id"])
+        self.mock_fetch_ad_parent_ids.assert_not_called()
+
+    @patch.object(AdsInsights, "run_job")
+    @patch.object(AdsInsights, "job_params")
+    def test_ad_lookup_only_fills_the_properties_actually_missing(
+        self, mock_job_params, mock_run_job, _mock_sleep
+    ):
+        """If only campaign_id is missing (adset_id already present), a resolved adset_id from the
+        ad lookup must not overwrite the value Insights already returned."""
+        self.mock_fetch_ad_parent_ids.side_effect = None
+        self.mock_fetch_ad_parent_ids.return_value = {"campaign_id": "999", "adset_id": "OTHER"}
+        stream = self._make_stream(
+            "ads_insights_hourly_advertiser",
+            {"primary-keys": ["hourly_stats_aggregated_by_advertiser_time_zone"]},
+        )
+        record = {
+            "ad_id": "123",
+            "adset_id": "456",
+            # campaign_id intentionally omitted
+            "date_start": "2026-10-02",
+            "date_stop": "2026-10-02",
+            "hourly_stats_aggregated_by_advertiser_time_zone": "00:00:00 - 00:59:59",
+        }
+
+        messages = self._iterate(stream, mock_job_params, mock_run_job, [record])
+
+        written = messages[0]["record"]
+        self.assertEqual("999", written["campaign_id"])
+        self.assertEqual("456", written["adset_id"])
 
 
 if __name__ == "__main__":
