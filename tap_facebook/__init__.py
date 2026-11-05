@@ -216,33 +216,6 @@ def raise_from(singer_error, fb_error):
     raise singer_error(error_message) from fb_error
 
 def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
-    def log_retry_attempt(details):
-        _, exception, _ = sys.exc_info()
-        LOGGER.info(exception)
-        LOGGER.info('Caught retryable error after %s tries. Waiting %s more seconds then retrying...',
-                    details["tries"],
-                    details["wait"])
-
-        if isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
-            LOGGER.info('TypeError due to bad JSON response')
-    def should_retry_api_error(exception):
-        if isinstance(exception, FacebookBadObjectError) or isinstance(exception, Timeout) or isinstance(exception, ConnectionError) or isinstance(exception, AttributeError):
-            return True
-        elif isinstance(exception, FacebookRequestError):
-            return (exception.api_transient_error()
-                    or exception.api_error_subcode() == 99
-                    or exception.http_status() in (500, 503)
-                    # This subcode corresponds to a race condition between AdsInsights job creation and polling
-                    or exception.api_error_subcode() == 33
-                    )
-        elif isinstance(exception, InsightsJobTimeout):
-            return True
-        elif isinstance(exception, InsightsJobFailed):
-            return True
-        elif isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
-            return True
-        return False
-
     return backoff.on_exception(
         backoff_type,
         exception,
@@ -251,6 +224,61 @@ def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
         giveup=lambda exc: not should_retry_api_error(exc),
         **wait_gen_kwargs
     )
+
+def log_retry_attempt(details):
+    _, exception, _ = sys.exc_info()
+    LOGGER.info(exception)
+    LOGGER.info('Caught retryable error after %s tries. Waiting %s more seconds then retrying...',
+                details["tries"],
+                details["wait"])
+
+    if isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
+        LOGGER.info('TypeError due to bad JSON response')
+
+def should_retry_api_error(exception):
+    if isinstance(exception, FacebookBadObjectError) or isinstance(exception, Timeout) or isinstance(exception, ConnectionError) or isinstance(exception, AttributeError):
+        return True
+    elif isinstance(exception, FacebookRequestError):
+        return (exception.api_transient_error()
+                or exception.api_error_subcode() == 99
+                or exception.http_status() in (500, 503)
+                # This subcode corresponds to a race condition between AdsInsights job creation and polling
+                or exception.api_error_subcode() == 33
+                )
+    elif isinstance(exception, InsightsJobTimeout):
+        return True
+    elif isinstance(exception, InsightsJobFailed):
+        return True
+    elif isinstance(exception, TypeError) and str(exception) == "string indices must be integers":
+        return True
+    return False
+
+def adcreative_batch_retry_pattern():
+    '''Like retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5),
+    but additionally pauses for ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS before retrying a transient/5xx
+    batch-endpoint error. on_backoff only fires ahead of an actual retry (not on the final failed
+    attempt that gives up), so this adds at most max_tries - 1 cooldowns, never a cooldown that's
+    immediately followed by giving up without another request.'''
+    def on_backoff(details):
+        log_retry_attempt(details)
+        _, exception, _ = sys.exc_info()
+        if is_transient_batch_error(exception):
+            LOGGER.warning(
+                'Batch request failed with a transient error (%s); pausing for %d seconds to ride '
+                'out the Facebook-side issue before retrying.',
+                exception, ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)
+            time.sleep(ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)
+
+    return backoff.on_exception(
+        backoff.expo,
+        (FacebookRequestError, AttributeError),
+        jitter=None,
+        on_backoff=on_backoff,
+        giveup=lambda exc: not should_retry_api_error(exc),
+        max_tries=5,
+        factor=5,
+    )
+
 
 @attr.s
 class Stream(object):
@@ -411,7 +439,8 @@ class AdCreative(Stream):
             raise
 
     # Retries only this batch (not the whole stream); AttributeError can be raised from api_batch.execute()
-    @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
+    # A transient/5xx error gets an extra cooldown before each retry (see adcreative_batch_retry_pattern)
+    @adcreative_batch_retry_pattern()
     def execute_batch(self, objs, dof_creative_ids, schema, transformer):
         api_batch = API.new_batch()
         for obj in objs:
@@ -422,16 +451,7 @@ class AdCreative(Stream):
                         batch=api_batch,
                         success=partial(batch_record_success, stream=self, transformer=transformer, schema=schema),
                         failure=partial(adcreative_batch_record_failure, dof_creative_ids=dof_creative_ids))
-        try:
-            api_batch.execute()
-        except FacebookRequestError as error:
-            if is_transient_batch_error(error):
-                LOGGER.warning(
-                    'Batch request for %d ad creative(s) failed with a transient error (%s); '
-                    'pausing for %d seconds to ride out the Facebook-side issue before retrying.',
-                    len(objs), error, ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)
-                time.sleep(ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)
-            raise
+        api_batch.execute()
 
     def sync_dof_creatives(self, dof_creative_ids):
         '''Re-reads the creatives whose object_story_spec was rejected, without that field.'''
@@ -450,7 +470,8 @@ class AdCreative(Stream):
             self.execute_dof_batch(dof_creative_ids[start:start + ADCREATIVE_BATCH_SIZE], fields, schema, transformer)
 
     # Retries only this fallback batch, so batches already emitted are not fetched again
-    @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5)
+    # A transient/5xx error gets an extra cooldown before each retry (see adcreative_batch_retry_pattern)
+    @adcreative_batch_retry_pattern()
     def execute_dof_batch(self, creative_ids, fields, schema, transformer):
         api_batch = API.new_batch()
         for creative_id in creative_ids:
@@ -459,16 +480,7 @@ class AdCreative(Stream):
                 batch=api_batch,
                 success=partial(batch_record_success, stream=self, transformer=transformer, schema=schema),
                 failure=batch_record_failure)
-        try:
-            api_batch.execute()
-        except FacebookRequestError as error:
-            if is_transient_batch_error(error):
-                LOGGER.warning(
-                    'DOF fallback batch request for %d ad creative(s) failed with a transient error (%s); '
-                    'pausing for %d seconds to ride out the Facebook-side issue before retrying.',
-                    len(creative_ids), error, ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)
-                time.sleep(ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)
-            raise
+        api_batch.execute()
 
     key_properties = ['id']
 

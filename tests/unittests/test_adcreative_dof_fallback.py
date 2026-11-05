@@ -83,9 +83,10 @@ class TestAdCreativeBatchErrorCooldown(unittest.TestCase):
     @mock.patch('tap_facebook.singer.resolve_schema_references')
     @mock.patch('tap_facebook.API')
     def test_execute_batch_pauses_before_retrying_a_transient_error(self, mock_api, _, mock_sleep):
-        """A transient (500) batch failure should sleep for the dedicated cooldown, every attempt,
-        before the normal retry backoff/giveup logic runs, so a multi-minute Facebook-side blip
-        doesn't exhaust the retry budget and fail the whole stream."""
+        """A transient (500) batch failure should sleep for the dedicated cooldown ahead of each
+        retry, so a multi-minute Facebook-side blip doesn't exhaust the retry budget and fail the
+        whole stream. The cooldown must NOT fire on the final (5th) attempt that gives up, since no
+        further request follows it - that would just add 5 minutes to failure reporting for nothing."""
         stream = AdCreative.__new__(AdCreative)
         stream.catalog_entry = mock.Mock()
         stream.fields = lambda: {'id'}
@@ -100,10 +101,11 @@ class TestAdCreativeBatchErrorCooldown(unittest.TestCase):
         with self.assertRaises(FacebookRequestError):
             stream.execute_batch([obj], [], {}, mock.Mock())
 
-        # Exhausted all 5 retries (as configured on execute_batch), each pausing for the cooldown
+        # Exhausted all 5 attempts (as configured on execute_batch), but only the 4 that are
+        # followed by a retry pause for the cooldown - not the 5th, which gives up.
         self.assertEqual(batch.execute.call_count, 5)
         self.assertEqual(
-            mock_sleep.call_args_list.count(mock.call(ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)), 5)
+            mock_sleep.call_args_list.count(mock.call(ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)), 4)
 
     @mock.patch('time.sleep')
     @mock.patch('tap_facebook.singer.resolve_schema_references')
@@ -127,3 +129,26 @@ class TestAdCreativeBatchErrorCooldown(unittest.TestCase):
 
         self.assertEqual(batch.execute.call_count, 1)
         self.assertNotIn(mock.call(ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS), mock_sleep.call_args_list)
+
+    @mock.patch('time.sleep')
+    @mock.patch('tap_facebook.singer.resolve_schema_references')
+    @mock.patch('tap_facebook.API')
+    def test_execute_dof_batch_pauses_before_retrying_a_transient_error(self, mock_api, _, mock_sleep):
+        """Same cooldown behavior as execute_batch applies to the DOF fallback batch: 4 cooldowns
+        for 5 attempts, none on the final attempt that gives up."""
+        stream = AdCreative.__new__(AdCreative)
+        stream.catalog_entry = mock.Mock()
+        stream.fields = lambda: {'id'}
+
+        error = FacebookRequestError('msg', {'relative_url': 'batch'}, 500, {}, '{}')
+        batch = mock.Mock()
+        batch.execute.side_effect = error
+        mock_api.new_batch.return_value = batch
+
+        with mock.patch('tap_facebook.adcreative.AdCreative'):
+            with self.assertRaises(FacebookRequestError):
+                stream.execute_dof_batch(['1'], ['id'], {}, mock.Mock())
+
+        self.assertEqual(batch.execute.call_count, 5)
+        self.assertEqual(
+            mock_sleep.call_args_list.count(mock.call(ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)), 4)
