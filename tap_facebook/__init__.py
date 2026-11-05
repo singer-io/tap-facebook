@@ -52,6 +52,18 @@ RESULT_RETURN_LIMIT = 100
 
 REQUEST_TIMEOUT = 300
 DEFAULT_PK_VALUE = "00:00:00 - 00:59:59"
+# Fallback default for any other key property (campaign_id, adset_id, ad_id,
+# date_start, or a breakdown dimension other than the hourly one above) that
+# Facebook's Insights API omits from a record. Deliberately non-numeric so it
+# can never collide with a real Facebook object id, and greppable in the
+# destination for follow-up investigation.
+MISSING_KEY_PROPERTY_DEFAULT = "unknown"
+# Per-key-property defaults for fields known to go missing under specific,
+# understood conditions. Any key property not listed here falls back to
+# MISSING_KEY_PROPERTY_DEFAULT.
+MISSING_KEY_PROPERTY_DEFAULTS = {
+    'hourly_stats_aggregated_by_advertiser_time_zone': DEFAULT_PK_VALUE,
+}
 ADCREATIVE_BATCH_SIZE = 50
 
 DOF_ERROR_CODE = 100
@@ -907,11 +919,34 @@ class AdsInsights(Stream):
                 if not min_date_start_for_job or rec['date_stop'] < min_date_start_for_job:
                     min_date_start_for_job = rec['date_stop']
 
-                # When the impressions count remains 0 for the specific campaign throughout the day, 
-                # the API does not return hourly_stats_aggregated_by_advertiser_time_zone in the response.
-                # As it is one of the primary keys, we need to ensure it is present.
-                if self.name == "ads_insights_hourly_advertiser" and "hourly_stats_aggregated_by_advertiser_time_zone" not in rec:
-                    rec["hourly_stats_aggregated_by_advertiser_time_zone"] = DEFAULT_PK_VALUE
+                # Facebook's Insights API can omit one or more declared key
+                # properties from a record instead of returning them as null:
+                # - The breakdown dimension itself (e.g.
+                #   hourly_stats_aggregated_by_advertiser_time_zone) is dropped
+                #   when impressions stayed at 0 for that bucket all day.
+                # - campaign_id/adset_id (and in rare cases ad_id) can be
+                #   dropped when the owning campaign/ad set/ad has since been
+                #   deleted or archived, so Facebook can no longer resolve the
+                #   parent id to attribute the row to.
+                # Since these are declared key properties, a destination will
+                # reject the record outright if any of them are missing.
+                # Default the missing field(s) instead of dropping the record,
+                # so no data is lost; log a warning with context so operators
+                # can see which rows (and likely why) were affected.
+                for key_property in self.key_properties:
+                    if key_property not in rec:
+                        default_value = MISSING_KEY_PROPERTY_DEFAULTS.get(
+                            key_property, MISSING_KEY_PROPERTY_DEFAULT
+                        )
+                        LOGGER.warning(
+                            "%s: record (ad_id=%s, date_start=%s) is missing key property '%s'; "
+                            "this usually means its owning campaign/ad set/ad has since been "
+                            "deleted or archived. Defaulting to '%s' so the record isn't rejected "
+                            "by the destination.",
+                            self.name, rec.get('ad_id'), rec.get('date_start'),
+                            key_property, default_value,
+                        )
+                        rec[key_property] = default_value
 
                 yield {'record': rec}
             LOGGER.info('Got %d results for insights job', count)

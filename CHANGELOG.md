@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.27.1
+  * `ads_insights_*` streams: default any missing key property (not just the hourly breakdown dimension) instead of letting the destination reject the record. Fixes `Record for table ads_insights_hourly_advertiser is missing key property campaign_id`, seen when Facebook omits `campaign_id`/`adset_id` for a row whose owning campaign/ad set has since been deleted or archived.
+
 ## 1.27.0
   * `ad_creatives`: when the Graph API rejects `object_story_spec` for a creative (error 100/2446211), re-read only those creatives without that field instead of failing the sync.
   * `ad_creatives`: retry only the failed batch (not the whole stream) on `FacebookRequestError`/`AttributeError`, and retry fetching later pages of the creatives cursor separately so pending objects are kept.
