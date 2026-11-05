@@ -935,8 +935,12 @@ class AdsInsights(Stream):
                 # can see which rows (and likely why) were affected.
                 for key_property in self.key_properties:
                     if key_property not in rec:
-                        default_value = MISSING_KEY_PROPERTY_DEFAULTS.get(
-                            key_property, MISSING_KEY_PROPERTY_DEFAULT
+                        default_value = (
+                            params['time_ranges'][0]['since']
+                            if key_property == 'date_start'
+                            else MISSING_KEY_PROPERTY_DEFAULTS.get(
+                                key_property, MISSING_KEY_PROPERTY_DEFAULT
+                            )
                         )
                         LOGGER.warning(
                             "%s: record (ad_id=%s, date_start=%s) is missing key property '%s'; "
