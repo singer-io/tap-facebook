@@ -163,6 +163,12 @@ TRANSIENT_INSIGHTS_JOB_ERROR_CODES = {1, 2}
 RATE_LIMITED_INSIGHTS_JOB_ERROR_CODES = {4, 17, 341}
 INSIGHTS_RATE_LIMIT_PAUSE_SECONDS = 5 * 60
 
+# Extra cooldown applied (on top of execute_batch/execute_dof_batch's normal exponential
+# backoff) when the AdCreative batch endpoint itself fails with a transient/5xx error, so a
+# multi-minute Facebook-side blip doesn't exhaust the retry budget and fail the whole stream.
+# Mirrors the Insights jobs' INSIGHTS_RATE_LIMIT_PAUSE_SECONDS cooldown pattern above.
+ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS = 5 * 60
+
 def transform_datetime_string(dts):
     parsed_dt = dateutil.parser.parse(dts)
     if parsed_dt.tzinfo is None:
@@ -325,6 +331,14 @@ def is_dof_object_story_spec_error(error):
             and error.api_error_subcode() == DOF_ERROR_SUBCODE)
 
 
+def is_transient_batch_error(error):
+    '''True for Graph API errors that are typically transient/service-level (HTTP 500/503, or
+    the API's own transient_error flag) rather than a permanent per-object error. Used to decide
+    whether a batch failure warrants an extra cooldown before the normal retry backoff.'''
+    return (isinstance(error, FacebookRequestError)
+            and (error.api_transient_error() or error.http_status() in (500, 503)))
+
+
 def creative_id_from_response(response):
     '''A batch response only carries the call that produced it, e.g. relative_url
     "<creative_id>?fields=..."; the creative id is the last path segment.'''
@@ -408,7 +422,16 @@ class AdCreative(Stream):
                         batch=api_batch,
                         success=partial(batch_record_success, stream=self, transformer=transformer, schema=schema),
                         failure=partial(adcreative_batch_record_failure, dof_creative_ids=dof_creative_ids))
-        api_batch.execute()
+        try:
+            api_batch.execute()
+        except FacebookRequestError as error:
+            if is_transient_batch_error(error):
+                LOGGER.warning(
+                    'Batch request for %d ad creative(s) failed with a transient error (%s); '
+                    'pausing for %d seconds to ride out the Facebook-side issue before retrying.',
+                    len(objs), error, ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)
+                time.sleep(ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)
+            raise
 
     def sync_dof_creatives(self, dof_creative_ids):
         '''Re-reads the creatives whose object_story_spec was rejected, without that field.'''
@@ -436,7 +459,16 @@ class AdCreative(Stream):
                 batch=api_batch,
                 success=partial(batch_record_success, stream=self, transformer=transformer, schema=schema),
                 failure=batch_record_failure)
-        api_batch.execute()
+        try:
+            api_batch.execute()
+        except FacebookRequestError as error:
+            if is_transient_batch_error(error):
+                LOGGER.warning(
+                    'DOF fallback batch request for %d ad creative(s) failed with a transient error (%s); '
+                    'pausing for %d seconds to ride out the Facebook-side issue before retrying.',
+                    len(creative_ids), error, ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)
+                time.sleep(ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)
+            raise
 
     key_properties = ['id']
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.27.2
+  * `ad_creatives`: add a dedicated cooldown pause (`ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS`, 5 minutes) before retrying a batch (`execute_batch`/`execute_dof_batch`) that failed with a transient/5xx Graph API error, mirroring the Insights jobs' rate-limit cooldown pattern, so a multi-minute Facebook-side outage doesn't exhaust the retry budget and fail the whole stream.
+  * Add unit tests for the above.
+
 ## 1.27.0
   * `ad_creatives`: when the Graph API rejects `object_story_spec` for a creative (error 100/2446211), re-read only those creatives without that field instead of failing the sync.
   * `ad_creatives`: retry only the failed batch (not the whole stream) on `FacebookRequestError`/`AttributeError`, and retry fetching later pages of the creatives cursor separately so pending objects are kept.
