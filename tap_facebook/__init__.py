@@ -215,12 +215,21 @@ def raise_from(singer_error, fb_error):
         error_message = str(fb_error)
     raise singer_error(error_message) from fb_error
 
-def retry_pattern(backoff_type, exception, **wait_gen_kwargs):
+def retry_pattern(backoff_type, exception, on_backoff=None, **wait_gen_kwargs):
+    '''Builds a backoff.on_exception decorator that logs every retry attempt via
+    log_retry_attempt. Pass on_backoff to additionally run custom logic (e.g. an extra cooldown
+    for a specific error class) ahead of each actual retry; it still only fires before a retry
+    that will actually happen, never on the final attempt that gives up.'''
+    def handle_backoff(details):
+        log_retry_attempt(details)
+        if on_backoff:
+            on_backoff(details)
+
     return backoff.on_exception(
         backoff_type,
         exception,
         jitter=None,
-        on_backoff=log_retry_attempt,
+        on_backoff=handle_backoff,
         giveup=lambda exc: not should_retry_api_error(exc),
         **wait_gen_kwargs
     )
@@ -253,31 +262,19 @@ def should_retry_api_error(exception):
         return True
     return False
 
-def adcreative_batch_retry_pattern():
-    '''Like retry_pattern(backoff.expo, (FacebookRequestError, AttributeError), max_tries=5, factor=5),
-    but additionally pauses for ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS before retrying a transient/5xx
-    batch-endpoint error. on_backoff only fires ahead of an actual retry (not on the final failed
-    attempt that gives up), so this adds at most max_tries - 1 cooldowns, never a cooldown that's
-    immediately followed by giving up without another request.'''
-    def on_backoff(details):
-        log_retry_attempt(details)
-        _, exception, _ = sys.exc_info()
-        if is_transient_batch_error(exception):
-            LOGGER.warning(
-                'Batch request failed with a transient error (%s); pausing for %d seconds to ride '
-                'out the Facebook-side issue before retrying.',
-                exception, ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)
-            time.sleep(ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)
-
-    return backoff.on_exception(
-        backoff.expo,
-        (FacebookRequestError, AttributeError),
-        jitter=None,
-        on_backoff=on_backoff,
-        giveup=lambda exc: not should_retry_api_error(exc),
-        max_tries=5,
-        factor=5,
-    )
+def cooldown_transient_batch_error(details):
+    '''on_backoff hook for retry_pattern: when the AdCreative batch endpoint fails with a
+    transient/5xx error, pauses for ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS on top of the normal
+    exponential backoff, so a multi-minute Facebook-side blip doesn't exhaust the retry budget
+    and fail the whole stream. Only called ahead of an actual retry (never on the final failed
+    attempt that gives up), so this adds at most max_tries - 1 cooldowns.'''
+    _, exception, _ = sys.exc_info()
+    if is_transient_batch_error(exception):
+        LOGGER.warning(
+            'Batch request failed with a transient error (%s); pausing for %d seconds to ride '
+            'out the Facebook-side issue before retrying.',
+            exception, ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)
+        time.sleep(ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS)
 
 
 @attr.s
@@ -439,8 +436,9 @@ class AdCreative(Stream):
             raise
 
     # Retries only this batch (not the whole stream); AttributeError can be raised from api_batch.execute()
-    # A transient/5xx error gets an extra cooldown before each retry (see adcreative_batch_retry_pattern)
-    @adcreative_batch_retry_pattern()
+    # A transient/5xx error gets an extra cooldown before each retry (see cooldown_transient_batch_error)
+    @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError),
+                   on_backoff=cooldown_transient_batch_error, max_tries=5, factor=5)
     def execute_batch(self, objs, dof_creative_ids, schema, transformer):
         api_batch = API.new_batch()
         for obj in objs:
@@ -470,8 +468,9 @@ class AdCreative(Stream):
             self.execute_dof_batch(dof_creative_ids[start:start + ADCREATIVE_BATCH_SIZE], fields, schema, transformer)
 
     # Retries only this fallback batch, so batches already emitted are not fetched again
-    # A transient/5xx error gets an extra cooldown before each retry (see adcreative_batch_retry_pattern)
-    @adcreative_batch_retry_pattern()
+    # A transient/5xx error gets an extra cooldown before each retry (see cooldown_transient_batch_error)
+    @retry_pattern(backoff.expo, (FacebookRequestError, AttributeError),
+                   on_backoff=cooldown_transient_batch_error, max_tries=5, factor=5)
     def execute_dof_batch(self, creative_ids, fields, schema, transformer):
         api_batch = API.new_batch()
         for creative_id in creative_ids:
