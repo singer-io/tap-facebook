@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import json
-import hashlib
+import itertools
 import os
 import os.path
 import sys
@@ -53,19 +53,36 @@ RESULT_RETURN_LIMIT = 100
 
 REQUEST_TIMEOUT = 300
 DEFAULT_PK_VALUE = "00:00:00 - 00:59:59"
-# Fallback default for any other key property (campaign_id, adset_id, ad_id,
-# date_start, or a breakdown dimension other than the hourly one above) that
-# Facebook's Insights API omits from a record. Deliberately non-numeric so it
-# can never collide with a real Facebook object id, and greppable in the
-# destination for follow-up investigation.
-MISSING_KEY_PROPERTY_DEFAULT = "unknown"
+# Prefix for the generic fallback default applied to any key property (campaign_id, adset_id,
+# ad_id, date_start, or a breakdown dimension other than the hourly one above) that Facebook's
+# Insights API omits from a record. A single shared static value here (e.g. just "unknown") would
+# give every record missing the same key property(ies) an identical composite key once defaulted,
+# so a destination doing an upsert would silently collapse distinct records down to one and lose
+# data. _generate_missing_key_property_value() below instead appends the current timestamp (plus a
+# monotonic counter as a tie-breaker, since multiple rows can be processed within the same
+# timestamp) to this prefix, so every defaulted record keeps its own distinct, never-overwritten
+# composite key. Greppable in the destination for follow-up investigation either way.
+MISSING_KEY_PROPERTY_DEFAULT = "_unknown_"
 # Per-key-property defaults for fields known to go missing under specific,
-# understood conditions. Any key property not listed here falls back to
-# MISSING_KEY_PROPERTY_DEFAULT.
+# understood conditions. Any key property not listed here falls back to a
+# freshly generated, unique MISSING_KEY_PROPERTY_DEFAULT-prefixed value.
 MISSING_KEY_PROPERTY_DEFAULTS = {
     'hourly_stats_aggregated_by_advertiser_time_zone': DEFAULT_PK_VALUE,
 }
 ADCREATIVE_BATCH_SIZE = 50
+
+# Monotonic tie-breaker appended to each generated MISSING_KEY_PROPERTY_DEFAULT value, so two rows
+# defaulted within the same timestamp still don't collide with each other.
+_MISSING_KEY_PROPERTY_SEQUENCE = itertools.count()
+
+
+def _generate_missing_key_property_value():
+    '''Generates a unique sentinel for a single missing key property, instead of reusing one
+    static value for every record that's missing it. See MISSING_KEY_PROPERTY_DEFAULT above for
+    why uniqueness here matters.'''
+    return '{}{}_{}'.format(
+        MISSING_KEY_PROPERTY_DEFAULT, time.time_ns(), next(_MISSING_KEY_PROPERTY_SEQUENCE)
+    )
 
 DOF_ERROR_CODE = 100
 DOF_ERROR_SUBCODE = 2446211
@@ -815,16 +832,21 @@ def resolve_parent_ids_from_ad(rec, stream_name):
 def resolve_missing_key_properties(rec, key_properties, params, stream_name):
     '''Defaults any of rec's declared key_properties that Facebook's Insights API omitted instead
     of returning as null, so the record isn't rejected outright by the destination for missing a
-    declared key. Mutates rec in place and returns the list of key properties that were defaulted
-    (empty if none were missing).'''
+    declared key. Any key property without a specific understood default (see
+    MISSING_KEY_PROPERTY_DEFAULTS) gets a freshly generated, unique value (see
+    _generate_missing_key_property_value) instead of a single shared sentinel, so distinct records
+    missing the same key property(ies) never collapse onto the same composite key and silently
+    overwrite one another in the destination. Mutates rec in place and returns the list of key
+    properties that were defaulted (empty if none were missing).'''
     missing_keys = []
     for key_property in key_properties:
         if key_property not in rec:
-            default_value = (
-                params['time_ranges'][0]['since']
-                if key_property == 'date_start'
-                else MISSING_KEY_PROPERTY_DEFAULTS.get(key_property, MISSING_KEY_PROPERTY_DEFAULT)
-            )
+            if key_property == 'date_start':
+                default_value = params['time_ranges'][0]['since']
+            elif key_property in MISSING_KEY_PROPERTY_DEFAULTS:
+                default_value = MISSING_KEY_PROPERTY_DEFAULTS[key_property]
+            else:
+                default_value = _generate_missing_key_property_value()
             LOGGER.warning(
                 "%s: record (ad_id=%s, date_start=%s) is missing key property '%s'; "
                 "Facebook's Insights API omitted it from the response (root cause is not "
@@ -837,50 +859,6 @@ def resolve_missing_key_properties(rec, key_properties, params, stream_name):
             rec[key_property] = default_value
             missing_keys.append(key_property)
     return missing_keys
-
-
-def disambiguate_colliding_composite_key(rec, key_properties, missing_keys, seen_composite_keys, stream_name):
-    '''Two distinct records that are both missing the same key propert(y/ies) can end up with an
-    identical composite key once each is defaulted to the same shared sentinel value (see
-    resolve_missing_key_properties above); a destination doing an upsert on that key would then
-    silently overwrite one of the rows with the other. Facebook gives us no real identity for an
-    omitted field, so when a genuine collision is detected (two records resolving to the same key
-    but with different content) this falls back to a stable identity derived from the record's own
-    content (a hash of its fields) to keep the composite key unique without dropping any data, and
-    logs loudly so the collision is visible to operators. Records that resolve to the same key AND
-    have identical content are left untouched and allowed to keep sharing it, since they're
-    genuine duplicates with no data to distinguish them by. seen_composite_keys is a dict the
-    caller owns and passes back in on every call: it maps each resolved composite key seen so far
-    to the set of content hashes already emitted under that key, for the current sync.'''
-    if not missing_keys:
-        return
-    composite_key = tuple(rec.get(key_property) for key_property in key_properties)
-    content_hash = hashlib.sha1(
-        json.dumps(rec, sort_keys=True, default=str).encode('utf-8')
-    ).hexdigest()[:8]
-
-    seen_hashes_for_key = seen_composite_keys.setdefault(composite_key, set())
-    if content_hash in seen_hashes_for_key:
-        # Exact repeat of a record already emitted under this key: a genuine duplicate, not a
-        # collision between distinct rows - sharing the composite key is fine.
-        return
-    is_collision = bool(seen_hashes_for_key)
-    seen_hashes_for_key.add(content_hash)
-    if not is_collision:
-        # First distinct content seen for this resolved composite key: nothing to disambiguate.
-        return
-
-    LOGGER.error(
-        "%s: record (ad_id=%s, date_start=%s) missing key properties %s would collide with a "
-        "previously emitted, different record's composite key %s; disambiguating using a "
-        "content-derived identity (%s) so the duplicate composite key doesn't cause the "
-        "destination to overwrite one of the rows.",
-        stream_name, rec.get('ad_id'), rec.get('date_start'),
-        missing_keys, composite_key, content_hash,
-    )
-    for key_property in missing_keys:
-        rec[key_property] = '{}-{}'.format(rec[key_property], content_hash)
-
 
 
 @attr.s
@@ -1033,10 +1011,6 @@ class AdsInsights(Stream):
         return job
 
     def __iter__(self):
-        # Tracks how many times each resolved composite key (after defaulting any missing key
-        # properties below) has been seen so far in this sync, so a collision between two distinct
-        # records can be detected and disambiguated instead of silently overwriting one of them.
-        seen_composite_keys = {}
         for params in self.job_params():
             with metrics.job_timer('insights'):
                 job = self.run_job(params)
@@ -1070,12 +1044,10 @@ class AdsInsights(Stream):
                 # looking the owning ad up directly - cheap, since it's cached per ad_id and only
                 # attempted when needed, and it yields the real value instead of a sentinel.
                 resolve_parent_ids_from_ad(rec, self.name)
-                missing_keys = resolve_missing_key_properties(rec, self.key_properties, params, self.name)
-                # Two (or more) distinct records that are missing the same key propert(y/ies) would
-                # otherwise end up with an identical composite key once each defaults to the same
-                # sentinel value, letting a destination's upsert silently overwrite one of them.
-                disambiguate_colliding_composite_key(rec, self.key_properties, missing_keys,
-                                                     seen_composite_keys, self.name)
+                # Any key propert(y/ies) still missing after the ad-lookup recovery above get a
+                # freshly generated, unique default (see resolve_missing_key_properties), so
+                # distinct records never collapse onto the same composite key in the destination.
+                resolve_missing_key_properties(rec, self.key_properties, params, self.name)
 
                 yield {'record': rec}
             LOGGER.info('Got %d results for insights job', count)

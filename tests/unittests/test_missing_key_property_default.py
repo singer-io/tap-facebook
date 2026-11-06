@@ -110,7 +110,7 @@ class TestMissingKeyPropertyDefault(unittest.TestCase):
 
         self.assertEqual(1, len(messages))
         written = messages[0]["record"]
-        self.assertEqual(MISSING_KEY_PROPERTY_DEFAULT, written["campaign_id"])
+        self.assertTrue(written["campaign_id"].startswith(MISSING_KEY_PROPERTY_DEFAULT))
         self.assertEqual("123", written["ad_id"])
         self.assertEqual("456", written["adset_id"])
         self.assertEqual("10", written["impressions"])
@@ -185,7 +185,7 @@ class TestMissingKeyPropertyDefault(unittest.TestCase):
         messages = self._iterate(stream, mock_job_params, mock_run_job, [record])
 
         written = messages[0]["record"]
-        self.assertEqual(MISSING_KEY_PROPERTY_DEFAULT, written["campaign_id"])
+        self.assertTrue(written["campaign_id"].startswith(MISSING_KEY_PROPERTY_DEFAULT))
         self.assertEqual("US", written["country"])
 
     @patch.object(AdsInsights, "run_job")
@@ -215,7 +215,7 @@ class TestMissingKeyPropertyDefault(unittest.TestCase):
 
         written = messages[0]["record"]
         self.assertEqual("2026-10-02", written["date_start"])
-        self.assertNotEqual(MISSING_KEY_PROPERTY_DEFAULT, written["date_start"])
+        self.assertFalse(written["date_start"].startswith(MISSING_KEY_PROPERTY_DEFAULT))
 
         schema = {
             "type": "object",
@@ -227,57 +227,15 @@ class TestMissingKeyPropertyDefault(unittest.TestCase):
 
     @patch.object(AdsInsights, "run_job")
     @patch.object(AdsInsights, "job_params")
-    def test_colliding_composite_keys_are_disambiguated_not_overwritten(
+    def test_multiple_records_missing_same_key_get_distinct_composite_keys(
         self, mock_job_params, mock_run_job, _mock_sleep
     ):
-        """Two distinct records that are both missing campaign_id, with otherwise-identical key
-        fields (same ad_id/date_start/hourly bucket), would resolve to an identical composite key
-        once both default campaign_id to the same shared sentinel - letting a destination upsert
-        silently overwrite one of them despite their different impressions. Verify both are instead
-        emitted with distinct composite keys, with the first-seen record keeping the plain sentinel
-        (so existing single-record behavior/tests are unaffected)."""
-        stream = self._make_stream(
-            "ads_insights_hourly_advertiser",
-            {"primary-keys": ["hourly_stats_aggregated_by_advertiser_time_zone"]},
-        )
-        record_a = {
-            "ad_id": "123",
-            "adset_id": "456",
-            # campaign_id intentionally omitted on both records
-            "date_start": "2026-10-02",
-            "date_stop": "2026-10-02",
-            "hourly_stats_aggregated_by_advertiser_time_zone": "00:00:00 - 00:59:59",
-            "impressions": "0",
-        }
-        record_b = dict(record_a, impressions="37")
-
-        messages = self._iterate(stream, mock_job_params, mock_run_job, [record_a, record_b])
-
-        self.assertEqual(2, len(messages))
-        written_a, written_b = messages[0]["record"], messages[1]["record"]
-
-        # The first record seen at a given resolved key keeps the plain shared sentinel.
-        self.assertEqual(MISSING_KEY_PROPERTY_DEFAULT, written_a["campaign_id"])
-        # The second, colliding record is disambiguated so it no longer shares a composite key.
-        self.assertNotEqual(written_a["campaign_id"], written_b["campaign_id"])
-        self.assertTrue(written_b["campaign_id"].startswith(MISSING_KEY_PROPERTY_DEFAULT))
-
-        key_properties = stream.key_properties
-        composite_key_a = tuple(written_a[kp] for kp in key_properties)
-        composite_key_b = tuple(written_b[kp] for kp in key_properties)
-        self.assertNotEqual(composite_key_a, composite_key_b)
-
-        # Non-key data must still be preserved untouched on both records.
-        self.assertEqual("0", written_a["impressions"])
-        self.assertEqual("37", written_b["impressions"])
-
-    @patch.object(AdsInsights, "run_job")
-    @patch.object(AdsInsights, "job_params")
-    def test_three_colliding_records_all_get_distinct_composite_keys(
-        self, mock_job_params, mock_run_job, _mock_sleep
-    ):
-        """More than two records colliding on the same resolved key are all pairwise disambiguated,
-        not just the second one relative to the first."""
+        """Several distinct records that are all missing campaign_id, with otherwise-identical key
+        fields (same ad_id/date_start/hourly bucket), must NOT resolve to the same composite key -
+        a destination upsert would otherwise silently overwrite all but one of them. Each defaulted
+        campaign_id is generated fresh per record (see _generate_missing_key_property_value), so
+        every record keeps its own distinct composite key without needing any special-cased
+        collision detection."""
         stream = self._make_stream(
             "ads_insights_hourly_advertiser",
             {"primary-keys": ["hourly_stats_aggregated_by_advertiser_time_zone"]},
@@ -297,19 +255,27 @@ class TestMissingKeyPropertyDefault(unittest.TestCase):
 
         messages = self._iterate(stream, mock_job_params, mock_run_job, records)
 
+        self.assertEqual(3, len(messages))
+        for message in messages:
+            self.assertTrue(message["record"]["campaign_id"].startswith(MISSING_KEY_PROPERTY_DEFAULT))
+
         key_properties = stream.key_properties
         composite_keys = [tuple(msg["record"][kp] for kp in key_properties) for msg in messages]
-        self.assertEqual(3, len(composite_keys))
         self.assertEqual(len(composite_keys), len(set(composite_keys)))
+
+        # Non-key data must still be preserved untouched on every record.
+        self.assertEqual(["0", "5", "9"], [msg["record"]["impressions"] for msg in messages])
 
     @patch.object(AdsInsights, "run_job")
     @patch.object(AdsInsights, "job_params")
-    def test_genuinely_duplicate_records_are_not_artificially_split(
+    def test_fully_duplicate_records_missing_same_key_also_get_distinct_sentinels(
         self, mock_job_params, mock_run_job, _mock_sleep
     ):
-        """Two records that are truly full duplicates (identical content, not just identical
-        declared key fields) have no distinguishing data to derive a stable identity from, so
-        they're allowed to keep sharing a composite key - they're legitimately mergeable."""
+        """Even two records with otherwise fully identical content (not just identical declared
+        key fields) each get their own uniquely generated campaign_id default, since there's no
+        way to tell from the Insights response alone whether they're genuine duplicates or two
+        distinct rows that merely look alike - defaulting to a shared value in either case risks
+        the destination collapsing distinct records together."""
         stream = self._make_stream(
             "ads_insights_hourly_advertiser",
             {"primary-keys": ["hourly_stats_aggregated_by_advertiser_time_zone"]},
@@ -325,7 +291,10 @@ class TestMissingKeyPropertyDefault(unittest.TestCase):
 
         messages = self._iterate(stream, mock_job_params, mock_run_job, [dict(record), dict(record)])
 
-        self.assertEqual(messages[0]["record"], messages[1]["record"])
+        written_a, written_b = messages[0]["record"], messages[1]["record"]
+        self.assertNotEqual(written_a["campaign_id"], written_b["campaign_id"])
+        self.assertTrue(written_a["campaign_id"].startswith(MISSING_KEY_PROPERTY_DEFAULT))
+        self.assertTrue(written_b["campaign_id"].startswith(MISSING_KEY_PROPERTY_DEFAULT))
 
     @patch.object(AdsInsights, "run_job")
     @patch.object(AdsInsights, "job_params")
@@ -354,8 +323,8 @@ class TestMissingKeyPropertyDefault(unittest.TestCase):
         written = messages[0]["record"]
         self.assertEqual("999", written["campaign_id"])
         self.assertEqual("888", written["adset_id"])
-        self.assertNotEqual(MISSING_KEY_PROPERTY_DEFAULT, written["campaign_id"])
-        self.assertNotEqual(MISSING_KEY_PROPERTY_DEFAULT, written["adset_id"])
+        self.assertFalse(written["campaign_id"].startswith(MISSING_KEY_PROPERTY_DEFAULT))
+        self.assertFalse(written["adset_id"].startswith(MISSING_KEY_PROPERTY_DEFAULT))
         self.mock_fetch_ad_parent_ids.assert_called_once_with("123")
 
     @patch.object(AdsInsights, "run_job")
@@ -409,8 +378,8 @@ class TestMissingKeyPropertyDefault(unittest.TestCase):
         messages = self._iterate(stream, mock_job_params, mock_run_job, [record])
 
         written = messages[0]["record"]
-        self.assertEqual(MISSING_KEY_PROPERTY_DEFAULT, written["campaign_id"])
-        self.assertEqual(MISSING_KEY_PROPERTY_DEFAULT, written["adset_id"])
+        self.assertTrue(written["campaign_id"].startswith(MISSING_KEY_PROPERTY_DEFAULT))
+        self.assertTrue(written["adset_id"].startswith(MISSING_KEY_PROPERTY_DEFAULT))
         self.mock_fetch_ad_parent_ids.assert_called_once_with("123")
 
     @patch.object(AdsInsights, "run_job")
@@ -435,7 +404,7 @@ class TestMissingKeyPropertyDefault(unittest.TestCase):
         messages = self._iterate(stream, mock_job_params, mock_run_job, [record])
 
         written = messages[0]["record"]
-        self.assertEqual(MISSING_KEY_PROPERTY_DEFAULT, written["campaign_id"])
+        self.assertTrue(written["campaign_id"].startswith(MISSING_KEY_PROPERTY_DEFAULT))
         self.mock_fetch_ad_parent_ids.assert_not_called()
 
     @patch.object(AdsInsights, "run_job")
