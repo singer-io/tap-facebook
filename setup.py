@@ -10,6 +10,7 @@ setup(name='tap-facebook',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       py_modules=['tap_facebook'],
       install_requires=[
+          'aiohttp>=3.14.4',
           'attrs==26.1.0',
           'backoff==2.2.1',
           'facebook_business==25.0.1',
