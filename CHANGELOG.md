@@ -1,8 +1,12 @@
 # Changelog
 
-## 1.27.2
+## 1.27.1
+  * Fix unhandled `TypeError: string indices must be integers(, not 'str')` crash during discovery caused by a known `facebook_business` SDK pagination bug combined with Python 3.11+'s changed `TypeError` message format
+  * Add retry protection (`get_ad_accounts()`) around the account-discovery API call, matching the retry coverage already applied to other API calls
+  * Make `retry_pattern()`'s error-message matching version-agnostic (`str.startswith(...)` instead of exact match) so retries work on Python 3.11+ as well as older versions
+  * Add a safety net in `main_impl()` that surfaces a persistent instance of this known SDK bug as a dedicated `TapFacebookSDKPaginationException` instead of an unhandled crash (not a `SingerConfigurationError`, since this is not a user configuration problem)
+  * `ads_insights_*` streams: default any missing key property instead of letting the destination reject the record, and disambiguate colliding records (two distinct rows defaulting to the same key) using a content-derived identity so neither is overwritten. When a row omits `campaign_id`/`adset_id` but still has `ad_id`, first try to recover the real value(s) via a direct (cached per `ad_id`) Ad lookup before falling back to the "unknown" sentinel default.
   * `ad_creatives`: add a dedicated cooldown pause (`ADCREATIVE_BATCH_ERROR_PAUSE_SECONDS`, 5 minutes) before retrying a batch (`execute_batch`/`execute_dof_batch`) that failed with a transient/5xx Graph API error, mirroring the Insights jobs' rate-limit cooldown pattern, so a multi-minute Facebook-side outage doesn't exhaust the retry budget and fail the whole stream.
-  * Add unit tests for the above.
 
 ## 1.27.0
   * `ad_creatives`: when the Graph API rejects `object_story_spec` for a creative (error 100/2446211), re-read only those creatives without that field instead of failing the sync.
