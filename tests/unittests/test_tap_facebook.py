@@ -67,6 +67,28 @@ class TestAdsInsights(unittest.TestCase):
 
         self.assertEqual(31, len(list(insights.job_params())))
 
+    def _first_job_params(self, name):
+        insights = AdsInsights(
+            name=name,
+            account=None,
+            stream_alias=name,
+            options=tap_facebook.INSIGHTS_BREAKDOWNS_OPTIONS[name],
+            catalog_entry=self.fake_catalog_entry,
+            state={'bookmarks': {name: {'date_start': pendulum.today().to_date_string()}}})
+        return next(insights.job_params())
+
+    def test_hourly_advertiser_requests_only_action_type_breakdown(self):
+        params = self._first_job_params('ads_insights_hourly_advertiser')
+        self.assertEqual(params['action_breakdowns'], ['action_type'])
+        self.assertEqual(params['breakdowns'], ['hourly_stats_aggregated_by_advertiser_time_zone'])
+
+    def test_other_insights_streams_keep_all_action_breakdowns(self):
+        for name in tap_facebook.INSIGHTS_BREAKDOWNS_OPTIONS:
+            if name == 'ads_insights_hourly_advertiser':
+                continue
+            params = self._first_job_params(name)
+            self.assertEqual(params['action_breakdowns'], tap_facebook.ALL_ACTION_BREAKDOWNS, name)
+
 
 class TestPrimaryKeyInclusion(unittest.TestCase):
 
