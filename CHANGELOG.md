@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.27.1
+  * `ads_insights_hourly_advertiser`: request only the `action_type` action breakdown. Since 2026-11-15 Meta rejects (undocumented) `hourly_stats_aggregated_by_advertiser_time_zone` combined with `action_target_id`/`action_destination` (error 2, subcode 1504041 "Invalid breakdowns"), which caused hourly rows to load with zero spend/impressions.
+  * Insights streams can now override `action_breakdowns` per stream via `INSIGHTS_BREAKDOWNS_OPTIONS`.
+
 ## 1.27.0
   * `ad_creatives`: when the Graph API rejects `object_story_spec` for a creative (error 100/2446211), re-read only those creatives without that field instead of failing the sync.
   * `ad_creatives`: retry only the failed batch (not the whole stream) on `FacebookRequestError`/`AttributeError`, and retry fetching later pages of the creatives cursor separately so pending objects are kept.

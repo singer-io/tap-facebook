@@ -770,6 +770,9 @@ class AdsInsights(Stream):
     # pylint: disable=no-member,unsubscriptable-object,attribute-defined-outside-init
     def __attrs_post_init__(self):
         self.breakdowns = self.options.get('breakdowns') or []
+        # Some breakdowns only support a subset of action_breakdowns, so a stream can override them.
+        if self.options.get('action_breakdowns'):
+            self.action_breakdowns = self.options['action_breakdowns']
         self.key_properties = self.base_properties[:]
         if self.options.get('primary-keys'):
             self.key_properties.extend(self.options['primary-keys'])
@@ -942,7 +945,14 @@ INSIGHTS_BREAKDOWNS_OPTIONS = {
                          "primary-keys": ['dma']},
     'ads_insights_comscore_market': {"breakdowns": ['comscore_market'],
                                       "primary-keys": ['comscore_market']},
+    # Observed since 2026-11-15 (not documented by Meta; the Insights breakdowns docs still list
+    # hourly breakdowns as combinable with all action breakdowns): requesting
+    # hourly_stats_aggregated_by_advertiser_time_zone together with the action_target_id /
+    # action_destination action breakdowns fails with error 2, subcode 1504041 "Invalid breakdowns"
+    # (fbtrace Am469s69ek4PX5Hy1YocWA7) and hourly rows load with 0 spend/impressions. The same
+    # request with action_type only returns correct data, so this stream only requests action_type.
     'ads_insights_hourly_advertiser': {'breakdowns': ['hourly_stats_aggregated_by_advertiser_time_zone'],
+                                       'action_breakdowns': ['action_type'],
                                        "primary-keys": ['hourly_stats_aggregated_by_advertiser_time_zone']},
 }
 
